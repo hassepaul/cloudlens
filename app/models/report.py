@@ -39,3 +39,9 @@ class ReportMeta(BaseModel):
         data = self.model_dump(mode="json")
         data["_partitionKey"] = self.tenant_id
         return data
+
+    @classmethod
+    def from_cosmos(cls, doc: dict) -> "ReportMeta":
+        for k in ("_partitionKey", "_rid", "_self", "_etag", "_attachments", "_ts"):
+            doc.pop(k, None)
+        return cls(**doc)

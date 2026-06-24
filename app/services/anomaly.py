@@ -103,6 +103,12 @@ def detect_anomalies(
         )
 
     # Fit once on the bulk of history to get smoothing params + residual sigma.
+    # NOTE (BUG-016): The model is fitted once on the full history and reused for
+    # all scanned days.  For stricter rolling-origin evaluation (no look-ahead
+    # leakage) the model should be re-fitted on history[0:t] for each scan day t.
+    # The current approach trades statistical strictness for performance on the
+    # typical 14-day scan window; the practical impact is small when the scan
+    # window is short relative to total history length.
     holdout = min(SEASON, n // 4)
     params, _ = _select_params(y, SEASON, holdout)
     fitted, _ = _hw_additive(y, SEASON, *params, h=1)

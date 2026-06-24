@@ -73,6 +73,44 @@ async def trigger_ingest(tenant_id: str, background_tasks: BackgroundTasks) -> d
         raise HTTPException(status_code=503, detail=exc.to_dict())
 
 
+@ingest_router.post("/{tenant_id}/hourly", status_code=202)
+async def trigger_hourly_ingest(tenant_id: str, background_tasks: BackgroundTasks) -> dict:
+    """
+    Trigger a near-realtime (hourly) ingest for one tenant.
+    Returns 202 immediately; runs two tracks in the background:
+      - Track A: near-realtime estimated spend via Azure Usage Aggregates API
+      - Track B: confirmed billing rows for the last 48 hours
+    """
+    settings = get_settings()
+    try:
+        doc = await cosmos.get_item(settings.cosmos_container_tenants, tenant_id, tenant_id)
+        config = TenantConfig.from_cosmos(doc)
+        if not config.subscription_ids:
+            raise HTTPException(status_code=422, detail="Tenant has no subscription IDs configured")
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=exc.to_dict())
+    except CosmosError as exc:
+        raise HTTPException(status_code=503, detail=exc.to_dict())
+
+    async def _run():
+        from app.jobs.ingest_hourly import ingest_tenant_hourly
+        try:
+            creds = await keyvault.get_sp_credentials(tenant_id)
+            for sub_id in config.subscription_ids:
+                await ingest_tenant_hourly(config, sub_id, creds)
+        except Exception as exc:
+            log.error("ingest.hourly_failed", tenant_id=tenant_id, error=str(exc))
+
+    background_tasks.add_task(_run)
+    log.info("ingest.hourly_triggered", tenant_id=tenant_id)
+    return {
+        "tenant_id": tenant_id,
+        "status": "accepted",
+        "mode": "hourly",
+        "tracks": ["near_realtime_estimate", "billing_confirm_48h"],
+    }
+
+
 @health_router.get("/")
 async def health_check() -> dict:
     """Liveness + dependency health check."""

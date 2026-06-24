@@ -67,7 +67,7 @@ async def update_rule(tenant_id: str, rule_id: str, payload: AlertRuleUpdate) ->
         raise HTTPException(status_code=503, detail=exc.to_dict())
 
 
-@router.delete("/{tenant_id}/rules/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{tenant_id}/rules/{rule_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_rule(tenant_id: str, rule_id: str) -> None:
     try:
         doc = await cosmos.get_item(_c(), rule_id, tenant_id)

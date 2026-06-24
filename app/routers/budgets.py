@@ -104,7 +104,7 @@ async def update_budget(tenant_id: str, budget_id: str, payload: BudgetUpdate) -
         raise HTTPException(status_code=503, detail=exc.to_dict())
 
 
-@router.delete("/{tenant_id}/{budget_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{tenant_id}/{budget_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_budget(tenant_id: str, budget_id: str) -> None:
     try:
         doc = await cosmos.get_item(_container(), budget_id, tenant_id)
@@ -207,11 +207,11 @@ async def budget_status(tenant_id: str, budget_id: str) -> BudgetStatus:
                         break
 
         projected_pct = (round(projected / budget.amount_eur * 100, 1)
-                         if projected and budget.amount_eur else None)
+                         if projected is not None and budget.amount_eur else None)
 
         if consumed_pct >= 100:
             state = "breach"
-        elif projected_pct and projected_pct >= 100:
+        elif projected_pct is not None and projected_pct >= 100:
             state = "projected_breach"
         elif consumed_pct >= budget.warning_threshold_pct:
             state = "warning"

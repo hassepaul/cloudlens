@@ -12,7 +12,7 @@ from app.config import get_settings
 from app.exceptions import CloudLensError
 from app.logging_config import configure_logging, get_logger
 from app.models.cost import CostRecord
-from app.models.tenant import TenantConfig
+from app.models.tenant import TenantConfig, CloudProvider
 from app.services import cosmos, keyvault
 from app.services.azure_cost import AzureCostClient
 from app.services.waste_engine import run_all_rules
@@ -131,7 +131,7 @@ async def ingest_tenant_subscription(
             "app_service_metrics": {},
         }
 
-        # ── 4. Run waste engine ────────────────────────────────────────────
+        # ── 5. Run waste engine ────────────────────────────────────────────
         waste_items = await run_all_rules(config.id, subscription_id, cost_records, context)
 
         waste_docs = [w.to_cosmos() for w in waste_items]
@@ -148,6 +148,66 @@ async def ingest_tenant_subscription(
         "cost_records": upserted,
         "waste_items": waste_stored,
     }
+
+
+async def ingest_tenant_cloud_provider(
+    config: TenantConfig,
+    cloud: str,
+    provider_creds: dict,
+) -> dict:
+    """
+    Ingest cost data for a non-Azure cloud provider.
+    Fetches native billing data, normalises to FOCUS, and stores FocusRecords
+    to the cost_records container (discriminated by type='focus_record').
+    Returns a summary dict.
+    """
+    from app.providers.base import _PROVIDERS  # type: ignore
+    from app.models.focus import FocusRecord
+
+    settings = get_settings()
+    account_ids = config.cloud_accounts.get(cloud, [])
+    if not account_ids:
+        log.warning("ingest.cloud_no_accounts", tenant_id=config.id, cloud=cloud)
+        return {"cloud": cloud, "focus_records": 0}
+
+    provider_cls = _PROVIDERS.get(cloud)
+    if provider_cls is None:
+        log.error("ingest.cloud_no_provider", tenant_id=config.id, cloud=cloud)
+        return {"cloud": cloud, "focus_records": 0, "error": "no_provider_adapter"}
+
+    end_date = date.today() - timedelta(days=1)
+    start_date = end_date - timedelta(days=settings.ingest_lookback_days - 1)
+    total_stored = 0
+
+    for account_id in account_ids:
+        try:
+            provider = provider_cls(**{_provider_cred_key(cloud): provider_creds,
+                                       "project_id": account_id,        # GCP
+                                       "access_key_id": provider_creds.get("access_key_id", ""),  # AWS / Alibaba
+                                       "access_key_secret": provider_creds.get("access_key_secret", ""),
+                                       "region": provider_creds.get("region", "eu-central-1")})
+        except TypeError:
+            # Provider __init__ may not accept all kwargs — build with only what's needed.
+            provider = provider_cls()
+
+        raw = await provider.fetch_cost_data(start_date, end_date)
+        focus_records: list[FocusRecord] = provider.normalize(config.id, raw)
+        if not focus_records:
+            continue
+
+        docs = [r.to_cosmos() for r in focus_records]
+        stored = await cosmos.bulk_upsert(settings.cosmos_container_cost_records, docs)
+        total_stored += stored
+        log.info("ingest.focus_stored", tenant_id=config.id, cloud=cloud,
+                 account=account_id, stored=stored)
+
+    return {"cloud": cloud, "focus_records": total_stored}
+
+
+def _provider_cred_key(cloud: str) -> str:
+    """Return the primary credential kwarg name for a provider constructor."""
+    return {"gcp": "sa_key", "aws": "role_arn", "alibaba": "access_key_id",
+            "oci": "tenancy_ocid"}.get(cloud, "credentials")
 
 
 async def run_full_ingest() -> None:
@@ -168,6 +228,7 @@ async def run_full_ingest() -> None:
             try:
                 creds = await keyvault.get_sp_credentials(config.id)
                 results = []
+                # ── Azure subscriptions (always enabled) ──────────────────
                 for sub_id in config.subscription_ids:
                     try:
                         result = await ingest_tenant_subscription(config, sub_id, creds)
@@ -179,6 +240,22 @@ async def run_full_ingest() -> None:
                             subscription_id=sub_id,
                             error=str(exc),
                         )
+
+                # ── Additional enabled clouds (add-on entitlements) ────────
+                for cloud in config.enabled_clouds:
+                    if cloud == CloudProvider.AZURE:
+                        continue  # already handled above
+                    secret_name = config.cloud_credential_refs.get(cloud)
+                    if not secret_name:
+                        log.warning("ingest_job.cloud_no_secret", tenant_id=config.id, cloud=cloud)
+                        continue
+                    try:
+                        cloud_creds = await keyvault.get_secret_json(secret_name)
+                        result = await ingest_tenant_cloud_provider(config, cloud, cloud_creds)
+                        results.append(result)
+                    except CloudLensError as exc:
+                        log.error("ingest_job.cloud_failed",
+                                  tenant_id=config.id, cloud=cloud, error=str(exc))
 
                 # Update last_ingested_at on success
                 updated = config.model_copy(update={

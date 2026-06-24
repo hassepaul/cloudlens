@@ -141,25 +141,238 @@ def _eval_idle_commitment(rule, idle_eur) -> list[AlertEvent]:
 
 
 # ── Delivery ─────────────────────────────────────────────────────────────────
+# Terminology for channel types stored in AlertRule.webhook_url:
+#   auto-detected from URL pattern:
+#     hooks.slack.com  → Slack Block Kit format
+#     outlook.office.com / office365.com → Teams MessageCard format
+#     anything else    → generic JSON webhook (HMAC-signed)
+#
+# Retry: 3 attempts, exponential backoff (1s, 2s, 4s). Delivery failures are
+# logged but never raise — they must not interrupt billing ingest or API paths.
 
-async def deliver(event: AlertEvent, rule: AlertRule) -> AlertEvent:
-    """Deliver an event over its rule's channels. in_app is implicit (stored)."""
+import hashlib
+import hmac
+import json
+import time
+
+_SLACK_HOST = "hooks.slack.com"
+_TEAMS_HOSTS = ("outlook.office.com", "office365.com", "webhook.office.com")
+_MAX_DELIVERY_ATTEMPTS = 3
+
+
+def _is_slack_url(url: str) -> bool:
+    return _SLACK_HOST in url
+
+
+def _is_teams_url(url: str) -> bool:
+    return any(h in url for h in _TEAMS_HOSTS)
+
+
+def _build_slack_payload(event: "AlertEvent") -> dict:
+    """Slack Block Kit message.
+
+    Uses a *header* block (bold), a *section* with the detail text, and a
+    *context* footer with the tenant and severity.  Colour is conveyed via an
+    optional *attachment* (legacy attachment is the only way to set the sidebar
+    colour in Slack).
+    """
+    colour_map = {
+        "critical": "#FF0000",
+        "high": "#FF6600",
+        "medium": "#FFAA00",
+        "low": "#36A64F",
+        "info": "#0078D4",
+    }
+    sev = event.severity.value if hasattr(event.severity, "value") else str(event.severity)
+    colour = colour_map.get(sev.lower(), "#0078D4")
+    detail_text = ""
+    if isinstance(event.detail, dict):
+        detail_text = "\n".join(f"• *{k}*: {v}" for k, v in event.detail.items() if v is not None)
+    elif event.detail:
+        detail_text = str(event.detail)
+
+    return {
+        "text": event.title,   # fallback / notification preview
+        "attachments": [
+            {
+                "color": colour,
+                "blocks": [
+                    {
+                        "type": "header",
+                        "text": {"type": "plain_text", "text": f"🔔 {event.title}"},
+                    },
+                    {
+                        "type": "section",
+                        "fields": [
+                            {"type": "mrkdwn", "text": f"*Severity:*\n{sev.upper()}"},
+                            {"type": "mrkdwn",
+                             "text": f"*Impact:*\n€{event.impact_eur:,.2f}"},
+                            {"type": "mrkdwn",
+                             "text": f"*Tenant:*\n{event.tenant_id}"},
+                            {"type": "mrkdwn",
+                             "text": f"*Rule:*\n{event.rule_name}"},
+                        ],
+                    },
+                    *(
+                        [{"type": "section",
+                          "text": {"type": "mrkdwn", "text": detail_text}}]
+                        if detail_text else []
+                    ),
+                    {
+                        "type": "context",
+                        "elements": [
+                            {
+                                "type": "mrkdwn",
+                                "text": (
+                                    f"CloudLens Alert  |  "
+                                    f"{event.created_at.strftime('%Y-%m-%d %H:%M UTC') if hasattr(event, 'created_at') and event.created_at else 'now'}"
+                                ),
+                            }
+                        ],
+                    },
+                ],
+            }
+        ],
+    }
+
+
+def _build_teams_payload(event: "AlertEvent") -> dict:
+    """Microsoft Teams MessageCard (Adaptive Card v1 compatible incoming webhook).
+
+    Office 365 Connectors use the legacy MessageCard schema by default — it
+    works with all Teams webhook URLs without extra connector configuration.
+    """
+    sev = event.severity.value if hasattr(event.severity, "value") else str(event.severity)
+    theme_map = {
+        "critical": "FF0000",
+        "high": "FF6600",
+        "medium": "FFAA00",
+        "low": "36A64F",
+        "info": "0078D4",
+    }
+    colour = theme_map.get(sev.lower(), "0078D4")
+    facts = [
+        {"name": "Severity", "value": sev.upper()},
+        {"name": "Impact", "value": f"€{event.impact_eur:,.2f}"},
+        {"name": "Tenant", "value": event.tenant_id},
+        {"name": "Rule", "value": event.rule_name},
+    ]
+    if isinstance(event.detail, dict):
+        for k, v in event.detail.items():
+            if v is not None:
+                facts.append({"name": k.replace("_", " ").title(), "value": str(v)})
+    return {
+        "@type": "MessageCard",
+        "@context": "http://schema.org/extensions",
+        "themeColor": colour,
+        "summary": event.title,
+        "sections": [
+            {
+                "activityTitle": f"**CloudLens Alert — {sev.upper()}**",
+                "activitySubtitle": event.title,
+                "facts": facts,
+                "markdown": True,
+            }
+        ],
+    }
+
+
+def _build_generic_payload(event: "AlertEvent") -> dict:
+    """Generic signed JSON webhook payload."""
+    return {
+        "event_id": event.id,
+        "tenant_id": event.tenant_id,
+        "rule_id": event.rule_id,
+        "rule_name": event.rule_name,
+        "alert_type": event.alert_type.value if hasattr(event.alert_type, "value") else str(event.alert_type),
+        "severity": event.severity.value if hasattr(event.severity, "value") else str(event.severity),
+        "title": event.title,
+        "impact_eur": event.impact_eur,
+        "detail": event.detail,
+        "created_at": event.created_at.isoformat() if hasattr(event, "created_at") and event.created_at else None,
+    }
+
+
+def _hmac_signature(body: bytes, secret: str) -> str:
+    """HMAC-SHA256 signature for generic webhook; header: X-CloudLens-Signature."""
+    return "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+
+
+async def _post_with_retry(
+    url: str,
+    payload: dict,
+    headers: dict | None = None,
+    *,
+    attempts: int = _MAX_DELIVERY_ATTEMPTS,
+) -> bool:
+    """POST payload to url with exponential backoff. Returns True on success."""
+    body = json.dumps(payload, default=str).encode()
+    h = {"Content-Type": "application/json", **(headers or {})}
+    delay = 1.0
+    for attempt in range(1, attempts + 1):
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.post(url, content=body, headers=h)
+                if resp.status_code < 300:
+                    return True
+                log.warning(
+                    "alert.delivery_http_error",
+                    url=url[:60], status=resp.status_code, attempt=attempt,
+                )
+        except Exception as exc:
+            log.warning("alert.delivery_exception", url=url[:60], error=str(exc), attempt=attempt)
+        if attempt < attempts:
+            import asyncio
+            await asyncio.sleep(delay)
+            delay *= 2
+    return False
+
+
+async def deliver(event: "AlertEvent", rule: "AlertRule") -> "AlertEvent":
+    """Deliver an event over all configured channels.
+
+    in_app is always recorded (the event is persisted to Cosmos by the caller).
+    Slack, Teams, and generic webhooks use purpose-built payloads.
+    Email delivery is recorded as 'email_pending' until an SMTP/ACS provider
+    is wired into the config — we never silently drop the intent.
+    """
+    from app.models.alert import AlertChannel  # avoid circular at module level
     delivered = ["in_app"]
+
     for ch in rule.channels:
         if ch == AlertChannel.WEBHOOK and rule.webhook_url:
-            try:
-                async with httpx.AsyncClient(timeout=5) as client:
-                    await client.post(rule.webhook_url, json={
-                        "text": event.title, "severity": event.severity.value,
-                        "impact_eur": event.impact_eur, "detail": event.detail,
-                    })
-                delivered.append("webhook")
-            except Exception as exc:   # delivery must never break ingest
-                log.warning("alert.webhook_failed", rule_id=rule.id, error=str(exc))
+            url = rule.webhook_url
+            if _is_slack_url(url):
+                payload = _build_slack_payload(event)
+                success = await _post_with_retry(url, payload)
+                channel_label = "slack"
+            elif _is_teams_url(url):
+                payload = _build_teams_payload(event)
+                success = await _post_with_retry(url, payload)
+                channel_label = "teams"
+            else:
+                payload = _build_generic_payload(event)
+                body_bytes = json.dumps(payload, default=str).encode()
+                # Optional HMAC signing — key comes from rule.webhook_secret if present.
+                headers: dict = {}
+                webhook_secret = getattr(rule, "webhook_secret", None)
+                if webhook_secret:
+                    headers["X-CloudLens-Signature"] = _hmac_signature(body_bytes, webhook_secret)
+                    headers["X-CloudLens-Timestamp"] = str(int(time.time()))
+                success = await _post_with_retry(url, payload, headers)
+                channel_label = "webhook"
+
+            delivered.append(channel_label if success else f"{channel_label}_failed")
+            if not success:
+                log.error("alert.delivery_all_retries_failed",
+                          rule_id=rule.id, channel=channel_label, url=url[:60])
+
         elif ch == AlertChannel.EMAIL and rule.email_to:
-            # Extension point: wire SMTP / SendGrid / Azure Communication Services.
-            # Until configured we record intent rather than silently dropping.
-            log.info("alert.email_pending", to=rule.email_to, title=event.title)
+            # Extension point: wire SMTP / Azure Communication Services.
+            # Mark intent rather than silently dropping.
+            log.info("alert.email_pending", to=rule.email_to, title=event.title,
+                     rule_id=rule.id)
             delivered.append("email_pending")
+
     event.delivered_channels = delivered
     return event

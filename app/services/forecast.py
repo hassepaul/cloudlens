@@ -208,8 +208,12 @@ def _month_end_projection(daily, points, last_day) -> float:
         next_month = last_day.replace(year=last_day.year + 1, month=1, day=1)
     else:
         next_month = last_day.replace(month=last_day.month + 1, day=1)
+    # BUG-017 fix: filter to strictly after last_day AND before next_month so we
+    # only sum forecast points for the remaining days in the *current* month.
+    # Previously the filter only excluded points >= next_month, so when the
+    # horizon extended past month-end, points from the next month were included.
     remainder = sum(p.value for p in points
-                    if date.fromisoformat(p.day) < next_month)
+                    if last_day < date.fromisoformat(p.day) < next_month)
     return round(mtd + remainder, 2)
 
 

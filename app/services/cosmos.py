@@ -3,6 +3,19 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Optional
 
+# Module-level lock guarding container-client initialisation.
+# Prevents two concurrent coroutines from both observing a missing container
+# and creating duplicate clients (TOCTOU race on _containers dict).
+_init_lock: asyncio.Lock | None = None
+
+
+def _get_init_lock() -> asyncio.Lock:
+    """Return the module-level init lock, creating it lazily inside a running loop."""
+    global _init_lock
+    if _init_lock is None:
+        _init_lock = asyncio.Lock()
+    return _init_lock
+
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -34,9 +47,17 @@ _containers: dict[str, Any] = {}
 
 
 async def get_container(name: str) -> Any:
-    """Return (and cache) a Cosmos container client."""
+    """Return (and cache) a Cosmos container client.
+    The asyncio lock ensures only one coroutine initialises the client/database
+    pair; others wait and then reuse the cached result (double-checked locking).
+    """
     global _client, _database
-    if name not in _containers:
+    if name in _containers:
+        return _containers[name]
+    async with _get_init_lock():
+        # Re-check under the lock in case another coroutine already added it.
+        if name in _containers:
+            return _containers[name]
         if _database is None:
             if _client is None:
                 _client = _get_cosmos_client()

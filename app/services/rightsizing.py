@@ -29,7 +29,11 @@ from app.services.instance_catalog import InstanceType, lookup, candidates_for
 DEFAULT_HEADROOM = 0.30          # 30% buffer above observed peak
 TERMINATE_CPU = 1.0             # avg CPU% below this + near-zero mem ⇒ terminate
 TERMINATE_MEM = 2.0
-USD_TO_EUR = 0.92               # indicative; real rate from FX feed in prod
+# BUG-015: FX rate was hardcoded. It now reads from the environment so ops can
+# override it without a code deploy.  Wire to the live ECB API in production:
+# https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A
+import os as _os
+USD_TO_EUR: float = float(_os.environ.get("USD_TO_EUR", "0.92"))
 
 
 @dataclass

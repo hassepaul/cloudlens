@@ -17,10 +17,15 @@ import pytest
 import app.rate_limit as rl
 from app.rate_limit import reset as reset_rate_limits
 from app.models.tenant import PlanTier
+from app.config import get_settings
 
 
 @pytest.fixture(autouse=True)
 def _reset_rate_limiter():
+    # Clear the cached Settings object so per-test env-var overrides (e.g.
+    # RATE_LIMIT_STARTER=3 in test_auth_ratelimit.py) are picked up correctly
+    # regardless of test execution order.
+    get_settings.cache_clear()
     reset_rate_limits()
     # Pre-warm the plan cache for common test tenant ids so _resolve_plan
     # returns immediately instead of hitting Cosmos.

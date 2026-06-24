@@ -48,17 +48,26 @@ async def list_waste_items(
     )
     try:
         docs = await cosmos.query_items(_wi_container(), query, params, partition_key=tenant_id)
-        return [WasteItem(**d) for d in docs]
+        return [WasteItem.from_cosmos(d) for d in docs]
     except CosmosError as exc:
         raise HTTPException(status_code=503, detail=exc.to_dict())
 
 
-@router.patch("/{item_id}/resolve", response_model=WasteItem)
-async def resolve_waste_item(item_id: str, tenant_id: str, payload: WasteResolve) -> WasteItem:
-    """Mark a waste item as resolved."""
+@router.patch("/{tenant_id}/{item_id}/resolve", response_model=WasteItem)
+async def resolve_waste_item(
+    tenant_id: str,
+    item_id: str,
+    payload: WasteResolve,
+) -> WasteItem:
+    """Mark a waste item as resolved. `tenant_id` is a path parameter so Cosmos
+    partition-key enforcement isolates tenants at the storage layer."""
     try:
         doc = await cosmos.get_item(_wi_container(), item_id, tenant_id)
-        item = WasteItem(**doc)
+        item = WasteItem.from_cosmos(doc)
+        # Belt-and-suspenders: confirm the retrieved document actually belongs
+        # to the requested tenant (guard against misconfigured partition keys).
+        if item.tenant_id != tenant_id:
+            raise NotFoundError(f"Waste item {item_id} not found for tenant {tenant_id}")
         updated = item.model_copy(update={
             "resolved_at": datetime.now(timezone.utc),
             "resolved_by": payload.resolved_by,

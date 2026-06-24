@@ -13,6 +13,9 @@ from __future__ import annotations
 
 SUPPORTED = ("en", "it", "de", "fr", "es", "nl", "pt", "pl")
 DEFAULT = "en"
+# BUG-018: Export SUPPORTED_LANGUAGES as the canonical list of supported codes
+# so callers (routers, docs, tests) have a single source of truth.
+SUPPORTED_LANGUAGES: tuple[str, ...] = SUPPORTED
 
 # UI / label catalog. Keys are stable; values per language.
 CATALOG: dict[str, dict[str, str]] = {
@@ -212,10 +215,26 @@ CATALOG: dict[str, dict[str, str]] = {
 
 
 def normalize_lang(lang: str | None) -> str:
+    """Normalise a BCP-47 language tag to a supported two-letter code.
+
+    Unsupported codes fall back to DEFAULT (``"en"``).
+    Call ``is_supported_lang()`` beforehand if you need to surface a 400 error
+    to the caller instead of silently returning English.
+
+    Supported codes: ``en it de fr es nl pt pl``
+    """
     if not lang:
         return DEFAULT
     code = lang.split("-")[0].split(",")[0].strip().lower()
     return code if code in SUPPORTED else DEFAULT
+
+
+def is_supported_lang(lang: str | None) -> bool:
+    """Return True if *lang* resolves to a supported (non-fallback) language code."""
+    if not lang:
+        return False
+    code = lang.split("-")[0].split(",")[0].strip().lower()
+    return code in SUPPORTED
 
 
 def t(key: str, lang: str = DEFAULT) -> str:

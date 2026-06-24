@@ -255,9 +255,25 @@ class TestMulticloudRouter:
         ]
 
     def test_spend_endpoint_groups_by_provider(self):
+        tenant_doc = {
+            "id": "t-1", "type": "tenant", "tenant_name": "Test",
+            "subscription_ids": ["aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"],
+            "plan_tier": "growth", "alert_email": "ops@test.com", "active": True,
+            "sp_secret_ref": "sp-creds-t-1",
+            "enabled_clouds": ["azure", "aws"],
+            "cloud_accounts": {}, "cloud_credential_refs": {},
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "updated_at": "2026-01-01T00:00:00+00:00",
+        }
+
         async def fake_query(c, q, parameters=None, partition_key=None, **kw):
             return self._focus_rows()
-        with patch("app.services.cosmos.query_items", new=fake_query):
+
+        async def fake_get(container, item_id, pk):
+            return dict(tenant_doc)
+
+        with patch("app.services.cosmos.query_items", new=fake_query), \
+             patch("app.services.cosmos.get_item", new=fake_get):
             r = self._client().get("/api/v1/multicloud/t-1/spend?lang=de")
         assert r.status_code == 200
         body = r.json()
@@ -265,6 +281,8 @@ class TestMulticloudRouter:
         assert len(body["providers"]) == 3
         assert body["ai_llm"]["total_eur"] == 800
         assert "by_provider" in body["labels"]
+        assert "enabled_clouds" in body
+        assert "locked_clouds" in body
 
     def test_commitments_endpoint(self):
         async def fake_query(c, q, parameters=None, partition_key=None, **kw):

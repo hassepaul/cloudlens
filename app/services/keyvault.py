@@ -97,6 +97,17 @@ async def store_sp_credentials(
     return secret_name
 
 
+async def get_secret_json(secret_name: str) -> dict:
+    """Retrieve a JSON-encoded secret and parse it. Used for non-Azure cloud credentials."""
+    raw = await get_secret(secret_name)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise KeyVaultError(
+            f"Secret '{secret_name}' is not valid JSON", detail=str(exc)
+        ) from exc
+
+
 async def close() -> None:
     global _kv_client
     if _kv_client is not None:

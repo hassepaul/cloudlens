@@ -27,6 +27,11 @@ class CostRecord(BaseModel):
     meter_sub_category: str = ""
     ttl: int = Field(default=7_776_000, description="90 days in seconds")
     ingested_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # estimated=True when the row comes from the near-realtime usage API rather than
+    # the confirmed billing API. Downstream can filter these out or display them
+    # with a "~" prefix to signal approximation.
+    estimated: bool = Field(default=False)
+    extra: dict = Field(default_factory=dict)
 
 
     def to_cosmos(self) -> dict:

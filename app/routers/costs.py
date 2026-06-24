@@ -18,6 +18,8 @@ router = APIRouter(
 )
 
 VALID_DIMENSIONS = {"service", "resource_group", "tag", "location"}
+# Dimensions supported by Cosmos DB GROUP BY (tag requires client-side aggregation).
+_GROUPBY_DIMENSIONS = {"service", "resource_group", "location"}
 
 
 def _cr_container() -> str:
@@ -78,7 +80,7 @@ async def get_cost_summary(
         )
         prev_total = float(prev_rows[0]) if prev_rows else None
         change_pct = None
-        if prev_total and prev_total > 0:
+        if prev_total is not None and prev_total > 0:
             change_pct = round((total - prev_total) / prev_total * 100, 1)
 
         return CostSummary(
@@ -86,7 +88,7 @@ async def get_cost_summary(
             period_start=period_start,
             period_end=period_end,
             total_cost_eur=round(total, 2),
-            previous_period_cost_eur=round(prev_total, 2) if prev_total else None,
+            previous_period_cost_eur=round(prev_total, 2) if prev_total is not None else None,
             change_pct=change_pct,
             top_services=[{"service": r["service_name"], "cost_eur": round(r["total"], 2)} for r in rows],
         )
@@ -103,6 +105,18 @@ async def get_cost_breakdown(
 ) -> CostBreakdown:
     if dimension not in VALID_DIMENSIONS:
         raise HTTPException(status_code=422, detail=f"dimension must be one of {VALID_DIMENSIONS}")
+    if dimension == "tag":
+        raise HTTPException(
+            status_code=501,
+            detail={
+                "error": "NOT_IMPLEMENTED",
+                "message": (
+                    "Tag-dimension breakdown is not supported on this endpoint — "
+                    "Cosmos DB cannot GROUP BY a JSON sub-property. "
+                    "Use GET /api/v1/insights/{tenant_id}/chargeback?dimension=<tag_key> instead."
+                ),
+            },
+        )
     period_start, period_end = start or _default_period()[0], end or _default_period()[1]
 
     col_map = {
@@ -110,7 +124,7 @@ async def get_cost_breakdown(
         "resource_group": "c.resource_group",
         "location": "c.location",
     }
-    col = col_map.get(dimension, "c.service_name")
+    col = col_map[dimension]  # dimension is now guaranteed to be in col_map
 
     try:
         rows = await cosmos.query_items(

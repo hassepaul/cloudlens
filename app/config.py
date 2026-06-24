@@ -71,6 +71,30 @@ class Settings(BaseSettings):
     rate_limit_growth: int = Field(default=200)
     rate_limit_enterprise: int = Field(default=600)
 
+    # ── FX / Currency ─────────────────────────────────────────────────────
+    # ECB rate cache TTL in seconds. Set to 0 to disable caching (tests only).
+    fx_cache_ttl_seconds: int = Field(default=3600, ge=0)
+    # Comma-separated list of currencies to pre-warm at startup.
+    fx_prefetch_currencies: str = Field(
+        default="USD,GBP,CHF,JPY,CAD,AUD,SEK,PLN,NOK,DKK",
+        description="Currencies to warm FX cache for at startup.",
+    )
+
+    # ── AI Cost Analyst ────────────────────────────────────────────────────
+    # Set openai_api_key (or store in Key Vault as "openai-api-key") to enable
+    # LLM-powered root-cause explanations. Leave empty to use rule-based fallback.
+    # For Azure OpenAI, set openai_base_url to your deployment endpoint:
+    #   https://<resource>.openai.azure.com/openai/deployments/<deployment>
+    openai_api_key: str = Field(default="", description="OpenAI API key (empty = disabled)")
+    openai_base_url: str = Field(default="https://api.openai.com/v1", description="Base URL for the OpenAI-compatible API")
+    openai_model: str = Field(default="gpt-4o", description="Model name / Azure deployment name")
+    ai_analyst_max_tokens: int = Field(default=700, ge=100, le=2000)
+    ai_explanation_cache_ttl: int = Field(default=604_800, ge=0, description="Cache AI explanations for N seconds (default 7 days)")
+
+    @property
+    def fx_prefetch_list(self) -> list[str]:
+        return [c.strip().upper() for c in self.fx_prefetch_currencies.split(",") if c.strip()]
+
     @field_validator("log_level")
     @classmethod
     def validate_log_level(cls, v: str) -> str:

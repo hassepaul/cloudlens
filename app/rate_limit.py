@@ -5,7 +5,10 @@ Deliberately dependency-free (no Redis) to keep infrastructure cost at zero.
 Uses a token-bucket per tenant held in module memory. Because Container Apps
 can run multiple replicas, this is a per-replica limit; with min_replicas=0 and
 low traffic the effective ceiling is close enough for fair-use protection.
-For strict global limits later, swap the bucket store for Azure Cache for Redis.
+
+KNOWN LIMITATION (BUG-011): On a multi-replica deployment the effective rate
+limit is N_replicas * configured_limit.  For strict global limiting, replace
+``_buckets`` with Azure Cache for Redis using an atomic token-bucket script.
 
 Plan limits (requests/minute) come from settings:
   starter=60, growth=200, enterprise=600

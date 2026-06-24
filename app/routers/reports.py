@@ -3,16 +3,20 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Depends
 
 from app.config import get_settings
 from app.exceptions import NotFoundError, CosmosError, StorageError
 from app.logging_config import get_logger
 from app.models.report import ReportMeta, ReportStatus
+from app.rate_limit import rate_limit_tenant
 from app.services import cosmos, blob
 
 log = get_logger(__name__)
-router = APIRouter(prefix="/api/v1/reports", tags=["reports"])
+router = APIRouter(
+    prefix="/api/v1/reports", tags=["reports"],
+    dependencies=[Depends(rate_limit_tenant)],
+)
 
 
 def _rpt_container() -> str:
@@ -42,7 +46,7 @@ async def list_reports(
             ],
             partition_key=tenant_id,
         )
-        return [ReportMeta(**d) for d in docs]
+        return [ReportMeta.from_cosmos(d) for d in docs]
     except CosmosError as exc:
         raise HTTPException(status_code=503, detail=exc.to_dict())
 
@@ -135,7 +139,7 @@ async def get_download_url(report_id: str, tenant_id: str) -> dict:
     """Return a fresh SAS download URL for a report."""
     try:
         doc = await cosmos.get_item(_rpt_container(), report_id, tenant_id)
-        meta = ReportMeta(**doc)
+        meta = ReportMeta.from_cosmos(doc)
         if meta.status != ReportStatus.READY or not meta.blob_path:
             raise HTTPException(status_code=409, detail={"error": "Report not ready", "status": meta.status})
         url = await blob.get_download_url(meta.blob_path)

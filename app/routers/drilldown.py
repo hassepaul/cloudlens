@@ -83,6 +83,10 @@ async def drilldown(
         filters["service_name"] = service
 
     group_field = _LEVEL_FIELD[level]
+    # SECURITY NOTE (BUG-013): `group_field` is whitelisted via _LEVEL_FIELD which
+    # is keyed by the regex-validated `level` path parameter — it is never a raw
+    # user string.  Filter keys in `where` are code-controlled (not user input).
+    # This f-string pattern is safe.  Do NOT extend it with unwhitelisted field names.
     where, fparams = _filter_clause(filters)
     base_params = [
         {"name": "@t", "value": tenant_id},

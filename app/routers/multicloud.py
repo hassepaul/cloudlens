@@ -1,12 +1,16 @@
 """Multi-cloud router — cross-cloud spend, AI/LLM, allocation, commitments, i18n."""
 from __future__ import annotations
 from datetime import date, timedelta
+from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Depends, Header
+from pydantic import BaseModel
 
+from app.auth import require_cloud
 from app.config import get_settings
-from app.exceptions import CosmosError
+from app.exceptions import CosmosError, NotFoundError
 from app.logging_config import get_logger
+from app.models.tenant import CloudProvider, ADDON_CLOUDS
 from app.rate_limit import rate_limit_tenant
 from app.services import cosmos
 from app.services.allocation import (
@@ -22,6 +26,25 @@ router = APIRouter(
 )
 # labels has no tenant_id in the path, so it can't use the per-tenant limiter
 labels_router = APIRouter(prefix="/api/v1/multicloud", tags=["multicloud"])
+
+
+# ── Request models for typed validation ────────────────────────────────────────────
+
+class AllocationRuleRequest(BaseModel):
+    kind: str
+    cost_center: str = ""
+    match_key: str = ""
+    match_value: str = ""
+    source_key: str = ""
+    value_map: dict[str, str] = {}
+    accounts: list[str] = []
+    pattern: str = ""
+
+
+class AllocationRuleSetRequest(BaseModel):
+    dimension: str = "cost_center"
+    shared_strategy: str = "proportional"
+    rules: list[AllocationRuleRequest] = []
 
 
 def _fr() -> str:
@@ -60,7 +83,33 @@ async def _held_commitments(tenant_id: str) -> list[dict]:
     )
 
 
-# ── Cross-cloud spend summary ────────────────────────────────────────────────
+# ── Cloud entitlement status (no extra auth needed — rate-limited already) ───
+
+@router.get("/{tenant_id}/clouds")
+async def tenant_cloud_status(tenant_id: str) -> dict:
+    """Return which clouds are enabled for this tenant and which are available as add-ons."""
+    from app.services import cosmos as _cosmos
+    from app.models.tenant import TenantConfig
+    settings = get_settings()
+    try:
+        doc = await _cosmos.get_item(settings.cosmos_container_tenants, tenant_id, tenant_id)
+        config = TenantConfig.from_cosmos(doc)
+    except NotFoundError:
+        raise HTTPException(status_code=404,
+                            detail={"error": "NOT_FOUND", "message": f"Tenant {tenant_id} not found"})
+    except CosmosError as exc:
+        raise HTTPException(status_code=503, detail=exc.to_dict())
+
+    return {
+        "tenant_id": tenant_id,
+        "enabled_clouds": config.enabled_clouds,
+        "is_multicloud": config.is_multicloud(),
+        "available_addons": [c.value for c in ADDON_CLOUDS if c.value not in config.enabled_clouds],
+        "cloud_accounts": config.cloud_accounts,
+    }
+
+
+# ── Cross-cloud spend summary ─────────────────────────────────────────────────
 
 @router.get("/{tenant_id}/spend")
 async def multicloud_spend(
@@ -69,8 +118,29 @@ async def multicloud_spend(
     lang: str = Query("en"),
     accept_language: str | None = Header(default=None),
 ) -> dict:
-    """Spend grouped by cloud provider, plus AI/LLM spend broken out."""
+    """Spend grouped by cloud provider, plus AI/LLM spend broken out.
+
+    Returns data for enabled clouds only. The `locked_clouds` field lists add-on
+    clouds available for this tenant to unlock.
+    """
+    from app.services import cosmos as _cosmos
+    from app.models.tenant import TenantConfig
+    settings = get_settings()
     language = normalize_lang(lang or accept_language)
+
+    # Load tenant to determine entitlements.
+    try:
+        doc = await _cosmos.get_item(settings.cosmos_container_tenants, tenant_id, tenant_id)
+        config = TenantConfig.from_cosmos(doc)
+    except NotFoundError:
+        raise HTTPException(status_code=404,
+                            detail={"error": "NOT_FOUND", "message": f"Tenant {tenant_id} not found"})
+    except CosmosError as exc:
+        raise HTTPException(status_code=503, detail=exc.to_dict())
+
+    enabled = set(config.enabled_clouds)
+    locked_clouds = [c.value for c in ADDON_CLOUDS if c.value not in enabled]
+
     try:
         records = await _focus_records(tenant_id, days)
     except CosmosError as exc:
@@ -106,6 +176,9 @@ async def multicloud_spend(
                    round(ai_total / total * 100, 1) if total > 0 else 0.0,
                    "by_service": ai},
         "period_days": days,
+        "enabled_clouds": sorted(enabled),
+        "locked_clouds": locked_clouds,
+        "is_multicloud": config.is_multicloud(),
     }
 
 
@@ -114,7 +187,7 @@ async def multicloud_spend(
 @router.post("/{tenant_id}/allocate")
 async def allocate(
     tenant_id: str,
-    ruleset: dict,                      # {dimension, shared_strategy, rules:[...]}
+    ruleset: AllocationRuleSetRequest,
     days: int = Query(30, ge=1, le=90),
 ) -> dict:
     """Run rule-based 100% allocation over FOCUS records."""
@@ -124,21 +197,21 @@ async def allocate(
         raise HTTPException(status_code=503, detail=exc.to_dict())
 
     rules = []
-    for r in ruleset.get("rules", []):
+    for r in ruleset.rules:
         try:
             rules.append(AllocationRule(
-                kind=RuleKind(r["kind"]), cost_center=r.get("cost_center", ""),
-                match_key=r.get("match_key", ""), match_value=r.get("match_value", ""),
-                source_key=r.get("source_key", ""), value_map=r.get("value_map", {}),
-                accounts=tuple(r.get("accounts", [])), pattern=r.get("pattern", ""),
+                kind=RuleKind(r.kind), cost_center=r.cost_center,
+                match_key=r.match_key, match_value=r.match_value,
+                source_key=r.source_key, value_map=r.value_map,
+                accounts=tuple(r.accounts), pattern=r.pattern,
             ))
         except (KeyError, ValueError) as exc:
             raise HTTPException(status_code=422,
                                 detail={"error": "VALIDATION_ERROR", "message": f"Bad rule: {exc}"})
 
     rs = AllocationRuleSet(
-        dimension=ruleset.get("dimension", "cost_center"),
-        shared_strategy=ruleset.get("shared_strategy", "proportional"),
+        dimension=ruleset.dimension,
+        shared_strategy=ruleset.shared_strategy,
         rules=rules,
     )
     res = allocate_full(records, rs)

@@ -59,6 +59,12 @@ class WasteItem(BaseModel):
         data["_partitionKey"] = self.tenant_id
         return data
 
+    @classmethod
+    def from_cosmos(cls, doc: dict) -> "WasteItem":
+        for k in ("_partitionKey", "_rid", "_self", "_etag", "_attachments", "_ts"):
+            doc.pop(k, None)
+        return cls(**doc)
+
     @property
     def is_resolved(self) -> bool:
         return self.resolved_at is not None

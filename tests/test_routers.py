@@ -218,7 +218,7 @@ class TestWasteRouter:
         with patch("app.services.cosmos.get_item", new=fake_get), \
              patch("app.services.cosmos.upsert_item", new=fake_upsert):
             resp = client.patch(
-                f"/api/v1/waste/waste-1/resolve?tenant_id={TENANT_ID}",
+                f"/api/v1/waste/{TENANT_ID}/waste-1/resolve",
                 json={"resolved_by": "pablito@cloudlens.io"},
             )
         assert resp.status_code == 200
@@ -342,3 +342,121 @@ class TestReportsRouter:
         with patch("app.services.cosmos.get_item", new=AsyncMock(return_value=doc)):
             resp = client.get(f"/api/v1/reports/report-1/download?tenant_id={TENANT_ID}")
         assert resp.status_code == 409
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CLOUD ENTITLEMENT ENDPOINTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestCloudEntitlementEndpoints:
+    """Verify the cloud add-on subscription flow: list, enable, disable."""
+
+    def _azure_only_doc(self) -> dict:
+        return {
+            "id": TENANT_ID, "type": "tenant", "tenant_name": "Acme",
+            "subscription_ids": [SUB_ID], "plan_tier": "growth",
+            "alert_email": "ops@acme.com", "active": True,
+            "sp_secret_ref": "sp-creds-x",
+            "enabled_clouds": ["azure"],
+            "cloud_accounts": {},
+            "cloud_credential_refs": {},
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "updated_at": "2026-01-01T00:00:00+00:00",
+        }
+
+    def test_list_clouds_returns_enabled_and_available_addons(self, client):
+        with patch("app.services.cosmos.get_item",
+                   new=AsyncMock(return_value=self._azure_only_doc())):
+            resp = client.get(f"/api/v1/tenants/{TENANT_ID}/clouds", headers=ADMIN_HEADERS)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["enabled_clouds"] == ["azure"]
+        assert body["is_multicloud"] is False
+        assert "aws" in body["available_addons"]
+        assert "azure" not in body["available_addons"]
+
+    def test_enable_cloud_adds_to_enabled_list(self, client):
+        captured = {}
+
+        async def fake_upsert(container, item):
+            captured["item"] = item
+            return item
+
+        payload = {
+            "cloud": "aws",
+            "account_ids": ["123456789012"],
+            "credential_secret_ref": "aws-creds-acme",
+        }
+        with patch("app.services.cosmos.get_item",
+                   new=AsyncMock(return_value=self._azure_only_doc())), \
+             patch("app.services.cosmos.upsert_item", new=fake_upsert):
+            resp = client.post(f"/api/v1/tenants/{TENANT_ID}/clouds",
+                               json=payload, headers=ADMIN_HEADERS)
+        assert resp.status_code == 201
+        body = resp.json()
+        assert "aws" in body["enabled_clouds"]
+        assert body["cloud_accounts"]["aws"] == ["123456789012"]
+        assert body["cloud_credential_refs"]["aws"] == "aws-creds-acme"
+
+    def test_enable_cloud_conflict_if_already_enabled(self, client):
+        doc = self._azure_only_doc()
+        doc["enabled_clouds"] = ["azure", "aws"]
+        doc["cloud_accounts"] = {"aws": ["123456789012"]}
+        doc["cloud_credential_refs"] = {"aws": "aws-creds-acme"}
+
+        payload = {"cloud": "aws", "account_ids": ["123456789012"],
+                   "credential_secret_ref": "aws-creds-acme"}
+        with patch("app.services.cosmos.get_item", new=AsyncMock(return_value=doc)):
+            resp = client.post(f"/api/v1/tenants/{TENANT_ID}/clouds",
+                               json=payload, headers=ADMIN_HEADERS)
+        assert resp.status_code == 409
+
+    def test_enable_cloud_rejects_azure_as_addon(self, client):
+        """Azure is included by default and must not be passed as an add-on."""
+        payload = {"cloud": "azure", "account_ids": ["sub-1"],
+                   "credential_secret_ref": "some-ref"}
+        resp = client.post(f"/api/v1/tenants/{TENANT_ID}/clouds",
+                           json=payload, headers=ADMIN_HEADERS)
+        assert resp.status_code == 422
+
+    def test_enable_cloud_rejects_unknown_cloud(self, client):
+        payload = {"cloud": "notacloud", "account_ids": ["x"],
+                   "credential_secret_ref": "ref"}
+        resp = client.post(f"/api/v1/tenants/{TENANT_ID}/clouds",
+                           json=payload, headers=ADMIN_HEADERS)
+        assert resp.status_code == 422
+
+    def test_disable_cloud_removes_from_enabled_list(self, client):
+        doc = self._azure_only_doc()
+        doc["enabled_clouds"] = ["azure", "gcp"]
+        doc["cloud_accounts"] = {"gcp": ["my-proj"]}
+        doc["cloud_credential_refs"] = {"gcp": "gcp-creds"}
+        captured = {}
+
+        async def fake_upsert(container, item):
+            captured["item"] = item
+            return item
+
+        with patch("app.services.cosmos.get_item", new=AsyncMock(return_value=doc)), \
+             patch("app.services.cosmos.upsert_item", new=fake_upsert):
+            resp = client.delete(f"/api/v1/tenants/{TENANT_ID}/clouds/gcp",
+                                 headers=ADMIN_HEADERS)
+        assert resp.status_code == 204
+        assert "gcp" not in captured["item"]["enabled_clouds"]
+        assert "gcp" not in captured["item"].get("cloud_accounts", {})
+
+    def test_disable_azure_is_rejected(self, client):
+        """Azure is the default cloud and cannot be disabled."""
+        with patch("app.services.cosmos.get_item",
+                   new=AsyncMock(return_value=self._azure_only_doc())):
+            resp = client.delete(f"/api/v1/tenants/{TENANT_ID}/clouds/azure",
+                                 headers=ADMIN_HEADERS)
+        assert resp.status_code == 422
+
+    def test_disable_cloud_not_enabled_returns_404(self, client):
+        with patch("app.services.cosmos.get_item",
+                   new=AsyncMock(return_value=self._azure_only_doc())):
+            resp = client.delete(f"/api/v1/tenants/{TENANT_ID}/clouds/aws",
+                                 headers=ADMIN_HEADERS)
+        assert resp.status_code == 404
+

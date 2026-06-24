@@ -68,8 +68,20 @@ color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1
 .alloc .bar .d{background:linear-gradient(90deg,var(--teal),#1a9c8a);height:100%}
 .alloc .bar .s{background:repeating-linear-gradient(45deg,var(--amber),var(--amber) 3px,transparent 3px,transparent 6px);opacity:.6;height:100%}
 .alloc .rules{font-size:10.5px;color:var(--txt3);font-family:var(--mono);margin-top:3px}
-.note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.5}
-.badge{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:6px;background:var(--tealDim);color:var(--teal)}
+.lock-banner{background:linear-gradient(135deg,var(--amberDim),#3a2a08);border:1px solid var(--amber);
+  border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.lock-banner .icon{font-size:22px;flex-shrink:0}
+.lock-banner .body{flex:1;min-width:180px}
+.lock-banner .body .h{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);margin-bottom:3px}
+.lock-banner .body .s{font-size:11px;color:var(--txt2);line-height:1.5}
+.lock-banner .cta{background:var(--amber);color:#0b0f14;font-family:var(--mono);font-size:11px;
+  font-weight:700;padding:7px 14px;border-radius:8px;cursor:pointer;border:0;white-space:nowrap}
+.lock-banner .cta:hover{opacity:.85}
+.lock-pill{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;
+  padding:2px 8px;border-radius:6px;background:var(--amberDim);color:var(--amber);margin-left:6px}
+.unlock-pill{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;
+  padding:2px 8px;border-radius:6px;background:var(--tealDim);color:var(--teal);margin-left:6px}
+.prov.locked{opacity:.45;pointer-events:none}
 </style>
 </head>
 <body>
@@ -94,8 +106,10 @@ color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1
     </div>
   </div>
 
+  <div id="cloud-banner"></div>
+
   <div class="kpis">
-    <div class="kpi"><div class="l" id="k-total-l">Total spend</div><div class="v" id="k-total">—</div><div class="s">5 clouds + AI</div></div>
+    <div class="kpi"><div class="l" id="k-total-l">Total spend</div><div class="v" id="k-total">—</div><div class="s" id="k-cloud-count">1 cloud</div></div>
     <div class="kpi purple"><div class="l" id="k-ai-l">AI / LLM spend</div><div class="v" id="k-ai">—</div><div class="s" id="k-ai-s">—</div></div>
     <div class="kpi teal"><div class="l" id="k-cov-l">Coverage</div><div class="v" id="k-cov">—</div><div class="s" id="k-commit-l">commitments</div></div>
     <div class="kpi amber"><div class="l">Commitment opportunity</div><div class="v" id="k-opp">—</div><div class="s">€/mo if purchased</div></div>
@@ -149,32 +163,46 @@ const PROV_META={
 };
 
 /* mock data shaped to: GET /multicloud/{t}/spend, /commitments, POST /allocate, GET /labels */
+/* enabled_clouds / locked_clouds come from the spend API response */
 const DATA={
   total:48200,
+  enabled_clouds:['azure'],           /* single-cloud by default */
+  locked_clouds:['aws','gcp','alibaba','oci'],
+  is_multicloud:false,
   providers:[
-    {provider:'Amazon Web Services',spend_eur:18600,pct:38.6},
-    {provider:'Microsoft Azure',spend_eur:14200,pct:29.5},
-    {provider:'Google Cloud',spend_eur:8100,pct:16.8},
-    {provider:'Alibaba Cloud',spend_eur:3400,pct:7.1},
-    {provider:'Oracle Cloud Infrastructure',spend_eur:1700,pct:3.5},
-    {provider:'Anthropic',spend_eur:1400,pct:2.9},
-    {provider:'OpenAI',spend_eur:800,pct:1.7},
+    {provider:'Microsoft Azure',spend_eur:14200,pct:100},
   ],
-  ai:{total:3100,pct:6.4,by_service:[
-    {service:'Claude · Opus',amt:1400},{service:'Amazon Bedrock',amt:900},
+  ai:{total:800,pct:1.7,by_service:[
     {service:'OpenAI · gpt-4o',amt:800},
   ]},
-  commit:{coverage:34,util:81,idle:640,opportunity:2180,recs:[
-    {provider:'Amazon Web Services',type:'Savings Plan',save:1240},
-    {provider:'Google Cloud',type:'Committed Use Discount',save:620},
+  commit:{coverage:34,util:81,idle:120,opportunity:320,recs:[
     {provider:'Microsoft Azure',type:'Reserved',save:320},
-  ],note:'€640/mo of held commitments is idle (low utilization) — review before buying more.'},
+  ],note:'Review Azure Reserved Instance coverage to reduce on-demand spend.'},
   alloc:{allocated_pct:100,coverage_before:76,groups:[
-    {name:'engineering',direct:18900,shared:3100,total:22000,pct:45.6,rules:{tag:14000,tag_map:4900}},
-    {name:'data-platform',direct:11200,shared:1800,total:13000,pct:27,rules:{account:11200}},
-    {name:'product',direct:6800,shared:1100,total:7900,pct:16.4,rules:{name_pattern:6800}},
-    {name:'shared-services',direct:4400,shared:900,total:5300,pct:11,rules:{tag:4400}},
+    {name:'engineering',direct:6800,shared:1100,total:7900,pct:55.6,rules:{tag:5000,tag_map:1800}},
+    {name:'data-platform',direct:4200,shared:800,total:5000,pct:35.2,rules:{account:4200}},
+    {name:'shared-services',direct:900,shared:400,total:1300,pct:9.2,rules:{tag:900}},
   ]},
+};
+
+/* Provider display map — key = FOCUS ProviderName / internal cloud key */
+const PROV_META={
+  'Amazon Web Services':{ic:'AWS',c:'var(--aws)',key:'aws'},
+  'Microsoft Azure':{ic:'AZ',c:'var(--azure)',key:'azure'},
+  'Google Cloud':{ic:'GCP',c:'var(--gcp)',key:'gcp'},
+  'Alibaba Cloud':{ic:'ALI',c:'var(--alibaba)',key:'alibaba'},
+  'Oracle Cloud Infrastructure':{ic:'OCI',c:'var(--oci)',key:'oci'},
+  'Anthropic':{ic:'A',c:'var(--ai)',key:'ai'},
+  'OpenAI':{ic:'AI',c:'var(--ai)',key:'ai'},
+};
+/* Map internal cloud keys → FOCUS provider names (for lock check) */
+const CLOUD_PROVIDER_NAME={
+  azure:'Microsoft Azure',aws:'Amazon Web Services',gcp:'Google Cloud',
+  alibaba:'Alibaba Cloud',oci:'Oracle Cloud Infrastructure',
+};
+const ADDON_LABELS={
+  aws:'Amazon Web Services (AWS)',gcp:'Google Cloud Platform',
+  alibaba:'Alibaba Cloud',oci:'Oracle Cloud Infrastructure',
 };
 
 /* i18n labels (mirrors backend /labels) */
@@ -205,20 +233,58 @@ function applyLabels(){
 }
 
 function render(){
+  const locked=new Set(DATA.locked_clouds||[]);
+  const enabled=DATA.enabled_clouds||['azure'];
+  const cloudCount=enabled.length;
+
+  /* Cloud banner — show upgrade CTA if add-ons are available */
+  const banner=document.getElementById('cloud-banner');
+  if(locked.size>0){
+    const names=Array.from(locked).map(k=>ADDON_LABELS[k]||k).join(', ');
+    banner.innerHTML=`<div class="lock-banner">
+      <div class="icon">🔒</div>
+      <div class="body">
+        <div class="h">Multi-Cloud Add-on Available</div>
+        <div class="s">Unlock cross-cloud visibility for <strong>${names}</strong>. Enable an additional cloud to see unified spend, allocation, and commitment analysis across all your providers.</div>
+      </div>
+      <button class="cta" onclick="alert('Contact CloudLens support to activate your multi-cloud add-on.')">Unlock add-on →</button>
+    </div>`;
+  } else {
+    banner.innerHTML='';
+  }
+
+  /* KPI bar */
   document.getElementById('k-total').textContent=EUR(DATA.total);
+  document.getElementById('k-cloud-count').textContent=
+    cloudCount===1?'1 cloud · Azure':`${cloudCount} clouds enabled`;
   document.getElementById('k-ai').textContent=EUR(DATA.ai.total);
   document.getElementById('k-ai-s').textContent=DATA.ai.pct+'% of spend';
   document.getElementById('k-cov').textContent=DATA.commit.coverage+'%';
   document.getElementById('k-opp').textContent=EUR(DATA.commit.opportunity);
 
-  const max=Math.max(...DATA.providers.map(p=>p.spend_eur));
-  document.getElementById('providers').innerHTML=DATA.providers.map(p=>{
+  /* Provider bars — enabled clouds show data, locked clouds show upgrade prompt */
+  const max=Math.max(...DATA.providers.map(p=>p.spend_eur),1);
+  const enabledRows=DATA.providers.map(p=>{
     const m=PROV_META[p.provider]||{ic:'?',c:'var(--txt3)'};
     return `<div class="prov"><div class="top">
-      <div class="nm"><span class="ic" style="background:${m.c}">${m.ic}</span>${p.provider}</div>
+      <div class="nm"><span class="ic" style="background:${m.c}">${m.ic}</span>${p.provider}
+        <span class="unlock-pill">✓ active</span></div>
       <div class="amt">${EUR(p.spend_eur)} <span style="font-size:11px;color:var(--txt3)">${p.pct}%</span></div></div>
       <div class="bar"><i style="width:${p.spend_eur/max*100}%;background:${m.c}"></i></div></div>`;
   }).join('');
+
+  const lockedRows=Array.from(locked).map(k=>{
+    const pname=CLOUD_PROVIDER_NAME[k]||k;
+    const m=PROV_META[pname]||{ic:k.slice(0,3).toUpperCase(),c:'var(--txt3)'};
+    return `<div class="prov locked" title="Add-on not enabled">
+      <div class="top">
+        <div class="nm"><span class="ic" style="background:${m.c};filter:grayscale(1);opacity:.5">${m.ic}</span>
+          ${ADDON_LABELS[k]||pname}
+          <span class="lock-pill">🔒 add-on</span></div>
+        <div class="amt" style="color:var(--txt3)">— <span style="font-size:11px">locked</span></div></div>
+      <div class="bar"><i style="width:0%"></i></div></div>`;
+  }).join('');
+  document.getElementById('providers').innerHTML=enabledRows+lockedRows;
 
   document.getElementById('ai-total').textContent=EUR(DATA.ai.total);
   document.getElementById('ai-pct').textContent=DATA.ai.pct+'% of total cloud spend';
@@ -235,7 +301,7 @@ function render(){
   }).join('');
   document.getElementById('cm-note').textContent=DATA.commit.note;
 
-  const amax=Math.max(...DATA.alloc.groups.map(g=>g.total));
+  const amax=Math.max(...DATA.alloc.groups.map(g=>g.total),1);
   document.getElementById('allocation').innerHTML=DATA.alloc.groups.map(g=>{
     const dw=g.direct/amax*100, sw=g.shared/amax*100;
     const rules=Object.entries(g.rules).map(([k,v])=>`${k}:${EUR(v)}`).join(' · ');

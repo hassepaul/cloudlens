@@ -76,8 +76,9 @@ async def rule_idle_vm(
     subscription_id: str,
     cost_records: list[dict],
     metrics_fetcher: Any,  # callable(resource_id) -> dict
+    lookback_days: int = IDLE_VM_LOOKBACK_DAYS,
 ) -> list[WasteItem]:
-    """VMs with avg CPU < IDLE_VM_CPU_THRESHOLD_PCT over IDLE_VM_LOOKBACK_DAYS."""
+    """VMs with avg CPU < IDLE_VM_CPU_THRESHOLD_PCT over `lookback_days`."""
     vm_costs: dict[str, float] = {}
     for r in cost_records:
         rid = r.get("resource_id", "")
@@ -105,14 +106,14 @@ async def rule_idle_vm(
             saving_eur=saving,
             priority=Priority.CRITICAL if saving > 100 else Priority.HIGH,
             recommendation=(
-                f"VM has averaged {cpu_avg:.1f}% CPU over {IDLE_VM_LOOKBACK_DAYS} days. "
+                f"VM has averaged {cpu_avg:.1f}% CPU over {lookback_days} days. "
                 "Deallocate or resize to a burstable Bs-series SKU."
             ),
             recommendation_it=(
-                f"La VM ha una media CPU del {cpu_avg:.1f}% negli ultimi {IDLE_VM_LOOKBACK_DAYS} giorni. "
+                f"La VM ha una media CPU del {cpu_avg:.1f}% negli ultimi {lookback_days} giorni. "
                 "Dealloca o ridimensiona a una SKU Bs-series burstable."
             ),
-            evidence={"cpu_avg_pct": cpu_avg, "lookback_days": IDLE_VM_LOOKBACK_DAYS},
+            evidence={"cpu_avg_pct": cpu_avg, "lookback_days": lookback_days},
         ))
     return waste_items
 
@@ -590,7 +591,8 @@ async def run_all_rules(
     """
     log.info("waste_engine.start", tenant_id=tenant_id, subscription_id=subscription_id)
     tasks = [
-        rule_idle_vm(tenant_id, subscription_id, cost_records, context["metrics_fetcher"]),
+        rule_idle_vm(tenant_id, subscription_id, cost_records, context["metrics_fetcher"],
+                     context.get("lookback_days", IDLE_VM_LOOKBACK_DAYS)),
         rule_unattached_disk(tenant_id, subscription_id, cost_records, context.get("disk_states", {})),
         rule_orphan_public_ip(tenant_id, subscription_id, cost_records, context.get("ip_associations", {})),
         rule_oversized_vm(tenant_id, subscription_id, cost_records, context.get("advisor_recommendations", [])),

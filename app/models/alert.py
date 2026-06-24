@@ -44,6 +44,7 @@ class AlertRuleBase(BaseModel):
     sub_account_id: Optional[str] = None
     channels: list[AlertChannel] = Field(default_factory=lambda: [AlertChannel.IN_APP])
     webhook_url: Optional[str] = None
+    webhook_secret: Optional[str] = Field(default=None, description="HMAC-SHA256 secret for generic webhook signing")
     email_to: Optional[str] = None
     enabled: bool = True
 
@@ -58,6 +59,7 @@ class AlertRuleUpdate(BaseModel):
     enabled: Optional[bool] = None
     channels: Optional[list[AlertChannel]] = None
     webhook_url: Optional[str] = None
+    webhook_secret: Optional[str] = None
     email_to: Optional[str] = None
 
 

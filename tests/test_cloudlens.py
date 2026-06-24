@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import date
 import pytest
 
-from app.models.tenant import TenantConfig, PlanTier
+from app.models.tenant import TenantConfig, PlanTier, CloudProvider, ADDON_CLOUDS
 from app.models.waste import WasteItem, WasteType, Priority
 from app.models.report import ReportMeta, ReportStatus
 from app.services.waste_engine import (
@@ -111,6 +111,79 @@ class TestTenantConfig:
         assert PlanTier.STARTER.value == "starter"
         assert PlanTier.GROWTH.value == "growth"
         assert PlanTier.ENTERPRISE.value == "enterprise"
+
+
+class TestCloudEntitlements:
+    """Cloud subscription model — default single-cloud, multi-cloud add-on."""
+
+    def _make_config(self, **kwargs) -> TenantConfig:
+        base = dict(
+            id=TENANT_ID, tenant_name="Acme", subscription_ids=[SUB_ID],
+            alert_email="ops@acme.com", sp_secret_ref="sp-creds",
+        )
+        base.update(kwargs)
+        return TenantConfig(**base)
+
+    def test_default_is_azure_only(self):
+        config = self._make_config()
+        assert config.enabled_clouds == ["azure"]
+        assert not config.is_multicloud()
+        assert config.has_cloud("azure")
+        assert not config.has_cloud("aws")
+
+    def test_azure_always_included_even_if_omitted(self):
+        """If caller passes enabled_clouds without azure, azure is prepended."""
+        config = self._make_config(enabled_clouds=["aws"])
+        assert "azure" in config.enabled_clouds
+        assert "aws" in config.enabled_clouds
+
+    def test_multicloud_flag_true_with_addon(self):
+        config = self._make_config(enabled_clouds=["azure", "aws"])
+        assert config.is_multicloud()
+        assert config.has_cloud("aws")
+        assert not config.has_cloud("gcp")
+
+    def test_deduplication_in_enabled_clouds(self):
+        config = self._make_config(enabled_clouds=["azure", "azure", "aws", "aws"])
+        assert config.enabled_clouds.count("azure") == 1
+        assert config.enabled_clouds.count("aws") == 1
+
+    def test_invalid_cloud_raises(self):
+        with pytest.raises(Exception):
+            self._make_config(enabled_clouds=["azure", "notacloud"])
+
+    def test_cosmos_roundtrip_preserves_clouds(self):
+        config = self._make_config(
+            enabled_clouds=["azure", "gcp"],
+            cloud_accounts={"gcp": ["my-project"]},
+            cloud_credential_refs={"gcp": "gcp-creds-acme"},
+        )
+        doc = config.to_cosmos()
+        restored = TenantConfig.from_cosmos(doc)
+        assert restored.enabled_clouds == config.enabled_clouds
+        assert restored.cloud_accounts == {"gcp": ["my-project"]}
+        assert restored.cloud_credential_refs == {"gcp": "gcp-creds-acme"}
+
+    def test_from_cosmos_backcompat_no_enabled_clouds_field(self):
+        """Old documents without enabled_clouds default to azure-only."""
+        doc = {
+            "id": TENANT_ID, "type": "tenant", "tenant_name": "Legacy Corp",
+            "subscription_ids": [SUB_ID], "alert_email": "ops@legacy.com",
+            "sp_secret_ref": "sp-creds", "plan_tier": "growth",
+            "active": True, "created_at": "2025-01-01T00:00:00", "updated_at": "2025-01-01T00:00:00",
+            # no enabled_clouds, cloud_accounts, cloud_credential_refs
+        }
+        config = TenantConfig.from_cosmos(doc)
+        assert config.enabled_clouds == ["azure"]
+        assert config.cloud_accounts == {}
+
+    def test_addon_clouds_does_not_include_azure(self):
+        assert CloudProvider.AZURE not in ADDON_CLOUDS
+
+    def test_all_addon_clouds_are_known_provider_values(self):
+        known = {c.value for c in CloudProvider}
+        for c in ADDON_CLOUDS:
+            assert c.value in known
 
 
 class TestWasteItem:

@@ -30,6 +30,10 @@ from app.routers.alerts import router as alerts_router
 from app.routers.optimization import router as optimization_router
 from app.routers.admin import router as admin_router
 from app.routers.ingest import ingest_router, health_router
+from app.routers.fx import router as fx_router
+from app.routers.k8s import router as k8s_router, admin_router as k8s_admin_router
+from app.routers.unit_economics import router as unit_economics_router
+from app.routers.ai_analyst import router as ai_analyst_router
 from app.services import cosmos, blob, keyvault
 
 log = get_logger(__name__)
@@ -46,6 +50,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         json_output=settings.is_production,
     )
     log.info("app.startup", version=settings.app_version, env=settings.environment)
+    # Pre-warm FX rate cache so the first response is fast.
+    try:
+        from app.services.fx import prefetch as fx_prefetch
+        await fx_prefetch(settings.fx_prefetch_list)
+        log.info("fx.cache_warmed", currencies=settings.fx_prefetch_list)
+    except Exception as exc:
+        log.warning("fx.cache_warm_failed", error=str(exc))
     yield
     # Graceful shutdown
     log.info("app.shutdown")
@@ -123,7 +134,7 @@ def create_app() -> FastAPI:
         )
 
     # ── Routers ─────────────────────────────────────────────────────────────
-    for r in [tenants_router, costs_router, waste_router, reports_router, forecast_router, insights_router, budgets_router, multicloud_router, labels_router, drilldown_router, alerts_router, optimization_router, admin_router, ingest_router, health_router]:
+    for r in [tenants_router, costs_router, waste_router, reports_router, forecast_router, insights_router, budgets_router, multicloud_router, labels_router, drilldown_router, alerts_router, optimization_router, admin_router, ingest_router, health_router, fx_router, k8s_router, k8s_admin_router, unit_economics_router, ai_analyst_router]:
         app.include_router(r)
 
     return app
