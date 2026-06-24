@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CloudLens — Spend Forecast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+    --txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;
+    --teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;--red:#f0506e;--redDim:#4a1622;
+    --blue:#4d9fff;--purple:#a78bfa;
+    --mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55;padding:22px}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .wrap{max-width:1060px;margin:0 auto}
+
+  .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+  .head h1{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  .head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+  .controls{display:flex;gap:8px;align-items:center}
+  .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{background:transparent;border:0;color:var(--txt2);font-family:var(--mono);font-size:12px;padding:7px 13px;cursor:pointer;transition:all .14s}
+  .seg button.on{background:var(--panel2);color:var(--teal)}
+  .seg button:not(:last-child){border-right:1px solid var(--line)}
+
+  /* hero cost-of-inaction banner */
+  .hero{background:linear-gradient(135deg,#3a1420 0,#1a1118 60%);border:1px solid #5c1d2a;border-radius:14px;padding:20px 24px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:18px;position:relative;overflow:hidden}
+  .hero::after{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(240,80,110,.18),transparent 70%)}
+  .hero .l{position:relative;z-index:1}
+  .hero .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#f5a3b3;margin-bottom:6px}
+  .hero .big{font-family:var(--mono);font-size:38px;font-weight:700;letter-spacing:-.02em;color:#ff6b85;line-height:1}
+  .hero .sub{font-size:12.5px;color:var(--txt2);margin-top:7px}
+  .hero .burn{position:relative;z-index:1;text-align:right}
+  .hero .burn .n{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--amber)}
+  .hero .burn .t{font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em}
+
+  /* chart card */
+  .card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:20px 22px;margin-bottom:16px}
+  .card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:3px}
+  .card .cap{font-size:12px;color:var(--txt3);margin-bottom:16px}
+  .chartbox{position:relative}
+  svg{width:100%;display:block;overflow:visible}
+  .legend{display:flex;gap:18px;margin-top:14px;font-size:12px;color:var(--txt2);flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .legend i{width:16px;height:3px;border-radius:2px;display:inline-block}
+  .legend i.dash{background:linear-gradient(90deg,var(--amber) 0,var(--amber) 60%,transparent 60%);background-size:7px 3px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:16px}
+  .kpi{background:var(--bg2);border:1px solid var(--lineSoft);border-radius:11px;padding:14px 16px}
+  .kpi .l{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px;display:flex;align-items:center;gap:6px}
+  .kpi .v{font-family:var(--mono);font-size:23px;font-weight:600;letter-spacing:-.01em}
+  .kpi .s{font-size:11px;color:var(--txt3);margin-top:4px}
+  .kpi.teal .v{color:var(--teal)}.kpi.amber .v{color:var(--amber)}.kpi.blue .v{color:var(--blue)}
+
+  .conf{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);padding:2px 9px;border-radius:6px}
+  .conf.high{background:var(--tealDim);color:var(--teal)}
+  .conf.medium{background:#13314d;color:var(--blue)}
+  .conf.low{background:var(--amberDim);color:var(--amber)}
+
+  /* roadmap */
+  .phase{display:grid;grid-template-columns:30px 1.5fr 1fr 1.4fr;gap:14px;align-items:center;padding:13px 0;border-bottom:1px solid var(--lineSoft)}
+  .phase:last-child{border-bottom:0}
+  .phase .num{width:26px;height:26px;border-radius:8px;background:var(--panel2);display:grid;place-items:center;font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:600}
+  .phase .nm b{font-size:13.5px;display:block}
+  .phase .nm span{font-size:11.5px;color:var(--txt3)}
+  .phase .sv{font-family:var(--mono);color:var(--amber);font-weight:600;font-size:13px}
+  .phase .rr{display:flex;align-items:center;gap:9px}
+  .phase .rr .track{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+  .phase .rr .track i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),#1a9c8a);border-radius:3px}
+  .phase .rr .n{font-family:var(--mono);font-size:11.5px;color:var(--txt2);min-width:70px;text-align:right}
+
+  .note{font-size:11.5px;color:var(--txt3);margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);line-height:1.5}
+  .tip{font-size:12px;color:var(--txt2);background:var(--bg2);border:1px solid var(--lineSoft);border-left:3px solid var(--blue);border-radius:7px;padding:11px 14px;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2 class="sr-only">CloudLens spend forecast with dual-trajectory cost-of-inaction model</h2>
+
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · Spend Forecast</h1>
+    <div class="controls">
+      <div class="seg" id="horizon">
+        <button data-h="30" class="on">30d</button>
+        <button data-h="60">60d</button>
+        <button data-h="90">90d</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO: cost of inaction -->
+  <div class="hero">
+    <div class="l">
+      <div class="lbl">⚠ Cost of inaction · next <span id="h-days">30</span> days</div>
+      <div class="big" id="inaction">€0</div>
+      <div class="sub">Cumulative spend you forgo by not actioning the waste backlog — the gap between the two curves below.</div>
+    </div>
+    <div class="burn">
+      <div class="n" id="burn">€0</div>
+      <div class="t">lost / day</div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi blue">
+      <div class="l">◈ Month-end projection</div>
+      <div class="v" id="k-month">€0</div>
+      <div class="s">on current trajectory</div>
+    </div>
+    <div class="kpi teal">
+      <div class="l">⬡ Recoverable / mo</div>
+      <div class="v" id="k-rec">€0</div>
+      <div class="s" id="k-recy">€0 / year</div>
+    </div>
+    <div class="kpi amber">
+      <div class="l">▣ Optimized run-rate</div>
+      <div class="v" id="k-opt">€0</div>
+      <div class="s">if backlog actioned</div>
+    </div>
+    <div class="kpi">
+      <div class="l">◷ Forecast accuracy</div>
+      <div class="v" id="k-mape" style="font-size:19px">—</div>
+      <div class="s"><span class="conf high" id="k-conf">backtested</span></div>
+    </div>
+  </div>
+
+  <!-- DUAL-TRAJECTORY CHART -->
+  <div class="card">
+    <h2>Two futures: do nothing vs. act</h2>
+    <div class="cap">Holt-Winters forecast with weekly seasonality. The shaded band is the 80% prediction interval. The widening gap is money on the table.</div>
+    <div class="chartbox"><svg id="chart" viewBox="0 0 920 340" role="img" aria-label="Dual trajectory spend forecast chart"></svg></div>
+    <div class="legend">
+      <span><i style="background:var(--red)"></i> Do nothing (baseline forecast)</span>
+      <span><i style="background:var(--teal)"></i> If you act (optimized)</span>
+      <span><i class="dash"></i> waste backlog phased in</span>
+      <span><i style="background:rgba(240,80,110,.25)"></i> 80% prediction band</span>
+    </div>
+    <div class="note" id="chart-note"></div>
+  </div>
+
+  <!-- REMEDIATION ROADMAP -->
+  <div class="card">
+    <h2>Remediation roadmap</h2>
+    <div class="cap">Waste actioned in ROI order. Watch the monthly run-rate bend down as each phase lands.</div>
+    <div id="roadmap"></div>
+    <div class="tip" id="budget-tip"></div>
+  </div>
+</div>
+
+<script>
+/* ── mock data shaped to the real API responses ─────────────────────────────
+   GET /api/v1/forecast/{tid}                  → baseline + month_end + mape
+   GET /api/v1/forecast/{tid}/cost-of-inaction → baseline[] + optimized[] + burn
+   GET /api/v1/forecast/{tid}/roadmap          → phases[]
+   GET /api/v1/forecast/{tid}/budget-breach    → breach dates
+   Swap genData() for fetch(); render functions stay identical.
+─────────────────────────────────────────────────────────────────────────── */
+const EUR = n => '€' + Math.round(n).toLocaleString('en-US');
+
+const WASTE = { critical:2465, high:635, medium:180, low:60 };   // monthly savings by tier
+const PHASE_DAYS = { critical:7, high:21, medium:42, low:90 };
+const MONTHLY_SPEND = 20000;
+const BUDGET = 19000;
+
+function genData(horizon){
+  // synthetic baseline: rising trend + weekly seasonality
+  const base=[], today=new Date('2026-06-10');
+  let lvl=640;
+  for(let i=1;i<=horizon;i++){
+    const d=new Date(today); d.setDate(d.getDate()+i);
+    const wk=90*Math.sin(2*Math.PI*d.getDay()/7);
+    const weekend=(d.getDay()===0||d.getDay()===6)?-110:0;
+    const val=lvl + 2.4*i + wk + weekend;
+    base.push({day:d.toISOString().slice(0,10), value:Math.max(0,val)});
+  }
+  // optimized = baseline - phased daily savings
+  const opt = base.map((p,i)=>{
+    const dayN=i+1; let realised=0;
+    for(const[prio,monthly] of Object.entries(WASTE)){
+      realised += (monthly/30) * Math.min(1, dayN/PHASE_DAYS[prio]);
+    }
+    return {day:p.day, value:Math.max(0,p.value-realised)};
+  });
+  // prediction band
+  const sigma=24;
+  const band = base.map((p,i)=>({day:p.day, lo:Math.max(0,p.value-1.28*sigma*Math.sqrt(i+1)), hi:p.value+1.28*sigma*Math.sqrt(i+1)}));
+  // cumulative inaction = area between curves
+  let cum=0; base.forEach((p,i)=>cum+=p.value-opt[i].value);
+  const totalMonthly = Object.values(WASTE).reduce((a,b)=>a+b,0);
+  return {base,opt,band,
+    inaction:cum, burn:totalMonthly/30, monthlyRec:totalMonthly,
+    monthEnd: 25700, mape:1.8, confidence:'high'};
+}
+
+let HORIZON=30;
+function render(){
+  const D=genData(HORIZON);
+  document.getElementById('h-days').textContent=HORIZON;
+  document.getElementById('inaction').textContent=EUR(D.inaction);
+  document.getElementById('burn').textContent=EUR(D.burn);
+  document.getElementById('k-month').textContent=EUR(D.monthEnd);
+  document.getElementById('k-rec').textContent=EUR(D.monthlyRec);
+  document.getElementById('k-recy').textContent=EUR(D.monthlyRec*12)+' / year';
+  document.getElementById('k-opt').textContent=EUR(MONTHLY_SPEND-D.monthlyRec);
+  document.getElementById('k-mape').textContent=D.mape+'%';
+  const conf=document.getElementById('k-conf');
+  conf.className='conf '+D.confidence; conf.textContent=D.confidence+' confidence';
+  drawChart(D);
+  drawRoadmap();
+  drawBudget(D);
+  document.getElementById('chart-note').textContent =
+    `Forecast method: Holt-Winters additive (weekly seasonality) · backtest MAPE ${D.mape}% · `+
+    `the optimized curve assumes critical waste actioned within 7 days, high within 21, medium 42, low 90.`;
+}
+
+function drawChart(D){
+  const W=920,H=340,padL=58,padR=20,padT=20,padB=34;
+  const n=D.base.length;
+  const allVals=[...D.band.map(b=>b.hi),...D.opt.map(o=>o.value)];
+  const ymax=Math.max(...allVals)*1.05, ymin=Math.min(...D.opt.map(o=>o.value))*0.9;
+  const X=i=>padL+(i/(n-1))*(W-padL-padR);
+  const Y=v=>padT+(1-(v-ymin)/(ymax-ymin))*(H-padT-padB);
+  const line=arr=>arr.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.value).toFixed(1)).join(' ');
+  const bandPath='M'+D.band.map((b,i)=>X(i).toFixed(1)+' '+Y(b.hi).toFixed(1)).join(' L')
+    +' L'+D.band.slice().reverse().map((b,i)=>X(n-1-i).toFixed(1)+' '+Y(b.lo).toFixed(1)).join(' L')+' Z';
+
+  // y gridlines
+  let grid='';
+  for(let g=0;g<=4;g++){
+    const v=ymin+(ymax-ymin)*g/4, y=Y(v);
+    grid+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--line)" stroke-width="0.5" stroke-dasharray="2 4"/>`;
+    grid+=`<text x="${padL-8}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--txt3)" font-family="Space Grotesk">${EUR(v)}</text>`;
+  }
+  // x labels (every ~weekly)
+  let xlab='';
+  for(let i=0;i<n;i+=Math.ceil(n/6)){
+    xlab+=`<text x="${X(i)}" y="${H-12}" text-anchor="middle" font-size="9.5" fill="var(--txt3)" font-family="Space Grotesk">${D.base[i].day.slice(5)}</text>`;
+  }
+  // gap fill between curves at the end (highlight inaction)
+  const gapPath='M'+D.base.map((p,i)=>X(i).toFixed(1)+' '+Y(p.value).toFixed(1)).join(' L')
+    +' L'+D.opt.slice().reverse().map((p,i)=>X(n-1-i).toFixed(1)+' '+Y(p.value).toFixed(1)).join(' L')+' Z';
+
+  const lastX=X(n-1), baseY=Y(D.base[n-1].value), optY=Y(D.opt[n-1].value);
+
+  document.getElementById('chart').innerHTML=`
+    ${grid}${xlab}
+    <path d="${bandPath}" fill="rgba(240,80,110,.10)" stroke="none"/>
+    <path d="${gapPath}" fill="rgba(45,212,191,.07)" stroke="none"/>
+    <path d="${line(D.base)}" fill="none" stroke="var(--red)" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="${line(D.opt)}" fill="none" stroke="var(--teal)" stroke-width="2.4" stroke-dasharray="0" stroke-linejoin="round"/>
+    <circle cx="${lastX}" cy="${baseY}" r="3.5" fill="var(--red)"/>
+    <circle cx="${lastX}" cy="${optY}" r="3.5" fill="var(--teal)"/>
+    <line x1="${lastX}" y1="${baseY}" x2="${lastX}" y2="${optY}" stroke="var(--amber)" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="${lastX-6}" y="${(baseY+optY)/2+3}" text-anchor="end" font-size="10.5" fill="var(--amber)" font-family="Space Grotesk" font-weight="600">gap</text>
+  `;
+}
+
+function drawRoadmap(){
+  const tiers=[
+    {label:'Quick wins', sub:'critical · ETA 7d', save:2465, items:1},
+    {label:'High impact', sub:'high · ETA 21d', save:635, items:2},
+    {label:'Optimization', sub:'medium · ETA 42d', save:180, items:1},
+    {label:'Long tail', sub:'low · ETA 90d', save:60, items:1},
+  ];
+  let cum=0; const maxRR=MONTHLY_SPEND;
+  let html='';
+  tiers.forEach((t,i)=>{
+    cum+=t.save; const rr=MONTHLY_SPEND-cum;
+    const pct=(1-rr/maxRR)*100;
+    html+=`<div class="phase">
+      <div class="num">${i+1}</div>
+      <div class="nm"><b>${t.label}</b><span>${t.sub} · ${t.items} item${t.items>1?'s':''}</span></div>
+      <div class="sv">−${EUR(t.save)}/mo</div>
+      <div class="rr"><div class="track"><i style="width:${pct}%"></i></div><div class="n">${EUR(rr)}/mo</div></div>
+    </div>`;
+  });
+  document.getElementById('roadmap').innerHTML=html;
+}
+
+function drawBudget(D){
+  // simple cumulative breach estimate against BUDGET
+  let cumB=0,cumO=0,breachB=null,breachO=null;
+  D.base.forEach((p,i)=>{cumB+=p.value; if(!breachB&&cumB>BUDGET)breachB=p.day;});
+  D.opt.forEach((p,i)=>{cumO+=p.value; if(!breachO&&cumO>BUDGET)breachO=p.day;});
+  const el=document.getElementById('budget-tip');
+  if(breachB&&!breachO){
+    el.innerHTML=`◷ <b>Budget ${EUR(BUDGET)}/mo:</b> on the current trajectory you breach it on <b>${breachB}</b>. Actioning the backlog keeps you under budget for the full horizon.`;
+  }else if(breachB&&breachO){
+    el.innerHTML=`◷ <b>Budget ${EUR(BUDGET)}/mo:</b> breached <b>${breachB}</b> (do nothing) vs <b>${breachO}</b> (if actioned) — remediation buys time but you'll need deeper rightsizing to stay under.`;
+  }else{
+    el.innerHTML=`◷ <b>Budget ${EUR(BUDGET)}/mo:</b> projected to stay within budget across the horizon.`;
+  }
+}
+
+document.getElementById('horizon').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#horizon button').forEach(b=>b.classList.remove('on'));
+  e.target.classList.add('on');
+  HORIZON=+e.target.dataset.h;
+  render();
+});
+render();
+</script>
+</body>
+</html>

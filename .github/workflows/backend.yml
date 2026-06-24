@@ -1,0 +1,149 @@
+name: Backend — Test, Build, Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "tests/**"
+      - "requirements.txt"
+      - "Dockerfile"
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "tests/**"
+
+env:
+  REGISTRY: ${{ secrets.ACR_LOGIN_SERVER }}
+  IMAGE_NAME: cloudlens-api
+  ACA_RESOURCE_GROUP: rg-cloudlens-prod
+  ACA_APP_NAME: cloudlens-api
+  ACA_ENVIRONMENT: cae-cloudlens-prod
+
+permissions:
+  id-token: write   # OIDC federated credentials — no stored secrets
+  contents: read
+
+jobs:
+  # ── 1. Test ─────────────────────────────────────────────────────────────
+  test:
+    name: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-asyncio httpx
+
+      - name: Run test suite
+        env:
+          INTERNAL_API_KEY: test-key
+          AZURE_TENANT_ID: 00000000-0000-0000-0000-000000000000
+          AZURE_CLIENT_ID: 00000000-0000-0000-0000-000000000001
+          COSMOS_ENDPOINT: https://test.documents.azure.com
+          STORAGE_ACCOUNT_NAME: testaccount
+          SERVICE_BUS_NAMESPACE: test.servicebus.windows.net
+          KEY_VAULT_NAME: test-kv
+          ENVIRONMENT: development
+        run: pytest tests/ -v --tb=short --junitxml=test-results.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test-results.xml
+
+  # ── 2. Build & Push (main branch only) ─────────────────────────────────
+  build:
+    name: Docker build + push
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      sha_tag: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure OIDC login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR login
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=long
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── 3. Deploy ────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Container Apps
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production   # requires manual approval in GitHub Environments
+
+    steps:
+      - name: Azure OIDC login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Container Apps
+        run: |
+          az containerapp update \
+            --name ${{ env.ACA_APP_NAME }} \
+            --resource-group ${{ env.ACA_RESOURCE_GROUP }} \
+            --image ${{ needs.build.outputs.sha_tag }}
+
+      - name: Smoke test — health check
+        run: |
+          FQDN=$(az containerapp show \
+            --name ${{ env.ACA_APP_NAME }} \
+            --resource-group ${{ env.ACA_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+          RESPONSE=$(curl -sf "https://${FQDN}/api/v1/health" || echo "FAILED")
+          echo "Health: $RESPONSE"
+          echo "$RESPONSE" | grep -q '"status":"healthy"' || exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deploy failed — rolling back to previous revision"
+          PREV=$(az containerapp revision list \
+            --name ${{ env.ACA_APP_NAME }} \
+            --resource-group ${{ env.ACA_RESOURCE_GROUP }} \
+            --query "[-2].name" -o tsv)
+          az containerapp ingress traffic set \
+            --name ${{ env.ACA_APP_NAME }} \
+            --resource-group ${{ env.ACA_RESOURCE_GROUP }} \
+            --revision-weight "${PREV}=100"

@@ -1,0 +1,132 @@
+"""
+CloudLens FastAPI application entry point.
+Wires up routers, middleware, lifespan events, and global exception handlers.
+"""
+from __future__ import annotations
+import time
+import uuid
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+import structlog
+
+from app.config import get_settings
+from app.exceptions import CloudLensError
+from app.logging_config import configure_logging, get_logger
+from app.routers.tenants import router as tenants_router
+from app.routers.costs import router as costs_router
+from app.routers.waste import router as waste_router
+from app.routers.reports import router as reports_router
+from app.routers.forecast import router as forecast_router
+from app.routers.insights import router as insights_router
+from app.routers.budgets import router as budgets_router
+from app.routers.multicloud import router as multicloud_router, labels_router
+from app.routers.drilldown import router as drilldown_router
+from app.routers.alerts import router as alerts_router
+from app.routers.optimization import router as optimization_router
+from app.routers.admin import router as admin_router
+from app.routers.ingest import ingest_router, health_router
+from app.services import cosmos, blob, keyvault
+
+log = get_logger(__name__)
+
+
+# ── Lifespan ────────────────────────────────────────────────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Startup + shutdown lifecycle management."""
+    settings = get_settings()
+    configure_logging(
+        log_level=settings.log_level,
+        json_output=settings.is_production,
+    )
+    log.info("app.startup", version=settings.app_version, env=settings.environment)
+    yield
+    # Graceful shutdown
+    log.info("app.shutdown")
+    await cosmos.close()
+    await blob.close()
+    await keyvault.close()
+
+
+# ── App factory ─────────────────────────────────────────────────────────────
+
+def create_app() -> FastAPI:
+    settings = get_settings()
+    app = FastAPI(
+        title="CloudLens API",
+        description="Azure FinOps Managed Service — cost intelligence API",
+        version=settings.app_version,
+        docs_url="/docs" if not settings.is_production else None,
+        redoc_url="/redoc" if not settings.is_production else None,
+        lifespan=lifespan,
+    )
+
+    # ── CORS ────────────────────────────────────────────────────────────────
+    # The SPA is served from the storage account's static-website origin, which
+    # is configured via the cors_allowed_origins setting (comma-separated).
+    allowed_origins = list(settings.cors_allowed_origins_list)
+    if not settings.is_production:
+        allowed_origins += ["http://localhost:3000", "http://localhost:5173"]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
+        allow_headers=["*"],
+    )
+
+    # ── Request ID + timing middleware ──────────────────────────────────────
+    @app.middleware("http")
+    async def request_middleware(request: Request, call_next):
+        request_id = str(uuid.uuid4())
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(
+            request_id=request_id,
+            method=request.method,
+            path=request.url.path,
+        )
+        start = time.perf_counter()
+        try:
+            response: Response = await call_next(request)
+            elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
+            response.headers["X-Request-ID"] = request_id
+            response.headers["X-Response-Time-Ms"] = str(elapsed_ms)
+            log.info(
+                "http.response",
+                status_code=response.status_code,
+                elapsed_ms=elapsed_ms,
+            )
+            return response
+        except Exception as exc:
+            elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
+            log.error("http.unhandled_error", error=str(exc), elapsed_ms=elapsed_ms)
+            raise
+
+    # ── Global exception handlers ───────────────────────────────────────────
+    @app.exception_handler(CloudLensError)
+    async def cloudlens_error_handler(request: Request, exc: CloudLensError) -> JSONResponse:
+        log.warning("app.domain_error", error_code=exc.error_code, message=exc.message)
+        return JSONResponse(status_code=exc.status_code, content=exc.to_dict())
+
+    @app.exception_handler(Exception)
+    async def generic_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        log.error("app.unhandled_exception", error=str(exc), exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"error": "INTERNAL_ERROR", "message": "An unexpected error occurred"},
+        )
+
+    # ── Routers ─────────────────────────────────────────────────────────────
+    for r in [tenants_router, costs_router, waste_router, reports_router, forecast_router, insights_router, budgets_router, multicloud_router, labels_router, drilldown_router, alerts_router, optimization_router, admin_router, ingest_router, health_router]:
+        app.include_router(r)
+
+    return app
+
+
+app = create_app()

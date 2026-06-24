@@ -1,0 +1,134 @@
+name: Infrastructure — Terraform Plan / Apply
+
+on:
+  push:
+    branches: [main]
+    paths: ["infra/**"]
+  pull_request:
+    branches: [main]
+    paths: ["infra/**"]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [dev, staging, prod]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  TF_VERSION: "1.9.8"
+  ARM_USE_OIDC: "true"
+
+jobs:
+  plan:
+    name: Terraform plan (${{ github.event.inputs.environment || 'prod' }})
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure OIDC login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform init
+        run: terraform init -backend-config="environments/${{ github.event.inputs.environment || 'prod' }}.backend.tfvars"
+
+      - name: Terraform format check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        id: plan
+        run: |
+          terraform plan \
+            -var-file="environments/${{ github.event.inputs.environment || 'prod' }}.tfvars" \
+            -out=tfplan \
+            -no-color 2>&1 | tee plan_output.txt
+        continue-on-error: true
+
+      - name: Post plan to PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('infra/plan_output.txt', 'utf8').slice(0, 60000);
+            const status = '${{ steps.plan.outcome }}';
+            const body = `## Terraform Plan — ${{ github.event.inputs.environment || 'prod' }}
+            **Status:** ${status === 'success' ? '✅ Success' : '❌ Failed'}
+            <details><summary>Plan output</summary>
+            \`\`\`terraform\n${plan}\n\`\`\`
+            </details>`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+      - name: Fail on plan error
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ github.event.inputs.environment || 'prod' }}
+          path: infra/tfplan
+          retention-days: 1
+
+  apply:
+    name: Terraform apply
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'prod' }}   # manual approval gate
+    if: github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: infra
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure OIDC login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ github.event.inputs.environment || 'prod' }}
+          path: infra
+
+      - name: Terraform init
+        run: terraform init -backend-config="environments/${{ github.event.inputs.environment || 'prod' }}.backend.tfvars"
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan

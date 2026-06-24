@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Compliance Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--green:#36d399;--purple:#a78bfa;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;--code:'JetBrains Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1080px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+.head .lock{font-family:var(--mono);font-size:11px;color:var(--amber);border:1px solid var(--amberDim);border-radius:20px;padding:4px 12px}
+.disclaimer{background:var(--amberDim);border:1px solid var(--amber);border-radius:9px;padding:11px 14px;font-size:12px;color:#f8d9a0;margin:14px 0 18px;line-height:1.5}
+.disclaimer b{color:var(--amber)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:11px;padding:13px 15px}
+.kpi .l{font-size:10.5px;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.kpi .v{font-family:var(--mono);font-size:22px;font-weight:600}
+.kpi.green .v{color:var(--green)}.kpi.amber .v{color:var(--amber)}.kpi.teal .v{color:var(--teal)}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.toolbar input{background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--body);font-size:12.5px;padding:8px 11px;outline:none;width:200px}
+.toolbar input:focus{border-color:var(--teal)}
+.btn{background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);font-family:var(--mono);font-size:12px;padding:8px 15px;border-radius:8px;cursor:pointer}
+.btn:hover{background:#1a5c50}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--txt2)}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:16px 18px;margin-bottom:14px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:13px;display:flex;align-items:center;gap:8px}
+.ctrl{border:1px solid var(--lineSoft);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.ctrl .top{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
+.ctrl .top:hover{background:var(--bg2)}
+.cid{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--blue);min-width:56px}
+.ctrl .nm{flex:1;min-width:0}
+.ctrl .nm .t{font-size:13px;font-weight:500}
+.ctrl .nm .d{font-size:11.5px;color:var(--txt3);margin-top:2px;line-height:1.45}
+.status{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;padding:3px 9px;border-radius:6px;letter-spacing:.03em;white-space:nowrap}
+.status.implemented{background:var(--tealDim);color:var(--teal)}
+.status.partial{background:var(--amberDim);color:var(--amber)}
+.status.needs_org_process{background:var(--panel2);color:var(--txt3)}
+.kind{font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em}
+.ev{display:none;border-top:1px solid var(--lineSoft);padding:12px 14px;background:#0a0f14}
+.ev.open{display:block}
+.ev .lbl{font-size:11px;color:var(--txt3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.cli{background:#05080b;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px;position:relative}
+.cli .desc{font-size:11.5px;color:var(--txt2);margin-bottom:7px}
+.cli pre{font-family:var(--code);font-size:11.5px;color:#a5e8dd;white-space:pre-wrap;word-break:break-all;line-height:1.5}
+.cli .exp{font-family:var(--code);font-size:11px;color:var(--green);margin-top:7px;padding-top:7px;border-top:1px dashed var(--line)}
+.cli .exp::before{content:'expect → ';color:var(--txt3)}
+.cli .copy{position:absolute;top:8px;right:8px;font-family:var(--mono);font-size:9.5px;background:var(--panel2);border:1px solid var(--line);color:var(--txt3);border-radius:5px;padding:3px 8px;cursor:pointer}
+.cli .copy:hover{color:var(--teal)}
+.note{font-size:11.5px;color:var(--amber);margin-top:8px}
+.integrity{display:flex;align-items:center;gap:10px;font-size:13px}
+.integrity .badge{font-family:var(--mono);font-size:11px;padding:4px 12px;border-radius:7px}
+.integrity .badge.ok{background:var(--tealDim);color:var(--teal)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2 class="sr-only">CloudLens compliance admin: SOC 2-aligned control matrix with CLI evidence export and audit-trail integrity</h2>
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · Compliance Admin</h1>
+    <span class="lock">🔒 operator · API-key required</span>
+  </div>
+
+  <div class="disclaimer">
+    <b>Not a SOC report.</b> This is an audit-readiness control matrix. A SOC 1 / SOC 2 attestation must be issued by a licensed CPA firm over a defined audit period (Type II typically 6–12 months of evidence). Use this to prepare for and evidence that audit — it is not itself a certification.
+  </div>
+
+  <div class="kpis">
+    <div class="kpi green"><div class="l">Coverage</div><div class="v" id="k-cov">—</div><div class="s" style="font-size:10.5px;color:var(--txt3);margin-top:3px">controls in code/infra</div></div>
+    <div class="kpi teal"><div class="l">Implemented</div><div class="v" id="k-impl">—</div></div>
+    <div class="kpi amber"><div class="l">Partial</div><div class="v" id="k-part">—</div></div>
+    <div class="kpi"><div class="l">Needs org process</div><div class="v" id="k-org">—</div></div>
+  </div>
+
+  <div class="card">
+    <h2>✓ Audit-trail integrity</h2>
+    <div class="integrity">
+      <span>Hash-chained audit log for <b id="int-tenant">t-acme</b>:</span>
+      <span class="badge ok" id="int-badge">✓ intact · 1,284 records</span>
+      <button class="btn ghost" style="margin-left:auto" onclick="alert('Calls GET /api/v1/admin/compliance/audit-integrity/{tenant}')">re-verify</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--txt3);margin-top:9px">Each record is SHA-256 chained to the previous; any tampering or back-dating breaks the chain and is reported (CC7.3).</div>
+  </div>
+
+  <div class="card">
+    <h2>▤ SOC 2 control matrix &amp; CLI evidence</h2>
+    <div class="toolbar">
+      <input id="search" placeholder="filter controls (e.g. CC6, encryption)" oninput="render()" />
+      <button class="btn" onclick="exportPack()">⬇ Export evidence pack</button>
+      <button class="btn ghost" onclick="copyAll()">copy all CLI commands</button>
+    </div>
+    <div id="controls"></div>
+  </div>
+</div>
+
+<script>
+/* shaped to GET /api/v1/admin/compliance/matrix */
+const MATRIX={
+  framework:"SOC 2 (AICPA Trust Services Criteria)",
+  summary:{total:15,implemented:12,partial:1,needs_org_process:2,coverage_pct:80.0},
+  controls:[
+    {criteria_id:"CC6.1",criteria_name:"Logical access — authentication",control:"All per-tenant endpoints require a verified Azure AD bearer token; internal endpoints require an API key. No anonymous data access.",status:"implemented",evidence_kind:"code",notes:"",cli_evidence:[{description:"Confirm the API enforces auth (401 without a token)",command:"curl -s -o /dev/null -w '%{http_code}' https://cloudlens-api.azurecontainerapps.io/api/v1/tenants/",expected:"401"}]},
+    {criteria_id:"CC6.1b",criteria_name:"Logical access — tenant isolation",control:"A bearer token scoped to tenant A is rejected (403) when accessing tenant B (require_tenant_scope dependency).",status:"implemented",evidence_kind:"code",notes:"",cli_evidence:[{description:"Cross-tenant request returns 403",command:"curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer $TOKEN_TENANT_A' https://cloudlens-api.azurecontainerapps.io/api/v1/costs/tenant-b",expected:"403"}]},
+    {criteria_id:"CC6.2",criteria_name:"Least-privilege identities",control:"Customer service principals are read-only (Reader + Cost Management Reader); internal service uses a user-assigned managed identity, no stored secrets.",status:"implemented",evidence_kind:"infra",notes:"",cli_evidence:[{description:"List role assignments for the CloudLens identity (expect only read roles)",command:"az role assignment list --assignee $(az identity show -g rg-cloudlens-prod -n cloudlens-id --query principalId -o tsv) --query \"[].roleDefinitionName\" -o tsv",expected:"Reader / Cost Management Reader (no Contributor/Owner)"}]},
+    {criteria_id:"CC6.3",criteria_name:"Access modification logged",control:"Tenant/budget/alert-rule create/update/delete and waste resolutions are written to the tamper-evident audit log.",status:"implemented",evidence_kind:"audit_log",notes:"",cli_evidence:[{description:"Pull recent access-change audit events",command:"curl -H 'X-API-Key: $KEY' https://cloudlens-api.azurecontainerapps.io/api/v1/admin/audit?action=tenant_updated",expected:"Chained audit records with verified hashes"}]},
+    {criteria_id:"CC6.6",criteria_name:"Encryption in transit",control:"TLS 1.2+ enforced on all ingress; Container Apps and Storage reject plaintext.",status:"implemented",evidence_kind:"infra",notes:"",cli_evidence:[{description:"Confirm Storage enforces HTTPS-only and TLS1_2",command:"az storage account show -g rg-cloudlens-prod -n cloudlensstorage --query \"{https:enableHttpsTrafficOnly, tls:minimumTlsVersion}\"",expected:'{"https": true, "tls": "TLS1_2"}'}]},
+    {criteria_id:"CC6.7",criteria_name:"Encryption at rest",control:"Cosmos DB, Blob Storage, and Key Vault encrypt data at rest; storage has infrastructure (double) encryption enabled.",status:"implemented",evidence_kind:"infra",notes:"",cli_evidence:[{description:"Confirm Storage infrastructure encryption + blob encryption",command:"az storage account show -g rg-cloudlens-prod -n cloudlensstorage --query \"{infra:encryption.requireInfrastructureEncryption, blob:encryption.services.blob.enabled}\"",expected:'{"infra": true, "blob": true}'}]},
+    {criteria_id:"CC6.8",criteria_name:"Secret management",control:"Customer SP credentials and the internal API key live only in Key Vault (purge protection on); no secrets in code, config, or logs.",status:"implemented",evidence_kind:"infra",notes:"",cli_evidence:[{description:"Confirm Key Vault purge protection + soft delete",command:"az keyvault show -n cloudlens-kv --query \"properties.{purge:enablePurgeProtection, softDelete:enableSoftDelete}\"",expected:'{"purge": true, "softDelete": true}'}]},
+    {criteria_id:"CC7.2",criteria_name:"Monitoring of components",control:"Structured JSON logs with request_id to Log Analytics; tamper-evident audit log; health endpoint with dependency checks.",status:"implemented",evidence_kind:"infra",notes:"",cli_evidence:[{description:"Confirm diagnostic logs flow to Log Analytics",command:"az monitor diagnostic-settings list --resource $(az containerapp show -g rg-cloudlens-prod -n cloudlens-api --query id -o tsv) --query \"[].name\"",expected:"At least one diagnostic setting → Log Analytics workspace"}]},
+    {criteria_id:"CC7.3",criteria_name:"Audit-log integrity",control:"Audit records form a SHA-256 hash chain; the export verifies the chain is intact.",status:"implemented",evidence_kind:"audit_log",notes:"",cli_evidence:[{description:"Verify the audit chain for a tenant",command:"curl -H 'X-API-Key: $KEY' https://cloudlens-api.azurecontainerapps.io/api/v1/admin/compliance/audit-integrity/t-acme",expected:'{"intact": true, "records": N}'}]},
+    {criteria_id:"CC8.1",criteria_name:"Change management",control:"All changes ship via CI/CD with mandatory tests; infra changes require plan review + manual approval; deployments versioned by image SHA; GitHub OIDC (no secrets).",status:"implemented",evidence_kind:"process",notes:"",cli_evidence:[{description:"Confirm the running image is a pinned SHA (not :latest)",command:"az containerapp show -g rg-cloudlens-prod -n cloudlens-api --query \"properties.template.containers[0].image\"",expected:"registry/cloudlens:<git-sha> (immutable tag)"}]},
+    {criteria_id:"A1.2",criteria_name:"Availability — backup & recovery",control:"Cosmos continuous backup (point-in-time restore); Key Vault soft-delete; full IaC rebuild from Terraform.",status:"partial",evidence_kind:"infra",notes:"Document RPO/RTO targets and run a restore test to fully satisfy A1.3.",cli_evidence:[{description:"Confirm Cosmos backup policy",command:"az cosmosdb show -g rg-cloudlens-prod -n cloudlens-cosmos --query \"backupPolicy.type\"",expected:"Continuous"}]},
+    {criteria_id:"C1.1",criteria_name:"Confidential data protected",control:"Cost data partitioned by tenant_id; 90-day TTL; read-only architecture means CloudLens holds only billing metadata, never customer workload data.",status:"implemented",evidence_kind:"code",notes:"",cli_evidence:[{description:"Confirm cost-record TTL is enforced",command:"az cosmosdb sql container show -g rg-cloudlens-prod -a cloudlens-cosmos -d cloudlens -n cost_records --query \"resource.defaultTtl\"",expected:"7776000 (90 days)"}]},
+    {criteria_id:"C1.2",criteria_name:"Confidential data disposal",control:"TTL auto-expires cost records; tenant soft-delete retains then ages out data.",status:"implemented",evidence_kind:"code",notes:"",cli_evidence:[]},
+    {criteria_id:"CC1.1",criteria_name:"Integrity & ethical values",control:"Code of conduct and security policies maintained; not enforced by software.",status:"needs_org_process",evidence_kind:"process",notes:"Provide signed policy documents and acknowledgement records.",cli_evidence:[]},
+    {criteria_id:"CC1.4",criteria_name:"Commitment to competence",control:"Engineers trained on secure SDLC; background checks on hire.",status:"needs_org_process",evidence_kind:"process",notes:"HR/training records are the evidence here.",cli_evidence:[]},
+  ]};
+
+function render(){
+  const s=MATRIX.summary;
+  document.getElementById('k-cov').textContent=s.coverage_pct+'%';
+  document.getElementById('k-impl').textContent=s.implemented;
+  document.getElementById('k-part').textContent=s.partial;
+  document.getElementById('k-org').textContent=s.needs_org_process;
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const list=MATRIX.controls.filter(c=>!q||(c.criteria_id+c.criteria_name+c.control).toLowerCase().includes(q));
+  document.getElementById('controls').innerHTML=list.map((c,i)=>{
+    const ev=c.cli_evidence.map((e,j)=>`<div class="cli">
+      <button class="copy" onclick="copyCmd(this,${i},${j})">copy</button>
+      <div class="desc">${e.description}</div>
+      <pre>$ ${e.command}</pre>
+      <div class="exp">${e.expected}</div></div>`).join('')||'<div style="font-size:11.5px;color:var(--txt3)">No CLI proof — process/document evidence.</div>';
+    const note=c.notes?`<div class="note">⚠ ${c.notes}</div>`:'';
+    return `<div class="ctrl">
+      <div class="top" onclick="toggle(${i})">
+        <span class="cid">${c.criteria_id}</span>
+        <div class="nm"><div class="t">${c.criteria_name} <span class="kind">· ${c.evidence_kind}</span></div><div class="d">${c.control}</div></div>
+        <span class="status ${c.status}">${c.status.replace(/_/g,' ')}</span>
+      </div>
+      <div class="ev" id="ev-${i}"><div class="lbl">CLI evidence (run against the deployed resources)</div>${ev}${note}</div>
+    </div>`;
+  }).join('');
+}
+function toggle(i){document.getElementById('ev-'+i).classList.toggle('open');}
+function copyCmd(btn,i,j){
+  const cmd=MATRIX.controls.filter(c=>{const q=(document.getElementById('search').value||'').toLowerCase();return !q||(c.criteria_id+c.criteria_name+c.control).toLowerCase().includes(q);})[i].cli_evidence[j].command;
+  navigator.clipboard?.writeText(cmd);btn.textContent='copied';setTimeout(()=>btn.textContent='copy',1200);
+}
+function copyAll(){
+  const cmds=MATRIX.controls.flatMap(c=>c.cli_evidence.map(e=>'# '+c.criteria_id+' '+e.description+'\n'+e.command)).join('\n\n');
+  navigator.clipboard?.writeText(cmds);alert('Copied '+MATRIX.controls.flatMap(c=>c.cli_evidence).length+' CLI evidence commands to clipboard.');
+}
+function exportPack(){
+  // in production: POST /api/v1/admin/compliance/evidence-export → downloads JSON/PDF pack
+  const pack={export_id:'evidence-'+new Date().toISOString().replace(/[-:T.]/g,'').slice(0,15)+'Z',framework:MATRIX.framework,summary:MATRIX.summary,controls:MATRIX.controls};
+  const blob=new Blob([JSON.stringify(pack,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=pack.export_id+'.json';a.click();URL.revokeObjectURL(url);
+}
+render();
+</script>
+</body>
+</html>

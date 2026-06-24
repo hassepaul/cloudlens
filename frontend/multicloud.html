@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Multi-Cloud</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--purpleDim:#2e2548;
+--aws:#ff9900;--azure:#0078d4;--gcp:#ea4335;--alibaba:#ff6a00;--oci:#c74634;--ai:#a78bfa;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1100px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+.controls{display:flex;gap:8px;align-items:center}
+.lang{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:5px 8px}
+.lang select{background:transparent;border:0;color:var(--txt);font-family:var(--mono);font-size:12px;cursor:pointer;outline:none}
+.lang select option{background:var(--panel)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:11px;padding:14px 16px}
+.kpi .l{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px}
+.kpi .v{font-family:var(--mono);font-size:23px;font-weight:600;letter-spacing:-.01em}
+.kpi.teal .v{color:var(--teal)}.kpi.amber .v{color:var(--amber)}.kpi.purple .v{color:var(--purple)}.kpi.blue .v{color:var(--blue)}
+.kpi .s{font-size:11px;color:var(--txt3);margin-top:4px}
+.grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-bottom:16px}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.card .cap{font-size:12px;color:var(--txt3);margin-bottom:15px}
+/* provider bars */
+.prov{padding:10px 0;border-bottom:1px solid var(--lineSoft)}
+.prov:last-child{border-bottom:0}
+.prov .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.prov .nm{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:500}
+.prov .ic{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-family:var(--mono);font-size:10px;font-weight:700;color:#0b0f14}
+.prov .amt{font-family:var(--mono);font-size:13.5px;font-weight:600}
+.prov .bar{height:7px;background:var(--line);border-radius:4px;overflow:hidden}
+.prov .bar i{display:block;height:100%;border-radius:4px}
+/* AI donut */
+.ai-row{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:12.5px}
+.ai-row .dot2{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.ai-row .nm{flex:1;color:var(--txt2)}
+.ai-row .amt{font-family:var(--mono);color:var(--txt)}
+.ai-total{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--purple);margin-bottom:2px}
+/* commitment */
+.cm-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.cm-stat .b{background:var(--bg2);border:1px solid var(--lineSoft);border-radius:9px;padding:10px 12px;text-align:center}
+.cm-stat .b .n{font-family:var(--mono);font-size:18px;font-weight:600}
+.cm-stat .b .t{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+.cm-rec{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--lineSoft);font-size:12.5px}
+.cm-rec:last-child{border-bottom:0}
+.cm-rec .save{font-family:var(--mono);color:var(--teal);font-weight:600}
+.gauge{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:4px 0}
+.gauge i{display:block;height:100%;border-radius:4px}
+/* allocation */
+.alloc{padding:9px 0;border-bottom:1px solid var(--lineSoft)}
+.alloc:last-child{border-bottom:0}
+.alloc .top{display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px}
+.alloc .nm{font-weight:500}.alloc .amt{font-family:var(--mono);font-weight:600}
+.alloc .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:flex}
+.alloc .bar .d{background:linear-gradient(90deg,var(--teal),#1a9c8a);height:100%}
+.alloc .bar .s{background:repeating-linear-gradient(45deg,var(--amber),var(--amber) 3px,transparent 3px,transparent 6px);opacity:.6;height:100%}
+.alloc .rules{font-size:10.5px;color:var(--txt3);font-family:var(--mono);margin-top:3px}
+.note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.5}
+.badge{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:6px;background:var(--tealDim);color:var(--teal)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2 class="sr-only">CloudLens multi-cloud cost dashboard with AI spend, commitments, allocation, and EU language switcher</h2>
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · <span id="t-multicloud">Multi-Cloud</span></h1>
+    <div class="controls">
+      <div class="lang">
+        <span style="font-size:12px;color:var(--txt3)">🌐</span>
+        <select id="lang" onchange="setLang(this.value)">
+          <option value="en">English</option>
+          <option value="it">Italiano</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="nl">Nederlands</option>
+          <option value="pt">Português</option>
+          <option value="pl">Polski</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="l" id="k-total-l">Total spend</div><div class="v" id="k-total">—</div><div class="s">5 clouds + AI</div></div>
+    <div class="kpi purple"><div class="l" id="k-ai-l">AI / LLM spend</div><div class="v" id="k-ai">—</div><div class="s" id="k-ai-s">—</div></div>
+    <div class="kpi teal"><div class="l" id="k-cov-l">Coverage</div><div class="v" id="k-cov">—</div><div class="s" id="k-commit-l">commitments</div></div>
+    <div class="kpi amber"><div class="l">Commitment opportunity</div><div class="v" id="k-opp">—</div><div class="s">€/mo if purchased</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>☁ <span id="t-byprov">By cloud provider</span></h2>
+      <div class="cap">FOCUS-normalized spend across all connected clouds.</div>
+      <div id="providers"></div>
+    </div>
+    <div class="card">
+      <h2>✦ <span id="t-ai">AI / LLM spend</span></h2>
+      <div class="cap">Bedrock, OpenAI &amp; Anthropic — tracked as first-class spend.</div>
+      <div class="ai-total" id="ai-total">—</div>
+      <div style="font-size:11px;color:var(--txt3);margin-bottom:12px" id="ai-pct">—</div>
+      <div id="ai-services"></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>◷ <span id="t-commit">Commitments</span></h2>
+      <div class="cap">Coverage, utilization &amp; purchase recommendations across clouds.</div>
+      <div class="cm-stat">
+        <div class="b"><div class="n" id="cm-cov" style="color:var(--teal)">—</div><div class="t" id="t-coverage">Coverage</div></div>
+        <div class="b"><div class="n" id="cm-util" style="color:var(--blue)">—</div><div class="t" id="t-util">Utilization</div></div>
+        <div class="b"><div class="n" id="cm-idle" style="color:var(--amber)">—</div><div class="t">Idle / mo</div></div>
+      </div>
+      <div id="cm-recs"></div>
+      <div class="note" id="cm-note"></div>
+    </div>
+    <div class="card">
+      <h2>◰ <span id="t-charge">Chargeback</span> · 100% <span class="badge">allocated</span></h2>
+      <div class="cap">Rule-based allocation — direct tags + account + name rules + shared split.</div>
+      <div id="allocation"></div>
+      <div class="note" id="alloc-note"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
+const PROV_META={
+  'Amazon Web Services':{ic:'AWS',c:'var(--aws)'},
+  'Microsoft Azure':{ic:'AZ',c:'var(--azure)'},
+  'Google Cloud':{ic:'GCP',c:'var(--gcp)'},
+  'Alibaba Cloud':{ic:'ALI',c:'var(--alibaba)'},
+  'Oracle Cloud Infrastructure':{ic:'OCI',c:'var(--oci)'},
+  'Anthropic':{ic:'A',c:'var(--ai)'},'OpenAI':{ic:'AI',c:'var(--ai)'},
+};
+
+/* mock data shaped to: GET /multicloud/{t}/spend, /commitments, POST /allocate, GET /labels */
+const DATA={
+  total:48200,
+  providers:[
+    {provider:'Amazon Web Services',spend_eur:18600,pct:38.6},
+    {provider:'Microsoft Azure',spend_eur:14200,pct:29.5},
+    {provider:'Google Cloud',spend_eur:8100,pct:16.8},
+    {provider:'Alibaba Cloud',spend_eur:3400,pct:7.1},
+    {provider:'Oracle Cloud Infrastructure',spend_eur:1700,pct:3.5},
+    {provider:'Anthropic',spend_eur:1400,pct:2.9},
+    {provider:'OpenAI',spend_eur:800,pct:1.7},
+  ],
+  ai:{total:3100,pct:6.4,by_service:[
+    {service:'Claude · Opus',amt:1400},{service:'Amazon Bedrock',amt:900},
+    {service:'OpenAI · gpt-4o',amt:800},
+  ]},
+  commit:{coverage:34,util:81,idle:640,opportunity:2180,recs:[
+    {provider:'Amazon Web Services',type:'Savings Plan',save:1240},
+    {provider:'Google Cloud',type:'Committed Use Discount',save:620},
+    {provider:'Microsoft Azure',type:'Reserved',save:320},
+  ],note:'€640/mo of held commitments is idle (low utilization) — review before buying more.'},
+  alloc:{allocated_pct:100,coverage_before:76,groups:[
+    {name:'engineering',direct:18900,shared:3100,total:22000,pct:45.6,rules:{tag:14000,tag_map:4900}},
+    {name:'data-platform',direct:11200,shared:1800,total:13000,pct:27,rules:{account:11200}},
+    {name:'product',direct:6800,shared:1100,total:7900,pct:16.4,rules:{name_pattern:6800}},
+    {name:'shared-services',direct:4400,shared:900,total:5300,pct:11,rules:{tag:4400}},
+  ]},
+};
+
+/* i18n labels (mirrors backend /labels) */
+const L={
+  en:{multicloud:'Multi-Cloud',total_spend:'Total spend',ai_spend:'AI / LLM spend',by_provider:'By cloud provider',coverage:'Coverage',utilization:'Utilization',commitments:'Commitments',chargeback:'Chargeback'},
+  it:{multicloud:'Multi-Cloud',total_spend:'Spesa totale',ai_spend:'Spesa AI / LLM',by_provider:'Per provider cloud',coverage:'Copertura',utilization:'Utilizzo',commitments:'Impegni',chargeback:'Ribaltamento costi'},
+  de:{multicloud:'Multi-Cloud',total_spend:'Gesamtausgaben',ai_spend:'KI / LLM-Ausgaben',by_provider:'Nach Cloud-Anbieter',coverage:'Abdeckung',utilization:'Auslastung',commitments:'Verpflichtungen',chargeback:'Kostenverrechnung'},
+  fr:{multicloud:'Multi-Cloud',total_spend:'Dépense totale',ai_spend:'Dépense IA / LLM',by_provider:'Par fournisseur cloud',coverage:'Couverture',utilization:'Utilisation',commitments:'Engagements',chargeback:'Refacturation'},
+  es:{multicloud:'Multi-Cloud',total_spend:'Gasto total',ai_spend:'Gasto IA / LLM',by_provider:'Por proveedor cloud',coverage:'Cobertura',utilization:'Utilización',commitments:'Compromisos',chargeback:'Imputación de costes'},
+  nl:{multicloud:'Multi-Cloud',total_spend:'Totale uitgaven',ai_spend:'AI / LLM-uitgaven',by_provider:'Per cloudprovider',coverage:'Dekking',utilization:'Benutting',commitments:'Verplichtingen',chargeback:'Kostentoewijzing'},
+  pt:{multicloud:'Multi-Cloud',total_spend:'Gasto total',ai_spend:'Gasto IA / LLM',by_provider:'Por fornecedor de cloud',coverage:'Cobertura',utilization:'Utilização',commitments:'Compromissos',chargeback:'Imputação de custos'},
+  pl:{multicloud:'Multi-Cloud',total_spend:'Całkowite wydatki',ai_spend:'Wydatki AI / LLM',by_provider:'Wg dostawcy chmury',coverage:'Pokrycie',utilization:'Wykorzystanie',commitments:'Zobowiązania',chargeback:'Rozliczenie kosztów'},
+};
+let LANG='en';
+function setLang(l){LANG=l;applyLabels();}
+function applyLabels(){
+  const x=L[LANG]||L.en;
+  document.getElementById('t-multicloud').textContent=x.multicloud;
+  document.getElementById('k-total-l').textContent=x.total_spend;
+  document.getElementById('k-ai-l').textContent=x.ai_spend;
+  document.getElementById('t-ai').textContent=x.ai_spend;
+  document.getElementById('k-cov-l').textContent=x.coverage;
+  document.getElementById('t-byprov').textContent=x.by_provider;
+  document.getElementById('t-coverage').textContent=x.coverage;
+  document.getElementById('t-util').textContent=x.utilization;
+  document.getElementById('t-commit').textContent=x.commitments;
+  document.getElementById('t-charge').textContent=x.chargeback;
+}
+
+function render(){
+  document.getElementById('k-total').textContent=EUR(DATA.total);
+  document.getElementById('k-ai').textContent=EUR(DATA.ai.total);
+  document.getElementById('k-ai-s').textContent=DATA.ai.pct+'% of spend';
+  document.getElementById('k-cov').textContent=DATA.commit.coverage+'%';
+  document.getElementById('k-opp').textContent=EUR(DATA.commit.opportunity);
+
+  const max=Math.max(...DATA.providers.map(p=>p.spend_eur));
+  document.getElementById('providers').innerHTML=DATA.providers.map(p=>{
+    const m=PROV_META[p.provider]||{ic:'?',c:'var(--txt3)'};
+    return `<div class="prov"><div class="top">
+      <div class="nm"><span class="ic" style="background:${m.c}">${m.ic}</span>${p.provider}</div>
+      <div class="amt">${EUR(p.spend_eur)} <span style="font-size:11px;color:var(--txt3)">${p.pct}%</span></div></div>
+      <div class="bar"><i style="width:${p.spend_eur/max*100}%;background:${m.c}"></i></div></div>`;
+  }).join('');
+
+  document.getElementById('ai-total').textContent=EUR(DATA.ai.total);
+  document.getElementById('ai-pct').textContent=DATA.ai.pct+'% of total cloud spend';
+  const aiColors=['var(--purple)','var(--aws)','#10a37f'];
+  document.getElementById('ai-services').innerHTML=DATA.ai.by_service.map((s,i)=>
+    `<div class="ai-row"><span class="dot2" style="background:${aiColors[i%3]}"></span><span class="nm">${s.service}</span><span class="amt">${EUR(s.amt)}</span></div>`).join('');
+
+  document.getElementById('cm-cov').textContent=DATA.commit.coverage+'%';
+  document.getElementById('cm-util').textContent=DATA.commit.util+'%';
+  document.getElementById('cm-idle').textContent=EUR(DATA.commit.idle);
+  document.getElementById('cm-recs').innerHTML=DATA.commit.recs.map(r=>{
+    const m=PROV_META[r.provider]||{ic:'?',c:'var(--txt3)'};
+    return `<div class="cm-rec"><div style="display:flex;align-items:center;gap:8px"><span class="ic" style="width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-family:var(--mono);font-size:9px;font-weight:700;color:#0b0f14;background:${m.c}">${m.ic}</span>${r.type}</div><div class="save">+${EUR(r.save)}/mo</div></div>`;
+  }).join('');
+  document.getElementById('cm-note').textContent=DATA.commit.note;
+
+  const amax=Math.max(...DATA.alloc.groups.map(g=>g.total));
+  document.getElementById('allocation').innerHTML=DATA.alloc.groups.map(g=>{
+    const dw=g.direct/amax*100, sw=g.shared/amax*100;
+    const rules=Object.entries(g.rules).map(([k,v])=>`${k}:${EUR(v)}`).join(' · ');
+    return `<div class="alloc"><div class="top"><span class="nm">${g.name}</span><span class="amt">${EUR(g.total)} <span style="font-size:11px;color:var(--txt3)">${g.pct}%</span></span></div>
+      <div class="bar"><div class="d" style="width:${dw}%"></div><div class="s" style="width:${sw}%"></div></div>
+      <div class="rules">${rules}${g.shared?' · +shared '+EUR(g.shared):''}</div></div>`;
+  }).join('');
+  document.getElementById('alloc-note').textContent=`${DATA.alloc.coverage_before}% allocated by direct rules → ${DATA.alloc.allocated_pct}% after proportional shared-cost split. Zero unallocated.`;
+}
+applyLabels(); render();
+</script>
+</body>
+</html>

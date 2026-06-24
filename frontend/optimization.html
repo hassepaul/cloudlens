@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Optimization</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--green:#36d399;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1120px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+.tabs{display:flex;gap:4px;border:1px solid var(--line);border-radius:9px;padding:3px}
+.tabs button{background:transparent;border:0;color:var(--txt2);font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer}
+.tabs button.on{background:var(--panel2);color:var(--teal)}
+.view{display:none}.view.on{display:block}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:11px;padding:13px 15px}
+.kpi .l{font-size:10.5px;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.kpi .v{font-family:var(--mono);font-size:21px;font-weight:600}
+.kpi.teal .v{color:var(--teal)}.kpi.amber .v{color:var(--amber)}.kpi.green .v{color:var(--green)}.kpi.red .v{color:var(--red)}
+.kpi .s{font-size:10.5px;color:var(--txt3);margin-top:3px}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:16px 18px;margin-bottom:14px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card .cap{font-size:12px;color:var(--txt3);margin-bottom:14px}
+/* heatmap */
+.heat{display:grid;grid-template-columns:1.4fr repeat(2,70px) 1fr 80px;gap:0;font-size:12.5px}
+.heat .hdr{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);padding:7px 8px;border-bottom:1px solid var(--line)}
+.heat .cell{padding:9px 8px;border-bottom:1px solid var(--lineSoft);display:flex;align-items:center}
+.heat .rn{flex-direction:column;align-items:flex-start;gap:1px}
+.heat .rn .t{font-weight:500}.heat .rn .s{font-size:10.5px;color:var(--txt3);font-family:var(--mono)}
+.util-chip{font-family:var(--mono);font-size:12px;font-weight:600;padding:3px 0;border-radius:6px;width:54px;text-align:center}
+.score-bar{width:100%;height:7px;background:var(--line);border-radius:4px;overflow:hidden}
+.score-bar i{display:block;height:100%;border-radius:4px}
+.band{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;padding:2px 7px;border-radius:5px;letter-spacing:.03em}
+.band.idle{background:var(--redDim);color:var(--red)}.band.over{background:var(--amberDim);color:var(--amber)}
+.band.balanced{background:var(--tealDim);color:var(--teal)}.band.hot{background:var(--blueDim);color:var(--blue)}
+/* rec rows */
+.rec{display:flex;gap:13px;align-items:center;padding:12px 0;border-bottom:1px solid var(--lineSoft)}
+.rec:last-child{border-bottom:0}
+.rec .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:13px;flex-shrink:0}
+.rec.downsize .ic{background:var(--amberDim);color:var(--amber)}.rec.terminate .ic{background:var(--redDim);color:var(--red)}
+.rec.schedule .ic{background:var(--blueDim);color:var(--blue)}
+.rec .c{flex:1;min-width:0}
+.rec .c .t{font-size:13px;font-weight:500}
+.rec .c .m{font-size:11.5px;color:var(--txt3);margin-top:2px;line-height:1.45}
+.rec .move{font-family:var(--mono);font-size:11px;color:var(--txt2);margin-top:3px}
+.rec .move b{color:var(--teal)}
+.rec .save{font-family:var(--mono);font-weight:600;color:var(--green);text-align:right;min-width:90px;font-size:13.5px}
+.rec .save .cf{display:block;font-size:9px;color:var(--purple);font-weight:500}
+.tag{font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:4px;background:var(--panel2);color:var(--txt3);margin-left:6px}
+/* ledger */
+.ledger{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.lcol{background:var(--bg2);border:1px solid var(--lineSoft);border-radius:10px;padding:14px}
+.lcol .n{font-family:var(--mono);font-size:22px;font-weight:600}
+.lcol .l{font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+.lcol.id .n{color:var(--txt2)}.lcol.ac .n{color:var(--amber)}.lcol.re .n{color:var(--green)}
+.funnel{height:9px;border-radius:5px;background:var(--line);overflow:hidden;display:flex;margin:4px 0 14px}
+.funnel i{height:100%}
+.catrow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--lineSoft);font-size:12.5px}
+.catrow:last-child{border-bottom:0}.catrow .nm{flex:1;text-transform:capitalize}
+.catrow .v{font-family:var(--mono);min-width:70px;text-align:right}
+.note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2 class="sr-only">CloudLens optimization: utilization heatmap with over-capacity scoring, CPU and memory rightsizing recommendations, scheduling, and realized-savings ledger</h2>
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · Optimization</h1>
+    <div class="tabs">
+      <button class="on" onclick="tab('util',this)">Utilization</button>
+      <button onclick="tab('right',this)">Rightsizing</button>
+      <button onclick="tab('sched',this)">Scheduling</button>
+      <button onclick="tab('ledger',this)">Savings ledger</button>
+    </div>
+  </div>
+
+  <!-- UTILIZATION -->
+  <div class="view on" id="v-util">
+    <div class="kpis">
+      <div class="kpi"><div class="l">Avg CPU peak</div><div class="v" id="u-cpu">—</div><div class="s">across fleet</div></div>
+      <div class="kpi"><div class="l">Avg memory peak</div><div class="v" id="u-mem">—</div><div class="s">across fleet</div></div>
+      <div class="kpi amber"><div class="l">Over-provisioned</div><div class="v" id="u-over">—</div><div class="s">resources</div></div>
+      <div class="kpi teal"><div class="l">Reclaimable</div><div class="v" id="u-recl">—</div><div class="s">€/month headroom</div></div>
+    </div>
+    <div class="card">
+      <h2>▦ Utilization &amp; over-capacity</h2>
+      <div class="cap">Over-capacity score uses the <em>binding</em> dimension — a box at 85% memory / 10% CPU is hot, not wasteful. This is the memory-aware logic CPU-only tools miss.</div>
+      <div class="heat" id="heat"></div>
+    </div>
+  </div>
+
+  <!-- RIGHTSIZING -->
+  <div class="view" id="v-right">
+    <div class="kpis">
+      <div class="kpi green"><div class="l">Rightsizing saving</div><div class="v" id="r-total">—</div><div class="s">€/month potential</div></div>
+      <div class="kpi"><div class="l">Recommendations</div><div class="v" id="r-count">—</div><div class="s">resources</div></div>
+      <div class="kpi purple" style="--purple:#a78bfa"><div class="l">Cross-family moves</div><div class="v" id="r-cf" style="color:var(--purple)">—</div><div class="s">deeper savings</div></div>
+    </div>
+    <div class="card">
+      <h2>⤓ Rightsizing recommendations</h2>
+      <div class="cap">Computed from CPU <strong>and</strong> memory peaks with a 30% headroom buffer — including cross-family downgrades.</div>
+      <div id="right-list"></div>
+    </div>
+  </div>
+
+  <!-- SCHEDULING -->
+  <div class="view" id="v-sched">
+    <div class="kpis">
+      <div class="kpi green"><div class="l">Scheduling saving</div><div class="v" id="s-total">—</div><div class="s">€/month potential</div></div>
+      <div class="kpi"><div class="l">Eligible resources</div><div class="v" id="s-count">—</div><div class="s">non-prod, 24/7</div></div>
+    </div>
+    <div class="card">
+      <h2>◷ On/off scheduling</h2>
+      <div class="cap">Non-production resources running 24/7 that can shut down nights &amp; weekends.</div>
+      <div id="sched-list"></div>
+    </div>
+  </div>
+
+  <!-- LEDGER -->
+  <div class="view" id="v-ledger">
+    <div class="card">
+      <h2>↻ Realized-savings ledger</h2>
+      <div class="cap">Closes the ROI loop: identified → actioned → realized on the bill.</div>
+      <div class="ledger">
+        <div class="lcol id"><div class="n" id="l-id">—</div><div class="l">Identified /mo</div></div>
+        <div class="lcol ac"><div class="n" id="l-ac">—</div><div class="l">Actioned /mo</div></div>
+        <div class="lcol re"><div class="n" id="l-re">—</div><div class="l">Realized /mo</div></div>
+      </div>
+      <div class="funnel" id="funnel"></div>
+      <div style="font-size:12px;color:var(--txt2);margin-bottom:14px">Realization rate <b id="l-rate" style="font-family:var(--mono);color:var(--green)">—</b> · realized annualized <b id="l-ann" style="font-family:var(--mono);color:var(--green)">—</b></div>
+      <div id="ledger-cats"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
+function tab(v,el){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  document.getElementById('v-'+v).classList.add('on');
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+
+/* mock data shaped to GET /optimization/{t}/{utilization|rightsizing|scheduling|savings/ledger} */
+const UTIL={summary:{avg_cpu_pct:24.6,avg_mem_pct:41.2,over_provisioned_count:5,idle_count:2,hot_count:3,reclaimable_monthly_eur:1840},
+  resources:[
+    {resource_name:'idle-reporting-vm',service:'EC2',provider:'aws',cpu_peak_pct:1,mem_peak_pct:2,over_capacity_score:98,band:'idle',monthly_eur:70},
+    {resource_name:'web-prod-03',service:'EC2',provider:'aws',cpu_peak_pct:18,mem_peak_pct:22,over_capacity_score:78,band:'over',monthly_eur:280},
+    {resource_name:'staging-app-01',service:'VM',provider:'azure',cpu_peak_pct:14,mem_peak_pct:28,over_capacity_score:72,band:'over',monthly_eur:120},
+    {resource_name:'batch-worker',service:'GCE',provider:'gcp',cpu_peak_pct:33,mem_peak_pct:35,over_capacity_score:65,band:'over',monthly_eur:160},
+    {resource_name:'analytics-db',service:'EC2',provider:'aws',cpu_peak_pct:12,mem_peak_pct:85,over_capacity_score:15,band:'hot',monthly_eur:560},
+    {resource_name:'prod-api-01',service:'EC2',provider:'aws',cpu_peak_pct:71,mem_peak_pct:64,over_capacity_score:29,band:'balanced',monthly_eur:200},
+    {resource_name:'cache-node',service:'VM',provider:'azure',cpu_peak_pct:15,mem_peak_pct:88,over_capacity_score:12,band:'hot',monthly_eur:280},
+  ]};
+const RIGHT={total_monthly_saving_eur:354,recommendations:[
+  {resource_name:'web-prod-03',current_type:'m5.2xlarge',recommended_type:'r5.large',action:'downsize',monthly_saving_eur:188,cross_family:true,confidence:'high',cpu_peak_pct:18,mem_peak_pct:22,rationale:'Peaked at 18% CPU / 22% memory. Needs ~1.9 vCPU / 9 GiB with a 30% buffer — r5.large (cross-family) covers it.'},
+  {resource_name:'cache-node',current_type:'D8s_v5',recommended_type:'E4s_v5',action:'downsize',monthly_saving_eur:96,cross_family:true,confidence:'medium',cpu_peak_pct:15,mem_peak_pct:70,rationale:'Low CPU but high memory — moves to memory-optimized family rather than a too-small general box.'},
+  {resource_name:'idle-reporting-vm',current_type:'m5.large',recommended_type:null,action:'terminate',monthly_saving_eur:70,cross_family:false,confidence:'high',cpu_peak_pct:1,mem_peak_pct:2,rationale:'Effectively idle over 30 days — consider terminating.'},
+]};
+const SCHED={total_monthly_saving_eur:193,recommendations:[
+  {resource_name:'dev-erp-app',environment:'dev',schedule_label:'Mon–Fri 08:00–20:00',recommended_hours_week:60,saving_pct:64.3,monthly_saving_eur:116,confidence:'medium'},
+  {resource_name:'staging-app-01',environment:'staging',schedule_label:'Mon–Fri 08:00–20:00',recommended_hours_week:60,saving_pct:64.3,monthly_saving_eur:77,confidence:'medium'},
+]};
+const LEDGER={identified_monthly_eur:2380,actioned_monthly_eur:920,realized_monthly_eur:740,realized_annual_eur:8880,realization_rate_pct:80.4,
+  by_category:{rightsize:{identified:1100,actioned:400,realized:354},schedule:{identified:480,actioned:193,realized:193},waste:{identified:800,actioned:327,realized:193}}};
+
+function utilColor(p){return p>=85?'var(--blue)':p>=40?'var(--teal)':p>=15?'var(--amber)':'var(--red)';}
+function scoreColor(s){return s>=70?'var(--red)':s>=40?'var(--amber)':s>=15?'var(--teal)':'var(--blue)';}
+
+function renderUtil(){
+  const s=UTIL.summary;
+  document.getElementById('u-cpu').textContent=s.avg_cpu_pct+'%';
+  document.getElementById('u-mem').textContent=s.avg_mem_pct+'%';
+  document.getElementById('u-over').textContent=s.over_provisioned_count+s.idle_count;
+  document.getElementById('u-recl').textContent=EUR(s.reclaimable_monthly_eur);
+  let h='<div class="hdr">Resource</div><div class="hdr">CPU</div><div class="hdr">Mem</div><div class="hdr">Over-capacity</div><div class="hdr">Band</div>';
+  UTIL.resources.forEach(r=>{
+    h+=`<div class="cell rn"><div class="t">${r.resource_name}</div><div class="s">${r.provider} · ${r.service} · ${EUR(r.monthly_eur)}/mo</div></div>`;
+    h+=`<div class="cell"><span class="util-chip" style="background:${utilColor(r.cpu_peak_pct)}22;color:${utilColor(r.cpu_peak_pct)}">${r.cpu_peak_pct}%</span></div>`;
+    h+=`<div class="cell"><span class="util-chip" style="background:${utilColor(r.mem_peak_pct)}22;color:${utilColor(r.mem_peak_pct)}">${r.mem_peak_pct}%</span></div>`;
+    h+=`<div class="cell"><div class="score-bar"><i style="width:${r.over_capacity_score}%;background:${scoreColor(r.over_capacity_score)}"></i></div></div>`;
+    h+=`<div class="cell"><span class="band ${r.band}">${r.band}</span></div>`;
+  });
+  document.getElementById('heat').innerHTML=h;
+}
+function renderRight(){
+  document.getElementById('r-total').textContent=EUR(RIGHT.total_monthly_saving_eur);
+  document.getElementById('r-count').textContent=RIGHT.recommendations.length;
+  document.getElementById('r-cf').textContent=RIGHT.recommendations.filter(r=>r.cross_family).length;
+  document.getElementById('right-list').innerHTML=RIGHT.recommendations.map(r=>{
+    const icon=r.action==='terminate'?'⊗':'⤓';
+    const move=r.action==='terminate'?`<b>terminate</b> ${r.current_type}`:`${r.current_type} → <b>${r.recommended_type}</b>`;
+    return `<div class="rec ${r.action}">
+      <div class="ic">${icon}</div>
+      <div class="c"><div class="t">${r.resource_name} <span class="tag">${r.confidence}</span></div>
+        <div class="move">${move}</div>
+        <div class="m">${r.rationale}</div></div>
+      <div class="save">${EUR(r.monthly_saving_eur)}/mo${r.cross_family?'<span class="cf">cross-family</span>':''}</div>
+    </div>`;
+  }).join('');
+}
+function renderSched(){
+  document.getElementById('s-total').textContent=EUR(SCHED.total_monthly_saving_eur);
+  document.getElementById('s-count').textContent=SCHED.recommendations.length;
+  document.getElementById('sched-list').innerHTML=SCHED.recommendations.map(r=>`<div class="rec schedule">
+    <div class="ic">◷</div>
+    <div class="c"><div class="t">${r.resource_name} <span class="tag">${r.environment}</span></div>
+      <div class="move">168h/week → <b>${r.recommended_hours_week}h</b> · ${r.schedule_label}</div>
+      <div class="m">Shut down nights &amp; weekends — ${r.saving_pct}% saved, no working-hours impact.</div></div>
+    <div class="save">${EUR(r.monthly_saving_eur)}/mo</div></div>`).join('');
+}
+function renderLedger(){
+  document.getElementById('l-id').textContent=EUR(LEDGER.identified_monthly_eur);
+  document.getElementById('l-ac').textContent=EUR(LEDGER.actioned_monthly_eur);
+  document.getElementById('l-re').textContent=EUR(LEDGER.realized_monthly_eur);
+  document.getElementById('l-rate').textContent=LEDGER.realization_rate_pct+'%';
+  document.getElementById('l-ann').textContent=EUR(LEDGER.realized_annual_eur)+'/yr';
+  const tot=LEDGER.identified_monthly_eur;
+  document.getElementById('funnel').innerHTML=
+    `<i style="width:${LEDGER.realized_monthly_eur/tot*100}%;background:var(--green)"></i>`+
+    `<i style="width:${LEDGER.actioned_monthly_eur/tot*100}%;background:var(--amber)"></i>`+
+    `<i style="width:${(tot-LEDGER.actioned_monthly_eur-LEDGER.realized_monthly_eur)/tot*100}%;background:var(--line)"></i>`;
+  document.getElementById('ledger-cats').innerHTML=Object.entries(LEDGER.by_category).map(([k,v])=>
+    `<div class="catrow"><span class="nm">${k}</span>
+      <span class="v" style="color:var(--txt3)">id ${EUR(v.identified)}</span>
+      <span class="v" style="color:var(--amber)">act ${EUR(v.actioned)}</span>
+      <span class="v" style="color:var(--green)">real ${EUR(v.realized)}</span></div>`).join('');
+}
+renderUtil();renderRight();renderSched();renderLedger();
+</script>
+</body>
+</html>

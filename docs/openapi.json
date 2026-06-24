@@ -1,0 +1,5367 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CloudLens API",
+    "description": "Azure FinOps Managed Service \u2014 cost intelligence API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/tenants/": {
+      "get": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "List Tenants",
+        "description": "List all tenant configurations.",
+        "operationId": "list_tenants_api_v1_tenants__get",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantConfig"
+                  },
+                  "title": "Response List Tenants Api V1 Tenants  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Create Tenant",
+        "description": "Create a new tenant configuration.\nSP credentials are stored in Key Vault; only the secret reference is persisted.",
+        "operationId": "create_tenant_api_v1_tenants__post",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{tenant_id}": {
+      "get": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Get Tenant",
+        "operationId": "get_tenant_api_v1_tenants__tenant_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Update Tenant",
+        "operationId": "update_tenant_api_v1_tenants__tenant_id__patch",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Delete Tenant",
+        "description": "Soft-delete: sets active=False. Does not remove data.",
+        "operationId": "delete_tenant_api_v1_tenants__tenant_id__delete",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/costs/{tenant_id}": {
+      "get": {
+        "tags": [
+          "costs"
+        ],
+        "summary": "Get Cost Summary",
+        "description": "Return aggregated cost summary for a tenant.",
+        "operationId": "get_cost_summary_api_v1_costs__tenant_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO date, default: 30 days ago",
+              "title": "Start"
+            },
+            "description": "ISO date, default: 30 days ago"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO date, default: today",
+              "title": "End"
+            },
+            "description": "ISO date, default: today"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/costs/{tenant_id}/breakdown": {
+      "get": {
+        "tags": [
+          "costs"
+        ],
+        "summary": "Get Cost Breakdown",
+        "operationId": "get_cost_breakdown_api_v1_costs__tenant_id__breakdown_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "dimension",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "service | resource_group | location",
+              "default": "service",
+              "title": "Dimension"
+            },
+            "description": "service | resource_group | location"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostBreakdown"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/costs/{tenant_id}/trend": {
+      "get": {
+        "tags": [
+          "costs"
+        ],
+        "summary": "Get Cost Trend",
+        "operationId": "get_cost_trend_api_v1_costs__tenant_id__trend_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 7,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostTrend"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/waste/{tenant_id}": {
+      "get": {
+        "tags": [
+          "waste"
+        ],
+        "summary": "List Waste Items",
+        "description": "Return waste items for a tenant, optionally filtered by priority.",
+        "operationId": "list_waste_items_api_v1_waste__tenant_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Priority"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
+            "name": "resolved",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include resolved items",
+              "default": false,
+              "title": "Resolved"
+            },
+            "description": "Include resolved items"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WasteItem"
+                  },
+                  "title": "Response List Waste Items Api V1 Waste  Tenant Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/waste/{item_id}/resolve": {
+      "patch": {
+        "tags": [
+          "waste"
+        ],
+        "summary": "Resolve Waste Item",
+        "description": "Mark a waste item as resolved.",
+        "operationId": "resolve_waste_item_api_v1_waste__item_id__resolve_patch",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WasteResolve"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WasteItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/{tenant_id}": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "List Reports",
+        "operationId": "list_reports_api_v1_reports__tenant_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 12,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportMeta"
+                  },
+                  "title": "Response List Reports Api V1 Reports  Tenant Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/{tenant_id}/generate": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Trigger Report",
+        "description": "Enqueue a report generation job. Returns immediately with status=pending.",
+        "operationId": "trigger_report_api_v1_reports__tenant_id__generate_post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "period_start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period Start"
+            }
+          },
+          {
+            "name": "period_end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period End"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportMeta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/{report_id}/download": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Get Download Url",
+        "description": "Return a fresh SAS download URL for a report.",
+        "operationId": "get_download_url_api_v1_reports__report_id__download_get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Download Url Api V1 Reports  Report Id  Download Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/forecast/{tenant_id}": {
+      "get": {
+        "tags": [
+          "forecast"
+        ],
+        "summary": "Get Spend Forecast",
+        "description": "Baseline spend forecast (Holt-Winters, weekly seasonality, with backtest MAPE).",
+        "operationId": "get_spend_forecast_api_v1_forecast__tenant_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "horizon_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 7,
+              "default": 30,
+              "title": "Horizon Days"
+            }
+          },
+          {
+            "name": "history_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 14,
+              "default": 90,
+              "title": "History Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpendForecastResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/forecast/{tenant_id}/cost-of-inaction": {
+      "get": {
+        "tags": [
+          "forecast"
+        ],
+        "summary": "Get Cost Of Inaction",
+        "description": "Dual-trajectory forecast: do-nothing vs. if-you-act, with cost-of-inaction.",
+        "operationId": "get_cost_of_inaction_api_v1_forecast__tenant_id__cost_of_inaction_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "horizon_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 7,
+              "default": 30,
+              "title": "Horizon Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrajectoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/forecast/{tenant_id}/roadmap": {
+      "get": {
+        "tags": [
+          "forecast"
+        ],
+        "summary": "Get Remediation Roadmap",
+        "description": "ROI-ordered, phased remediation roadmap with run-rate bending down per phase.",
+        "operationId": "get_remediation_roadmap_api_v1_forecast__tenant_id__roadmap_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadmapResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/forecast/{tenant_id}/budget-breach": {
+      "get": {
+        "tags": [
+          "forecast"
+        ],
+        "summary": "Get Budget Breach",
+        "description": "Predict the date cumulative spend breaches the budget, do-nothing vs. if-actioned.",
+        "operationId": "get_budget_breach_api_v1_forecast__tenant_id__budget_breach_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "monthly_budget",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Monthly budget in EUR",
+              "title": "Monthly Budget"
+            },
+            "description": "Monthly budget in EUR"
+          },
+          {
+            "name": "horizon_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 7,
+              "default": 60,
+              "title": "Horizon Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetBreachResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/insights/{tenant_id}/anomalies": {
+      "get": {
+        "tags": [
+          "insights"
+        ],
+        "summary": "Get Anomalies",
+        "description": "Detect spend anomalies outside the seasonal forecast band, with attribution.",
+        "operationId": "get_anomalies_api_v1_insights__tenant_id__anomalies_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "scan_last_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 60,
+              "minimum": 1,
+              "default": 14,
+              "title": "Scan Last Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnomalyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/insights/{tenant_id}/chargeback": {
+      "get": {
+        "tags": [
+          "insights"
+        ],
+        "summary": "Get Chargeback",
+        "description": "Allocate spend to cost-centers by tag, with shared-cost distribution.",
+        "operationId": "get_chargeback_api_v1_insights__tenant_id__chargeback_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "dimension",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Tag key to allocate by",
+              "default": "cost_center",
+              "title": "Dimension"
+            },
+            "description": "Tag key to allocate by"
+          },
+          {
+            "name": "strategy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(showback|proportional|even)$",
+              "default": "proportional",
+              "title": "Strategy"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChargebackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/insights/{tenant_id}/digest": {
+      "get": {
+        "tags": [
+          "insights"
+        ],
+        "summary": "Get Insight Digest",
+        "description": "The flagship endpoint: fuse waste, anomalies, chargeback, and forecast into a\nranked, business-language digest with an executive summary.",
+        "operationId": "get_insight_digest_api_v1_insights__tenant_id__digest_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InsightDigestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/budgets/{tenant_id}": {
+      "get": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "List Budgets",
+        "description": "List all budgets for a tenant.",
+        "operationId": "list_budgets_api_v1_budgets__tenant_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Budget"
+                  },
+                  "title": "Response List Budgets Api V1 Budgets  Tenant Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Create Budget",
+        "description": "Create a budget (tenant-wide or scoped to a tag dimension+value).",
+        "operationId": "create_budget_api_v1_budgets__tenant_id__post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Budget"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/budgets/{tenant_id}/{budget_id}": {
+      "get": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Get Budget",
+        "operationId": "get_budget_api_v1_budgets__tenant_id___budget_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Budget Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Budget"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Update Budget",
+        "operationId": "update_budget_api_v1_budgets__tenant_id___budget_id__patch",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Budget Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Budget"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Delete Budget",
+        "operationId": "delete_budget_api_v1_budgets__tenant_id___budget_id__delete",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Budget Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/budgets/{tenant_id}/{budget_id}/status": {
+      "get": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Budget Status",
+        "description": "Live budget status: spend-to-date, forecast month-end projection, and state.",
+        "operationId": "budget_status_api_v1_budgets__tenant_id___budget_id__status_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Budget Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/multicloud/{tenant_id}/spend": {
+      "get": {
+        "tags": [
+          "multicloud"
+        ],
+        "summary": "Multicloud Spend",
+        "description": "Spend grouped by cloud provider, plus AI/LLM spend broken out.",
+        "operationId": "multicloud_spend_api_v1_multicloud__tenant_id__spend_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Lang"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Accept-Language"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Multicloud Spend Api V1 Multicloud  Tenant Id  Spend Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/multicloud/{tenant_id}/allocate": {
+      "post": {
+        "tags": [
+          "multicloud"
+        ],
+        "summary": "Allocate",
+        "description": "Run rule-based 100% allocation over FOCUS records.",
+        "operationId": "allocate_api_v1_multicloud__tenant_id__allocate_post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Ruleset"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Allocate Api V1 Multicloud  Tenant Id  Allocate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/multicloud/{tenant_id}/commitments": {
+      "get": {
+        "tags": [
+          "multicloud"
+        ],
+        "summary": "Commitments",
+        "description": "Coverage, utilization, and commitment-purchase recommendations.",
+        "operationId": "commitments_api_v1_multicloud__tenant_id__commitments_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Commitments Api V1 Multicloud  Tenant Id  Commitments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/multicloud/labels": {
+      "get": {
+        "tags": [
+          "multicloud"
+        ],
+        "summary": "Labels",
+        "description": "Return the full UI label set for a language (frontend i18n bootstrap).",
+        "operationId": "labels_api_v1_multicloud_labels_get",
+        "parameters": [
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Lang"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Labels Api V1 Multicloud Labels Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/drilldown/{tenant_id}": {
+      "get": {
+        "tags": [
+          "drilldown"
+        ],
+        "summary": "Drilldown",
+        "description": "Aggregate FOCUS spend at `level`, filtered by any parent selections.\nAt the resource level, resource anomalies are flagged inline.",
+        "operationId": "drilldown_api_v1_drilldown__tenant_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(provider|account|service|resource)$",
+              "default": "provider",
+              "title": "Level"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account"
+            }
+          },
+          {
+            "name": "service",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Service"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Drilldown Api V1 Drilldown  Tenant Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/drilldown/{tenant_id}/resource-anomalies": {
+      "get": {
+        "tags": [
+          "drilldown"
+        ],
+        "summary": "Resource Anomalies",
+        "description": "Standalone list of resource-level anomalies across the (optionally filtered) estate.",
+        "operationId": "resource_anomalies_api_v1_drilldown__tenant_id__resource_anomalies_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Resource Anomalies Api V1 Drilldown  Tenant Id  Resource Anomalies Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/{tenant_id}/rules": {
+      "get": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "List Rules",
+        "operationId": "list_rules_api_v1_alerts__tenant_id__rules_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertRule"
+                  },
+                  "title": "Response List Rules Api V1 Alerts  Tenant Id  Rules Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Create Rule",
+        "operationId": "create_rule_api_v1_alerts__tenant_id__rules_post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRule"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/{tenant_id}/rules/{rule_id}": {
+      "patch": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Update Rule",
+        "operationId": "update_rule_api_v1_alerts__tenant_id__rules__rule_id__patch",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRule"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Delete Rule",
+        "operationId": "delete_rule_api_v1_alerts__tenant_id__rules__rule_id__delete",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/{tenant_id}/events": {
+      "get": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "List Events",
+        "description": "Most-recent alert events first.",
+        "operationId": "list_events_api_v1_alerts__tenant_id__events_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertEvent"
+                  },
+                  "title": "Response List Events Api V1 Alerts  Tenant Id  Events Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/{tenant_id}/events/{event_id}/acknowledge": {
+      "post": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Acknowledge Event",
+        "operationId": "acknowledge_event_api_v1_alerts__tenant_id__events__event_id__acknowledge_post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertEvent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/optimization/{tenant_id}/rightsizing": {
+      "get": {
+        "tags": [
+          "optimization"
+        ],
+        "summary": "Rightsizing",
+        "description": "CPU+memory rightsizing recommendations, including cross-family downgrades.",
+        "operationId": "rightsizing_api_v1_optimization__tenant_id__rightsizing_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "headroom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "default": 0.3,
+              "title": "Headroom"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 7,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Rightsizing Api V1 Optimization  Tenant Id  Rightsizing Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/optimization/{tenant_id}/scheduling": {
+      "get": {
+        "tags": [
+          "optimization"
+        ],
+        "summary": "Scheduling",
+        "description": "On/off schedule recommendations for non-prod 24/7 resources.",
+        "operationId": "scheduling_api_v1_optimization__tenant_id__scheduling_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "style",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(business|extended)$",
+              "default": "business",
+              "title": "Style"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 7,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Scheduling Api V1 Optimization  Tenant Id  Scheduling Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/optimization/{tenant_id}/utilization": {
+      "get": {
+        "tags": [
+          "optimization"
+        ],
+        "summary": "Utilization",
+        "description": "Estate-wide CPU/memory utilization with over-capacity scoring.",
+        "operationId": "utilization_api_v1_optimization__tenant_id__utilization_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 7,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Utilization Api V1 Optimization  Tenant Id  Utilization Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/optimization/{tenant_id}/savings": {
+      "post": {
+        "tags": [
+          "optimization"
+        ],
+        "summary": "Create Savings Record",
+        "operationId": "create_savings_record_api_v1_optimization__tenant_id__savings_post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavingsRecordCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavingsRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/optimization/{tenant_id}/savings/{record_id}/action": {
+      "post": {
+        "tags": [
+          "optimization"
+        ],
+        "summary": "Mark Actioned",
+        "description": "Mark a saving as actioned; records the baseline cost for later measurement.",
+        "operationId": "mark_actioned_api_v1_optimization__tenant_id__savings__record_id__action_post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Record Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavingsRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/optimization/{tenant_id}/savings/ledger": {
+      "get": {
+        "tags": [
+          "optimization"
+        ],
+        "summary": "Savings Ledger",
+        "description": "Roll up identified vs actioned vs realized savings \u2014 closes the ROI loop.",
+        "operationId": "savings_ledger_api_v1_optimization__tenant_id__savings_ledger_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavingsLedger"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Audit",
+        "description": "Query the audit trail (most recent first).",
+        "operationId": "get_audit_api_v1_admin_audit_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "_system",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditRecord"
+                  },
+                  "title": "Response Get Audit Api V1 Admin Audit Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/compliance/audit-integrity/{tenant_id}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Audit Integrity",
+        "description": "Verify the audit hash chain is intact \u2014 proof the trail is tamper-evident.",
+        "operationId": "audit_integrity_api_v1_admin_compliance_audit_integrity__tenant_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Audit Integrity Api V1 Admin Compliance Audit Integrity  Tenant Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/compliance/matrix": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Compliance Matrix",
+        "description": "The SOC 2-aligned control matrix with per-control CLI evidence commands.",
+        "operationId": "compliance_matrix_api_v1_admin_compliance_matrix_get",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Compliance Matrix Api V1 Admin Compliance Matrix Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/compliance/evidence-export": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Evidence Export",
+        "description": "Generate a compliance evidence pack: the control matrix with CLI proof\ncommands, plus the audit-chain integrity result. Records the export itself\nin the audit log (CC7.2). The admin page renders/downloads this.",
+        "operationId": "evidence_export_api_v1_admin_compliance_evidence_export_post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "_system",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "actor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "admin",
+              "title": "Actor"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Evidence Export Api V1 Admin Compliance Evidence Export Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingest/{tenant_id}": {
+      "post": {
+        "tags": [
+          "ingest"
+        ],
+        "summary": "Trigger Ingest",
+        "description": "Manually trigger a cost ingestion run for a tenant.\nRuns inline as a background task \u2014 returns 202 immediately.",
+        "operationId": "trigger_ingest_api_v1_ingest__tenant_id__post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Trigger Ingest Api V1 Ingest  Tenant Id  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health Check",
+        "description": "Liveness + dependency health check.",
+        "operationId": "health_check_api_v1_health__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Check Api V1 Health  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AlertChannel": {
+        "type": "string",
+        "enum": [
+          "in_app",
+          "email",
+          "webhook"
+        ],
+        "title": "AlertChannel"
+      },
+      "AlertEvent": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "alert_event"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "rule_id": {
+            "type": "string",
+            "title": "Rule Id"
+          },
+          "rule_name": {
+            "type": "string",
+            "title": "Rule Name"
+          },
+          "alert_type": {
+            "$ref": "#/components/schemas/AlertType"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/AlertSeverity"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "title_it": {
+            "type": "string",
+            "title": "Title It",
+            "default": ""
+          },
+          "detail": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Detail"
+          },
+          "impact_eur": {
+            "type": "number",
+            "title": "Impact Eur",
+            "default": 0.0
+          },
+          "triggered_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Triggered At"
+          },
+          "delivered_channels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Delivered Channels"
+          },
+          "acknowledged": {
+            "type": "boolean",
+            "title": "Acknowledged",
+            "default": false
+          },
+          "ttl": {
+            "type": "integer",
+            "title": "Ttl",
+            "default": 15552000
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "rule_id",
+          "rule_name",
+          "alert_type",
+          "severity",
+          "title"
+        ],
+        "title": "AlertEvent"
+      },
+      "AlertRule": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "alert_type": {
+            "$ref": "#/components/schemas/AlertType"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold",
+            "default": 100.0
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "sub_account_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Account Id"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/AlertChannel"
+            },
+            "type": "array",
+            "title": "Channels"
+          },
+          "webhook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Webhook Url"
+          },
+          "email_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email To"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "alert_rule"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "name",
+          "alert_type"
+        ],
+        "title": "AlertRule"
+      },
+      "AlertRuleCreate": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "alert_type": {
+            "$ref": "#/components/schemas/AlertType"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold",
+            "default": 100.0
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "sub_account_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Account Id"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/AlertChannel"
+            },
+            "type": "array",
+            "title": "Channels"
+          },
+          "webhook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Webhook Url"
+          },
+          "email_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email To"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "name",
+          "alert_type"
+        ],
+        "title": "AlertRuleCreate"
+      },
+      "AlertRuleUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "channels": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AlertChannel"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channels"
+          },
+          "webhook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Webhook Url"
+          },
+          "email_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email To"
+          }
+        },
+        "type": "object",
+        "title": "AlertRuleUpdate"
+      },
+      "AlertSeverity": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "info"
+        ],
+        "title": "AlertSeverity"
+      },
+      "AlertType": {
+        "type": "string",
+        "enum": [
+          "budget_breach",
+          "spend_spike",
+          "resource_anomaly",
+          "waste_threshold",
+          "commitment_idle"
+        ],
+        "title": "AlertType"
+      },
+      "AllocationGroupModel": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "direct_eur": {
+            "type": "number",
+            "title": "Direct Eur"
+          },
+          "allocated_shared_eur": {
+            "type": "number",
+            "title": "Allocated Shared Eur"
+          },
+          "total_eur": {
+            "type": "number",
+            "title": "Total Eur"
+          },
+          "pct_of_total": {
+            "type": "number",
+            "title": "Pct Of Total"
+          },
+          "resource_count": {
+            "type": "integer",
+            "title": "Resource Count",
+            "default": 0
+          },
+          "budget_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Eur"
+          },
+          "budget_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "direct_eur",
+          "allocated_shared_eur",
+          "total_eur",
+          "pct_of_total"
+        ],
+        "title": "AllocationGroupModel"
+      },
+      "AnomalyDriverModel": {
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "title": "Dimension"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "delta_eur": {
+            "type": "number",
+            "title": "Delta Eur"
+          },
+          "share_of_spike": {
+            "type": "number",
+            "title": "Share Of Spike"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dimension",
+          "name",
+          "delta_eur",
+          "share_of_spike"
+        ],
+        "title": "AnomalyDriverModel"
+      },
+      "AnomalyModel": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "title": "Day"
+          },
+          "actual_eur": {
+            "type": "number",
+            "title": "Actual Eur"
+          },
+          "expected_eur": {
+            "type": "number",
+            "title": "Expected Eur"
+          },
+          "excess_eur": {
+            "type": "number",
+            "title": "Excess Eur"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "z_score": {
+            "type": "number",
+            "title": "Z Score"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/AnomalyDriverModel"
+            },
+            "type": "array",
+            "title": "Drivers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "actual_eur",
+          "expected_eur",
+          "excess_eur",
+          "direction",
+          "severity",
+          "z_score"
+        ],
+        "title": "AnomalyModel"
+      },
+      "AnomalyResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "scanned_days": {
+            "type": "integer",
+            "title": "Scanned Days"
+          },
+          "total_anomalous_excess_eur": {
+            "type": "number",
+            "title": "Total Anomalous Excess Eur"
+          },
+          "anomalies": {
+            "items": {
+              "$ref": "#/components/schemas/AnomalyModel"
+            },
+            "type": "array",
+            "title": "Anomalies"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "method",
+          "scanned_days",
+          "total_anomalous_excess_eur"
+        ],
+        "title": "AnomalyResponse"
+      },
+      "AuditAction": {
+        "type": "string",
+        "enum": [
+          "login",
+          "access_denied",
+          "tenant_scope_violation",
+          "rate_limited",
+          "tenant_created",
+          "tenant_updated",
+          "tenant_deleted",
+          "budget_created",
+          "budget_updated",
+          "budget_deleted",
+          "alert_rule_created",
+          "alert_rule_updated",
+          "alert_rule_deleted",
+          "waste_resolved",
+          "ingest_triggered",
+          "report_generated",
+          "report_downloaded",
+          "evidence_exported"
+        ],
+        "title": "AuditAction"
+      },
+      "AuditRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "audit_record"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "action": {
+            "$ref": "#/components/schemas/AuditAction"
+          },
+          "actor": {
+            "type": "string",
+            "title": "Actor"
+          },
+          "actor_type": {
+            "type": "string",
+            "title": "Actor Type",
+            "default": "user"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id",
+            "default": ""
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome",
+            "default": "success"
+          },
+          "source_ip": {
+            "type": "string",
+            "title": "Source Ip",
+            "default": ""
+          },
+          "detail": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Detail"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "prev_hash": {
+            "type": "string",
+            "title": "Prev Hash",
+            "default": ""
+          },
+          "record_hash": {
+            "type": "string",
+            "title": "Record Hash",
+            "default": ""
+          },
+          "ttl": {
+            "type": "integer",
+            "title": "Ttl",
+            "default": 63072000
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "action",
+          "actor"
+        ],
+        "title": "AuditRecord"
+      },
+      "Budget": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "amount_eur": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount Eur"
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^(monthly)$",
+            "title": "Period",
+            "default": "monthly"
+          },
+          "scope_dimension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Dimension",
+            "description": "Tag key, e.g. cost_center"
+          },
+          "scope_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Value",
+            "description": "Tag value, e.g. engineering"
+          },
+          "warning_threshold_pct": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Warning Threshold Pct",
+            "default": 85
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "budget"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "name",
+          "amount_eur"
+        ],
+        "title": "Budget"
+      },
+      "BudgetBreachResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "monthly_budget_eur": {
+            "type": "number",
+            "title": "Monthly Budget Eur"
+          },
+          "breach_date_baseline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Date Baseline"
+          },
+          "breach_date_optimized": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Date Optimized"
+          },
+          "safe_if_actioned": {
+            "type": "boolean",
+            "title": "Safe If Actioned"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "monthly_budget_eur",
+          "safe_if_actioned"
+        ],
+        "title": "BudgetBreachResponse"
+      },
+      "BudgetCreate": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "amount_eur": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount Eur"
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^(monthly)$",
+            "title": "Period",
+            "default": "monthly"
+          },
+          "scope_dimension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Dimension",
+            "description": "Tag key, e.g. cost_center"
+          },
+          "scope_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Value",
+            "description": "Tag value, e.g. engineering"
+          },
+          "warning_threshold_pct": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Warning Threshold Pct",
+            "default": 85
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "name",
+          "amount_eur"
+        ],
+        "title": "BudgetCreate"
+      },
+      "BudgetStatus": {
+        "properties": {
+          "budget_id": {
+            "type": "string",
+            "title": "Budget Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "amount_eur": {
+            "type": "number",
+            "title": "Amount Eur"
+          },
+          "spend_to_date_eur": {
+            "type": "number",
+            "title": "Spend To Date Eur"
+          },
+          "consumed_pct": {
+            "type": "number",
+            "title": "Consumed Pct"
+          },
+          "projected_month_end_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projected Month End Eur"
+          },
+          "projected_consumed_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projected Consumed Pct"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "breach_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Date"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": "tenant"
+          },
+          "headroom_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headroom Eur"
+          }
+        },
+        "type": "object",
+        "required": [
+          "budget_id",
+          "name",
+          "amount_eur",
+          "spend_to_date_eur",
+          "consumed_pct",
+          "status"
+        ],
+        "title": "BudgetStatus"
+      },
+      "BudgetUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "amount_eur": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount Eur"
+          },
+          "warning_threshold_pct": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning Threshold Pct"
+          }
+        },
+        "type": "object",
+        "title": "BudgetUpdate"
+      },
+      "ChargebackResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "dimension": {
+            "type": "string",
+            "title": "Dimension"
+          },
+          "strategy": {
+            "type": "string",
+            "title": "Strategy"
+          },
+          "period_start": {
+            "type": "string",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "title": "Period End"
+          },
+          "total_spend_eur": {
+            "type": "number",
+            "title": "Total Spend Eur"
+          },
+          "tagged_spend_eur": {
+            "type": "number",
+            "title": "Tagged Spend Eur"
+          },
+          "untagged_spend_eur": {
+            "type": "number",
+            "title": "Untagged Spend Eur"
+          },
+          "tagging_coverage_pct": {
+            "type": "number",
+            "title": "Tagging Coverage Pct"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/AllocationGroupModel"
+            },
+            "type": "array",
+            "title": "Groups"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "dimension",
+          "strategy",
+          "period_start",
+          "period_end",
+          "total_spend_eur",
+          "tagged_spend_eur",
+          "untagged_spend_eur",
+          "tagging_coverage_pct"
+        ],
+        "title": "ChargebackResponse"
+      },
+      "CostBreakdown": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "dimension": {
+            "type": "string",
+            "title": "Dimension"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "dimension",
+          "period_start",
+          "period_end"
+        ],
+        "title": "CostBreakdown",
+        "description": "Cost breakdown by dimension"
+      },
+      "CostSummary": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "total_cost_eur": {
+            "type": "number",
+            "title": "Total Cost Eur"
+          },
+          "previous_period_cost_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Period Cost Eur"
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Pct"
+          },
+          "top_services": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Top Services"
+          },
+          "top_resource_groups": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Top Resource Groups"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "period_start",
+          "period_end",
+          "total_cost_eur"
+        ],
+        "title": "CostSummary",
+        "description": "Aggregated cost summary for a tenant/period"
+      },
+      "CostTrend": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "days": {
+            "type": "integer",
+            "title": "Days"
+          },
+          "data_points": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Data Points"
+          },
+          "average_daily_eur": {
+            "type": "number",
+            "title": "Average Daily Eur",
+            "default": 0.0
+          },
+          "peak_day": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Day"
+          },
+          "peak_cost_eur": {
+            "type": "number",
+            "title": "Peak Cost Eur",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "days"
+        ],
+        "title": "CostTrend",
+        "description": "Daily cost trend for sparkline / chart"
+      },
+      "ForecastPointModel": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "title": "Day"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "lower": {
+            "type": "number",
+            "title": "Lower"
+          },
+          "upper": {
+            "type": "number",
+            "title": "Upper"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "value",
+          "lower",
+          "upper"
+        ],
+        "title": "ForecastPointModel"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InsightDigestResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "monthly_spend_eur": {
+            "type": "number",
+            "title": "Monthly Spend Eur"
+          },
+          "monthly_recoverable_eur": {
+            "type": "number",
+            "title": "Monthly Recoverable Eur"
+          },
+          "efficiency_score": {
+            "type": "integer",
+            "title": "Efficiency Score"
+          },
+          "headline_summary": {
+            "type": "string",
+            "title": "Headline Summary"
+          },
+          "headline_summary_it": {
+            "type": "string",
+            "title": "Headline Summary It"
+          },
+          "insights": {
+            "items": {
+              "$ref": "#/components/schemas/InsightModel"
+            },
+            "type": "array",
+            "title": "Insights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "monthly_spend_eur",
+          "monthly_recoverable_eur",
+          "efficiency_score",
+          "headline_summary",
+          "headline_summary_it"
+        ],
+        "title": "InsightDigestResponse"
+      },
+      "InsightModel": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "headline_it": {
+            "type": "string",
+            "title": "Headline It"
+          },
+          "impact_eur": {
+            "type": "number",
+            "title": "Impact Eur"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Evidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rank",
+          "category",
+          "severity",
+          "headline",
+          "headline_it",
+          "impact_eur",
+          "action"
+        ],
+        "title": "InsightModel"
+      },
+      "PlanTier": {
+        "type": "string",
+        "enum": [
+          "starter",
+          "growth",
+          "enterprise"
+        ],
+        "title": "PlanTier"
+      },
+      "Priority": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
+        "title": "Priority"
+      },
+      "ReportMeta": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "report"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "total_spend_eur": {
+            "type": "number",
+            "title": "Total Spend Eur",
+            "default": 0.0
+          },
+          "total_waste_eur": {
+            "type": "number",
+            "title": "Total Waste Eur",
+            "default": 0.0
+          },
+          "waste_pct": {
+            "type": "number",
+            "title": "Waste Pct",
+            "default": 0.0
+          },
+          "waste_items_count": {
+            "type": "integer",
+            "title": "Waste Items Count",
+            "default": 0
+          },
+          "critical_count": {
+            "type": "integer",
+            "title": "Critical Count",
+            "default": 0
+          },
+          "high_count": {
+            "type": "integer",
+            "title": "High Count",
+            "default": 0
+          },
+          "blob_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blob Url"
+          },
+          "blob_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blob Path"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReportStatus",
+            "default": "pending"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "period_start",
+          "period_end"
+        ],
+        "title": "ReportMeta",
+        "description": "Report metadata \u2014 Cosmos container: reports"
+      },
+      "ReportStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "generating",
+          "ready",
+          "failed"
+        ],
+        "title": "ReportStatus"
+      },
+      "RoadmapPhaseModel": {
+        "properties": {
+          "phase": {
+            "type": "integer",
+            "title": "Phase"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "items": {
+            "type": "integer",
+            "title": "Items"
+          },
+          "monthly_saving_eur": {
+            "type": "number",
+            "title": "Monthly Saving Eur"
+          },
+          "cumulative_monthly_saving_eur": {
+            "type": "number",
+            "title": "Cumulative Monthly Saving Eur"
+          },
+          "target_run_rate_eur": {
+            "type": "number",
+            "title": "Target Run Rate Eur"
+          },
+          "eta_days": {
+            "type": "integer",
+            "title": "Eta Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phase",
+          "label",
+          "items",
+          "monthly_saving_eur",
+          "cumulative_monthly_saving_eur",
+          "target_run_rate_eur",
+          "eta_days"
+        ],
+        "title": "RoadmapPhaseModel"
+      },
+      "RoadmapResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "current_run_rate_eur": {
+            "type": "number",
+            "title": "Current Run Rate Eur"
+          },
+          "optimized_run_rate_eur": {
+            "type": "number",
+            "title": "Optimized Run Rate Eur"
+          },
+          "total_monthly_saving_eur": {
+            "type": "number",
+            "title": "Total Monthly Saving Eur"
+          },
+          "phases": {
+            "items": {
+              "$ref": "#/components/schemas/RoadmapPhaseModel"
+            },
+            "type": "array",
+            "title": "Phases"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "current_run_rate_eur",
+          "optimized_run_rate_eur",
+          "total_monthly_saving_eur"
+        ],
+        "title": "RoadmapResponse"
+      },
+      "SavingsCategory": {
+        "type": "string",
+        "enum": [
+          "waste",
+          "rightsize",
+          "schedule",
+          "commitment",
+          "anomaly"
+        ],
+        "title": "SavingsCategory"
+      },
+      "SavingsLedger": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "identified_monthly_eur": {
+            "type": "number",
+            "title": "Identified Monthly Eur"
+          },
+          "actioned_monthly_eur": {
+            "type": "number",
+            "title": "Actioned Monthly Eur"
+          },
+          "realized_monthly_eur": {
+            "type": "number",
+            "title": "Realized Monthly Eur"
+          },
+          "realized_annual_eur": {
+            "type": "number",
+            "title": "Realized Annual Eur"
+          },
+          "realization_rate_pct": {
+            "type": "number",
+            "title": "Realization Rate Pct"
+          },
+          "by_category": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "By Category"
+          },
+          "record_count": {
+            "type": "integer",
+            "title": "Record Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "identified_monthly_eur",
+          "actioned_monthly_eur",
+          "realized_monthly_eur",
+          "realized_annual_eur",
+          "realization_rate_pct"
+        ],
+        "title": "SavingsLedger"
+      },
+      "SavingsRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "savings_record"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/SavingsCategory"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id",
+            "default": ""
+          },
+          "resource_name": {
+            "type": "string",
+            "title": "Resource Name",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "estimated_monthly_eur": {
+            "type": "number",
+            "title": "Estimated Monthly Eur",
+            "default": 0.0
+          },
+          "status": {
+            "$ref": "#/components/schemas/SavingsStatus",
+            "default": "identified"
+          },
+          "actioned_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actioned At"
+          },
+          "realized_monthly_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Monthly Eur"
+          },
+          "baseline_monthly_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Monthly Eur"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "category"
+        ],
+        "title": "SavingsRecord"
+      },
+      "SavingsRecordCreate": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/SavingsCategory"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id",
+            "default": ""
+          },
+          "resource_name": {
+            "type": "string",
+            "title": "Resource Name",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "estimated_monthly_eur": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Estimated Monthly Eur"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "category",
+          "estimated_monthly_eur"
+        ],
+        "title": "SavingsRecordCreate"
+      },
+      "SavingsStatus": {
+        "type": "string",
+        "enum": [
+          "identified",
+          "actioned",
+          "realized",
+          "dismissed"
+        ],
+        "title": "SavingsStatus"
+      },
+      "SpendForecastResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "horizon_days": {
+            "type": "integer",
+            "title": "Horizon Days"
+          },
+          "history_days": {
+            "type": "integer",
+            "title": "History Days"
+          },
+          "mape": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mape",
+            "description": "Backtest mean abs % error"
+          },
+          "confidence": {
+            "type": "string",
+            "title": "Confidence"
+          },
+          "month_end_projection": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month End Projection"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/ForecastPointModel"
+            },
+            "type": "array",
+            "title": "Points"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "method",
+          "horizon_days",
+          "history_days",
+          "confidence"
+        ],
+        "title": "SpendForecastResponse"
+      },
+      "TenantConfig": {
+        "properties": {
+          "tenant_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Tenant Name",
+            "description": "Display name of the customer"
+          },
+          "subscription_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Subscription Ids",
+            "description": "Azure subscription IDs to monitor"
+          },
+          "plan_tier": {
+            "$ref": "#/components/schemas/PlanTier",
+            "default": "growth"
+          },
+          "alert_email": {
+            "type": "string",
+            "title": "Alert Email",
+            "description": "Recipient of weekly digest and alerts"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Cosmos discriminator",
+            "default": "tenant"
+          },
+          "sp_secret_ref": {
+            "type": "string",
+            "title": "Sp Secret Ref",
+            "description": "Key Vault secret name for SP credentials"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "last_ingested_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ingested At"
+          },
+          "last_ingest_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ingest Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_name",
+          "subscription_ids",
+          "alert_email",
+          "sp_secret_ref"
+        ],
+        "title": "TenantConfig",
+        "description": "Cosmos DB document \u2014 partition key: id"
+      },
+      "TenantCreate": {
+        "properties": {
+          "tenant_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Tenant Name",
+            "description": "Display name of the customer"
+          },
+          "subscription_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Subscription Ids",
+            "description": "Azure subscription IDs to monitor"
+          },
+          "plan_tier": {
+            "$ref": "#/components/schemas/PlanTier",
+            "default": "growth"
+          },
+          "alert_email": {
+            "type": "string",
+            "title": "Alert Email",
+            "description": "Recipient of weekly digest and alerts"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
+          "sp_client_id": {
+            "type": "string",
+            "title": "Sp Client Id",
+            "description": "Service principal client ID"
+          },
+          "sp_client_secret": {
+            "type": "string",
+            "title": "Sp Client Secret",
+            "description": "Service principal secret (stored to Key Vault)"
+          },
+          "sp_tenant_id": {
+            "type": "string",
+            "title": "Sp Tenant Id",
+            "description": "Customer Azure AD tenant ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_name",
+          "subscription_ids",
+          "alert_email",
+          "sp_client_id",
+          "sp_client_secret",
+          "sp_tenant_id"
+        ],
+        "title": "TenantCreate",
+        "description": "Payload for POST /api/v1/tenants"
+      },
+      "TenantUpdate": {
+        "properties": {
+          "tenant_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Name"
+          },
+          "subscription_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscription Ids"
+          },
+          "plan_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "alert_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Email"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "title": "TenantUpdate",
+        "description": "Payload for PATCH /api/v1/tenants/{id} \u2014 all fields optional"
+      },
+      "TrajectoryResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "horizon_days": {
+            "type": "integer",
+            "title": "Horizon Days"
+          },
+          "daily_waste_burn_eur": {
+            "type": "number",
+            "title": "Daily Waste Burn Eur"
+          },
+          "cumulative_inaction_eur": {
+            "type": "number",
+            "title": "Cumulative Inaction Eur"
+          },
+          "monthly_recoverable_eur": {
+            "type": "number",
+            "title": "Monthly Recoverable Eur"
+          },
+          "annual_recoverable_eur": {
+            "type": "number",
+            "title": "Annual Recoverable Eur"
+          },
+          "baseline": {
+            "items": {
+              "$ref": "#/components/schemas/ForecastPointModel"
+            },
+            "type": "array",
+            "title": "Baseline"
+          },
+          "optimized": {
+            "items": {
+              "$ref": "#/components/schemas/ForecastPointModel"
+            },
+            "type": "array",
+            "title": "Optimized"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "horizon_days",
+          "daily_waste_burn_eur",
+          "cumulative_inaction_eur",
+          "monthly_recoverable_eur",
+          "annual_recoverable_eur"
+        ],
+        "title": "TrajectoryResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WasteItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "waste_item"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "subscription_id": {
+            "type": "string",
+            "title": "Subscription Id"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id"
+          },
+          "resource_name": {
+            "type": "string",
+            "title": "Resource Name"
+          },
+          "resource_group": {
+            "type": "string",
+            "title": "Resource Group"
+          },
+          "resource_type": {
+            "type": "string",
+            "title": "Resource Type",
+            "default": ""
+          },
+          "waste_type": {
+            "$ref": "#/components/schemas/WasteType"
+          },
+          "monthly_cost_eur": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Monthly Cost Eur",
+            "description": "Current monthly cost of this resource"
+          },
+          "saving_eur": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Saving Eur",
+            "description": "Estimated saving if remediated"
+          },
+          "saving_pct": {
+            "type": "number",
+            "title": "Saving Pct",
+            "description": "Saving as % of current cost",
+            "default": 0.0
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation",
+            "description": "Human-readable action (EN)"
+          },
+          "recommendation_it": {
+            "type": "string",
+            "title": "Recommendation It",
+            "description": "Raccomandazione in italiano"
+          },
+          "advisor_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Advisor Ref",
+            "description": "Azure Advisor recommendation ID"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Evidence",
+            "description": "Supporting metrics: cpu_avg, disk_state, etc."
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "resolved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved By"
+          },
+          "snoozed_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snoozed Until"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "subscription_id",
+          "resource_id",
+          "resource_name",
+          "resource_group",
+          "waste_type",
+          "monthly_cost_eur",
+          "saving_eur",
+          "priority",
+          "recommendation",
+          "recommendation_it"
+        ],
+        "title": "WasteItem",
+        "description": "Detected waste item \u2014 Cosmos container: waste_items"
+      },
+      "WasteResolve": {
+        "properties": {
+          "resolved_by": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Resolved By"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resolved_by"
+        ],
+        "title": "WasteResolve"
+      },
+      "WasteType": {
+        "type": "string",
+        "enum": [
+          "idle_vm",
+          "unattached_disk",
+          "orphan_public_ip",
+          "oversized_vm",
+          "dev_test_eligible",
+          "reserved_instance",
+          "idle_app_service",
+          "unused_load_balancer",
+          "old_snapshots",
+          "cold_storage",
+          "duplicated_backup",
+          "expired_cert"
+        ],
+        "title": "WasteType"
+      }
+    }
+  }
+}

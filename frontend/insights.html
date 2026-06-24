@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CloudLens — Business Insights</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+    --txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;
+    --teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;--red:#f0506e;--redDim:#4a1622;
+    --blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--purpleDim:#2e2548;
+    --mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55;padding:22px}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .wrap{max-width:1080px;margin:0 auto}
+
+  .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+  .head h1{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  .head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+  .head .tenant{font-family:var(--mono);font-size:12px;color:var(--txt2);border:1px solid var(--line);border-radius:20px;padding:5px 13px}
+
+  /* exec summary hero */
+  .exec{background:linear-gradient(135deg,#10243a 0,#131b24 60%);border:1px solid #1e3a52;border-radius:14px;padding:20px 24px;margin-bottom:16px;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+  .score{flex-shrink:0;text-align:center}
+  .score .ring{width:92px;height:92px;position:relative}
+  .score .ring svg{transform:rotate(-90deg)}
+  .score .num{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:26px;font-weight:700}
+  .score .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);margin-top:6px}
+  .exec .body{flex:1;min-width:260px}
+  .exec .body .t{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);margin-bottom:7px}
+  .exec .body p{font-size:14px;line-height:1.6;color:var(--txt)}
+  .exec .body p.it{font-size:12.5px;color:var(--txt2);font-style:italic;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+
+  .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-bottom:16px}
+  @media(max-width:840px){.grid2{grid-template-columns:1fr}}
+
+  .card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px}
+  .card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+  .card .cap{font-size:12px;color:var(--txt3);margin-bottom:15px}
+
+  /* insights list */
+  .ins{display:flex;gap:13px;padding:13px 0;border-bottom:1px solid var(--lineSoft)}
+  .ins:last-child{border-bottom:0}
+  .ins .rk{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0}
+  .ins .c{flex:1;min-width:0}
+  .ins .c .hl{font-size:13.5px;line-height:1.5;font-weight:450}
+  .ins .c .ac{font-size:12px;color:var(--txt2);margin-top:5px;display:flex;align-items:flex-start;gap:6px}
+  .ins .c .ac::before{content:'→';color:var(--teal)}
+  .ins .imp{font-family:var(--mono);font-size:13px;font-weight:600;flex-shrink:0;text-align:right;min-width:74px}
+  .sev-critical .rk{background:var(--redDim);color:var(--red)} .sev-critical .imp{color:var(--red)}
+  .sev-high .rk{background:var(--amberDim);color:var(--amber)} .sev-high .imp{color:var(--amber)}
+  .sev-medium .rk{background:var(--blueDim);color:var(--blue)} .sev-medium .imp{color:var(--blue)}
+  .sev-info .rk{background:var(--panel2);color:var(--txt2)} .sev-info .imp{color:var(--txt2)}
+  .cat{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--txt3);margin-left:8px}
+
+  /* chargeback */
+  .cb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{background:transparent;border:0;color:var(--txt2);font-family:var(--mono);font-size:11px;padding:6px 11px;cursor:pointer}
+  .seg button.on{background:var(--panel2);color:var(--teal)}
+  .seg button:not(:last-child){border-right:1px solid var(--line)}
+  .cov{font-size:11px;color:var(--txt3);font-family:var(--mono)}
+
+  .grp{padding:11px 0;border-bottom:1px solid var(--lineSoft)}
+  .grp:last-child{border-bottom:0}
+  .grp .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .grp .nm{font-size:13.5px;font-weight:500;display:flex;align-items:center;gap:8px}
+  .grp .amt{font-family:var(--mono);font-size:13.5px;font-weight:600}
+  .grp .bar{height:7px;background:var(--line);border-radius:4px;overflow:hidden;display:flex}
+  .grp .bar .direct{height:100%;background:linear-gradient(90deg,var(--teal),#1a9c8a)}
+  .grp .bar .shared{height:100%;background:repeating-linear-gradient(45deg,var(--amber),var(--amber) 3px,transparent 3px,transparent 6px);opacity:.6}
+  .grp .meta{display:flex;justify-content:space-between;font-size:11px;color:var(--txt3);margin-top:5px;font-family:var(--mono)}
+  .bstat{font-size:9.5px;font-family:var(--mono);text-transform:uppercase;padding:1px 7px;border-radius:5px;letter-spacing:.03em}
+  .bstat.breach{background:var(--redDim);color:var(--red)} .bstat.warning{background:var(--amberDim);color:var(--amber)} .bstat.ok{background:var(--tealDim);color:var(--teal)}
+  .cb-legend{display:flex;gap:16px;font-size:11px;color:var(--txt3);margin-top:12px}
+  .cb-legend span{display:flex;align-items:center;gap:6px}
+  .cb-legend i{width:14px;height:7px;border-radius:2px;display:inline-block}
+
+  /* budgets */
+  .bud{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--lineSoft)}
+  .bud:last-child{border-bottom:0}
+  .bud .ti{flex:1;min-width:0}
+  .bud .ti b{font-size:13.5px;display:block}.bud .ti span{font-size:11px;color:var(--txt3);font-family:var(--mono)}
+  .bud .gauge{flex:1.4;max-width:200px}
+  .bud .gauge .tr{height:8px;background:var(--line);border-radius:4px;overflow:hidden;position:relative}
+  .bud .gauge .tr i{display:block;height:100%;border-radius:4px}
+  .bud .gauge .marks{font-size:10px;color:var(--txt3);font-family:var(--mono);margin-top:3px;display:flex;justify-content:space-between}
+  .bud .pc{font-family:var(--mono);font-size:14px;font-weight:600;min-width:48px;text-align:right}
+
+  .addbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt2);font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:7px;cursor:pointer}
+  .addbtn:hover{color:var(--teal)}
+  .note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2 class="sr-only">CloudLens business insights console — anomaly detection, chargeback, budgets, and executive insights</h2>
+
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · Business Insights</h1>
+    <span class="tenant">Acme Manufacturing SpA · enterprise</span>
+  </div>
+
+  <!-- EXECUTIVE SUMMARY -->
+  <div class="exec">
+    <div class="score">
+      <div class="ring">
+        <svg width="92" height="92" viewBox="0 0 92 92">
+          <circle cx="46" cy="46" r="40" fill="none" stroke="var(--line)" stroke-width="7"/>
+          <circle id="score-arc" cx="46" cy="46" r="40" fill="none" stroke="var(--teal)" stroke-width="7" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
+        </svg>
+        <div class="num" id="score-num">—</div>
+      </div>
+      <div class="lbl">efficiency</div>
+    </div>
+    <div class="body">
+      <div class="t">Executive summary</div>
+      <p id="summary">—</p>
+      <p class="it" id="summary-it">—</p>
+    </div>
+  </div>
+
+  <!-- INSIGHTS + CHARGEBACK -->
+  <div class="grid2">
+    <div class="card">
+      <h2>⬡ Ranked insights</h2>
+      <div class="cap">Fused from waste, anomalies, budgets, allocation & forecast — ordered by severity × € impact.</div>
+      <div id="insights"></div>
+    </div>
+
+    <div class="card">
+      <div class="cb-head">
+        <div>
+          <h2 style="margin-bottom:3px;">◰ Chargeback</h2>
+          <div class="cov" id="coverage"></div>
+        </div>
+        <div class="seg" id="strategy">
+          <button data-s="proportional" class="on">proportional</button>
+          <button data-s="even">even</button>
+          <button data-s="showback">showback</button>
+        </div>
+      </div>
+      <div id="groups"></div>
+      <div class="cb-legend">
+        <span><i style="background:var(--teal)"></i> direct</span>
+        <span><i style="background:repeating-linear-gradient(45deg,var(--amber),var(--amber) 2px,transparent 2px,transparent 4px)"></i> allocated shared</span>
+      </div>
+      <div class="note" id="cb-note"></div>
+    </div>
+  </div>
+
+  <!-- BUDGETS -->
+  <div class="card">
+    <div class="cb-head">
+      <div><h2 style="margin-bottom:3px;">◷ Budgets</h2><div class="cap" style="margin:0;">Spend-to-date vs. forecast month-end projection.</div></div>
+      <button class="addbtn" onclick="sendPrompt('Create a new budget for CloudLens')">+ new budget</button>
+    </div>
+    <div id="budgets"></div>
+  </div>
+</div>
+
+<script>
+const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
+
+/* mock data shaped to: GET /insights/{t}/digest, /insights/{t}/chargeback, /budgets/{t}/{b}/status */
+const DIGEST={
+  efficiency_score:78,
+  monthly_spend_eur:48200, monthly_recoverable_eur:9120,
+  headline_summary:"Acme Manufacturing spent €48,200 this period with an efficiency score of 78/100. €9,120 (19%) is recoverable. Top priority: €9,120/month is recoverable (€109,440/year) across 14 findings; the single biggest is vm-stage-erp-01 at €2,465/mo.",
+  headline_summary_it:"Acme Manufacturing ha speso €48.200 nel periodo con un punteggio di efficienza di 78/100. €9.120 (19%) sono recuperabili. Priorità principale: vm-stage-erp-01 a €2.465/mese.",
+  insights:[
+    {rank:1,category:"waste",severity:"critical",impact_eur:9120,headline:"€9,120/month is recoverable (€109,440/year) across 14 findings; the single biggest is vm-stage-erp-01 at €2,465/mo.",action:"Action the 3 critical items first to recover €4,200/mo within a week."},
+    {rank:2,category:"anomaly",severity:"high",impact_eur:1240,headline:"Unexpected spend spike of €1,240 on 2026-06-08, driven by Virtual Machines — 4.2σ above the seasonal forecast.",action:"Investigate rg-staging; if new steady-state, update the budget — else it's fresh waste."},
+    {rank:3,category:"budget",severity:"high",impact_eur:1800,headline:"Budget 'Engineering' (€11,000/mo) is at 92% consumed and is projected to hit 113% by month-end.",action:"Reallocate budget or accelerate remediation in this scope."},
+    {rank:4,category:"forecast",severity:"medium",impact_eur:4600,headline:"Spend is trending up 10% — month-end projected at €52,800.",action:"Validate the increase is intended capacity growth, not drift."},
+    {rank:5,category:"allocation",severity:"info",impact_eur:18900,headline:"Engineering accounts for 39% of spend (€18,900/mo) — the largest cost-center.",action:"Focus optimization and budget governance on this cost-center first."},
+  ]
+};
+
+const CHARGEBACK={
+  proportional:{coverage:80,untagged:9640,note:"€9,640 untagged spend distributed proportionally to each cost-center's tagged share.",
+    groups:[
+      {name:"engineering",direct:15200,shared:3700,total:18900,pct:39,rc:142,budget:11000,status:"breach"},
+      {name:"data-platform",direct:9800,shared:2385,total:12185,pct:25,rc:88},
+      {name:"manufacturing-iot",direct:7100,shared:1728,total:8828,pct:18,rc:64,budget:9000,status:"warning"},
+      {name:"marketing",direct:3760,shared:915,total:4675,pct:10,rc:31},
+    ]},
+  even:{coverage:80,untagged:9640,note:"€9,640 untagged spend split evenly across 4 cost-centers.",
+    groups:[
+      {name:"engineering",direct:15200,shared:2410,total:17610,pct:37,rc:142,budget:11000,status:"breach"},
+      {name:"data-platform",direct:9800,shared:2410,total:12210,pct:25,rc:88},
+      {name:"manufacturing-iot",direct:7100,shared:2410,total:9510,pct:20,rc:64,budget:9000,status:"breach"},
+      {name:"marketing",direct:3760,shared:2410,total:6170,pct:13,rc:31},
+    ]},
+  showback:{coverage:80,untagged:9640,note:"Showback mode: untagged spend shown separately, not charged back.",
+    groups:[
+      {name:"engineering",direct:15200,shared:0,total:15200,pct:32,rc:142,budget:11000,status:"breach"},
+      {name:"data-platform",direct:9800,shared:0,total:9800,pct:20,rc:88},
+      {name:"manufacturing-iot",direct:7100,shared:0,total:7100,pct:15,rc:64,budget:9000,status:"ok"},
+      {name:"marketing",direct:3760,shared:0,total:3760,pct:8,rc:31},
+      {name:"Unallocated",direct:9640,shared:0,total:9640,pct:20,rc:0},
+    ]},
+};
+
+const BUDGETS=[
+  {name:"Engineering",scope:"cost_center=engineering",amount:11000,spend:10120,pct:92,proj:113,status:"projected_breach"},
+  {name:"Manufacturing IoT",scope:"cost_center=manufacturing-iot",amount:9000,spend:6400,pct:71,proj:88,status:"warning"},
+  {name:"Tenant total",scope:"tenant",amount:50000,spend:31200,pct:62,proj:97,status:"ok"},
+];
+
+function scoreColor(s){return s>=75?'var(--teal)':s>=50?'var(--amber)':'var(--red)';}
+function budColor(p){return p>=100?'var(--red)':p>=85?'var(--amber)':'var(--teal)';}
+
+function renderDigest(){
+  const s=DIGEST.efficiency_score;
+  document.getElementById('score-num').textContent=s;
+  document.getElementById('score-num').style.color=scoreColor(s);
+  const arc=document.getElementById('score-arc');
+  arc.style.stroke=scoreColor(s);
+  arc.style.strokeDashoffset=251-(251*s/100);
+  document.getElementById('summary').textContent=DIGEST.headline_summary;
+  document.getElementById('summary-it').textContent=DIGEST.headline_summary_it;
+
+  document.getElementById('insights').innerHTML=DIGEST.insights.map(i=>`
+    <div class="ins sev-${i.severity}">
+      <div class="rk">${i.rank}</div>
+      <div class="c">
+        <div class="hl">${i.headline}<span class="cat">${i.category}</span></div>
+        <div class="ac">${i.action}</div>
+      </div>
+      <div class="imp">${EUR(i.impact_eur)}</div>
+    </div>`).join('');
+}
+
+let STRATEGY='proportional';
+function renderChargeback(){
+  const d=CHARGEBACK[STRATEGY];
+  document.getElementById('coverage').textContent=`${d.coverage}% tagging coverage · ${EUR(d.untagged)} untagged`;
+  document.getElementById('cb-note').textContent=d.note;
+  const max=Math.max(...d.groups.map(g=>g.total));
+  document.getElementById('groups').innerHTML=d.groups.map(g=>{
+    const dw=g.total>0?(g.direct/max*100):0, sw=g.total>0?(g.shared/max*100):0;
+    const bud=g.budget?`<span class="bstat ${g.status}">${g.status}</span>`:'';
+    return `<div class="grp">
+      <div class="top"><div class="nm">${g.name} ${bud}</div><div class="amt">${EUR(g.total)}<span style="font-size:11px;color:var(--txt3);font-weight:400;"> · ${g.pct}%</span></div></div>
+      <div class="bar"><div class="direct" style="width:${dw}%"></div><div class="shared" style="width:${sw}%"></div></div>
+      <div class="meta"><span>direct ${EUR(g.direct)}${g.shared?' + shared '+EUR(g.shared):''}</span><span>${g.rc?g.rc+' resources':''}${g.budget?' · budget '+EUR(g.budget):''}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderBudgets(){
+  document.getElementById('budgets').innerHTML=BUDGETS.map(b=>{
+    const col=budColor(b.proj);
+    return `<div class="bud">
+      <div class="ti"><b>${b.name}</b><span>${b.scope}</span></div>
+      <div class="gauge">
+        <div class="tr">
+          <i style="width:${Math.min(100,b.pct)}%;background:${budColor(b.pct)}"></i>
+          ${b.proj>b.pct?`<div style="position:absolute;left:${Math.min(100,b.proj)}%;top:-2px;width:2px;height:12px;background:${col};opacity:.7;"></div>`:''}
+        </div>
+        <div class="marks"><span>${EUR(b.spend)} spent</span><span>proj ${b.proj}% · ${EUR(b.amount)}</span></div>
+      </div>
+      <div class="pc" style="color:${budColor(b.pct)}">${b.pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('strategy').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#strategy button').forEach(b=>b.classList.remove('on'));
+  e.target.classList.add('on'); STRATEGY=e.target.dataset.s; renderChargeback();
+});
+
+renderDigest(); renderChargeback(); renderBudgets();
+</script>
+</body>
+</html>

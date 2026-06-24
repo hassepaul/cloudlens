@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Technical Documentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--amber:#f5a524;--red:#f0506e;--blue:#4d9fff;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:var(--bg);color:var(--txt);font-size:14.5px;line-height:1.65;display:flex}
+nav{position:fixed;top:0;left:0;width:230px;height:100vh;background:var(--bg2);border-right:1px solid var(--lineSoft);
+overflow-y:auto;padding:22px 16px}
+nav .brand{font-family:var(--mono);font-weight:600;font-size:16px;color:var(--teal);margin-bottom:4px}
+nav .sub{font-size:11px;color:var(--txt3);margin-bottom:18px}
+nav a{display:block;color:var(--txt2);text-decoration:none;font-size:13px;padding:5px 8px;border-radius:6px;margin-bottom:1px}
+nav a:hover{background:var(--panel);color:var(--teal)}
+main{margin-left:230px;padding:36px 48px 80px;max-width:1000px}
+h1{font-family:var(--mono);font-size:30px;font-weight:600;letter-spacing:-.02em;margin-bottom:6px}
+h1 .dot{color:var(--teal)}
+.docsub{color:var(--txt2);font-size:14px;margin-bottom:30px;padding-bottom:18px;border-bottom:1px solid var(--lineSoft)}
+h2{font-family:var(--mono);font-size:21px;font-weight:600;margin:40px 0 14px;padding-top:14px;border-top:1px solid var(--lineSoft);color:var(--txt)}
+h3{font-family:var(--mono);font-size:16px;font-weight:600;margin:26px 0 10px;color:var(--teal)}
+h4{font-size:14px;font-weight:600;margin:18px 0 8px;color:var(--blue)}
+p{margin-bottom:12px;color:var(--txt2)}
+p.lead{color:var(--txt);font-size:15px}
+code{font-family:var(--mono);font-size:12.5px;background:var(--panel);padding:1px 6px;border-radius:5px;color:#a5e8dd}
+pre{background:#0a0f14;border:1px solid var(--lineSoft);border-radius:9px;padding:14px 16px;overflow-x:auto;margin:12px 0}
+pre code{background:none;padding:0;color:#d7e0ea;font-size:12px;line-height:1.6}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+th{text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+color:var(--txt3);padding:8px 10px;border-bottom:1px solid var(--line);font-weight:500}
+td{padding:8px 10px;border-bottom:1px solid var(--lineSoft);color:var(--txt2);vertical-align:top}
+tr:hover td{background:var(--bg2)}
+td.typ,td.req{font-family:var(--mono);font-size:12px;color:var(--amber)}
+td.req{color:var(--teal);text-align:center}
+.method{font-family:var(--mono);font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:5px}
+.method.get{background:#13314d;color:var(--blue)} .method.post{background:#14463f;color:var(--teal)}
+.method.patch{background:#4a3410;color:var(--amber)} .method.delete{background:#4a1622;color:var(--red)}
+.api-group{margin-top:24px}
+.schema-name{margin-top:16px;color:var(--txt)}
+ol.steps li,ul.steps li{margin:0 0 10px 18px;color:var(--txt2)}
+.mermaid{background:var(--bg2);border:1px solid var(--lineSoft);border-radius:11px;padding:18px;margin:14px 0;text-align:center}
+.footer-note{margin-top:30px;padding-top:16px;border-top:1px solid var(--lineSoft);font-size:12px;color:var(--txt3);text-align:center}
+em{color:var(--txt);font-style:normal;border-bottom:1px dotted var(--txt3)}
+</style></head>
+<body>
+<nav>
+  <div class="brand">CloudLens</div>
+  <div class="sub">Technical Documentation v1.0</div>
+  <a href="#func">1. Functional spec</a>
+<a href="#arch">2. Architecture</a>
+<a href="#hld">&nbsp;&nbsp;2.1 HLD</a>
+<a href="#lld">&nbsp;&nbsp;2.2 LLD</a>
+<a href="#erd">&nbsp;&nbsp;2.3 Data model</a>
+<a href="#class">&nbsp;&nbsp;2.4 Class diagram</a>
+<a href="#proc">&nbsp;&nbsp;2.5 Process flows</a>
+<a href="#state">&nbsp;&nbsp;2.6 State flows</a>
+<a href="#multicloud">3. Multi-cloud &amp; AI</a>
+<a href="#mapping">4. Data mapping</a>
+<a href="#optimization">5. Optimization</a>
+<a href="#security">6. Security &amp; compliance</a>
+<a href="#api">7. API reference</a>
+<a href="#deploy">8. Deployment</a>
+<a href="#wiring">9. Wiring guide</a>
+<a href="#user">10. User guide</a>
+<a href="#glossary">11. Glossary</a>
+</nav>
+<main>
+  <h1><span class="dot">◈</span> CloudLens Technical Documentation</h1>
+  <div class="docsub">Multi-Cloud FinOps Managed Service · complete reference: functional spec, architecture,
+  multi-cloud, optimization, security &amp; compliance, API, deployment, wiring, and user guide · June 2026 · CONFIDENTIAL</div>
+  
+<h2 id="func">1. Functional Specification</h2>
+<p class="lead">CloudLens is a multi-tenant, read-only multi-cloud FinOps managed service. It ingests
+cost and resource data from customer subscriptions across Microsoft Azure, AWS, Google Cloud,
+Alibaba Cloud, and Oracle Cloud Infrastructure — plus AI/LLM spend (Amazon Bedrock, OpenAI,
+Anthropic) — normalizes everything onto the FOCUS billing standard, detects waste, forecasts
+spend, detects anomalies, allocates 100% of cost to business units, manages commitments, and
+synthesises everything into ranked, multilingual business insights — delivered through a REST API
+and a drill-down console available in eight EU languages.</p>
+
+<h3>1.1 Goals and non-goals</h3>
+<table class="data">
+<thead><tr><th>Goal</th><th>Non-goal</th></tr></thead>
+<tbody>
+<tr><td>Surface recoverable spend with concrete, quantified actions</td><td>Make any change to customer resources (read-only by architecture)</td></tr>
+<tr><td>Forecast spend and the cost of <em>not</em> acting on waste</td><td>Replace Azure-native billing as the system of record</td></tr>
+<tr><td>Allocate cost to teams/cost-centres (chargeback/showback)</td><td>Provision or manage customer infrastructure</td></tr>
+<tr><td>Run on the cheapest viable infrastructure (scale-to-zero)</td><td>Real-time (sub-hourly) cost streaming</td></tr>
+</tbody></table>
+
+<h3>1.2 Personas</h3>
+<table class="data">
+<thead><tr><th>Persona</th><th>Needs</th><th>Primary surfaces</th></tr></thead>
+<tbody>
+<tr><td>CloudLens operator (MSP)</td><td>Onboard tenants, manage the platform</td><td>Tenant API (API-key), deploy script</td></tr>
+<tr><td>Customer FinOps lead</td><td>See recoverable spend, chargeback, budgets</td><td>Console, insights digest, chargeback view</td></tr>
+<tr><td>Customer engineering director</td><td>Act on waste, understand anomalies</td><td>Drill-down explorer, waste detail, roadmap</td></tr>
+<tr><td>Customer CFO / finance</td><td>Forecast, budget breach, exec summary</td><td>Forecast view, budget gauges, digest summary</td></tr>
+</tbody></table>
+
+<h3>1.3 Feature catalogue</h3>
+<table class="data">
+<thead><tr><th>#</th><th>Capability</th><th>What it does</th><th>Endpoint(s)</th></tr></thead>
+<tbody>
+<tr><td>F1</td><td>Tenant management</td><td>CRUD for customer tenants; SP credentials stored in Key Vault; soft-delete</td><td><code>/tenants</code></td></tr>
+<tr><td>F2</td><td>Cost ingestion</td><td>Nightly inline job pulls cost + resource state, enriches with tags, persists (90d TTL)</td><td><code>/ingest/{tid}</code></td></tr>
+<tr><td>F3</td><td>Cost analytics</td><td>Summary with period-over-period delta, breakdown by service/RG/location, daily trend</td><td><code>/costs/{tid}*</code></td></tr>
+<tr><td>F4</td><td>Waste detection</td><td>12 rules (idle VM, unattached disk, orphan IP, oversized, dev/test, RI, idle app service, unused LB, old snapshots, cold storage, dup backup, expired cert) with bilingual recommendations</td><td><code>/waste/{tid}</code></td></tr>
+<tr><td>F5</td><td>Spend forecast</td><td>Holt-Winters weekly-seasonal forecast with backtest MAPE and confidence</td><td><code>/forecast/{tid}</code></td></tr>
+<tr><td>F6</td><td>Cost of inaction</td><td>Dual-trajectory: do-nothing vs. act; daily burn; cumulative inaction</td><td><code>/forecast/{tid}/cost-of-inaction</code></td></tr>
+<tr><td>F7</td><td>Remediation roadmap</td><td>ROI-ordered phased plan; run-rate bends down per phase</td><td><code>/forecast/{tid}/roadmap</code></td></tr>
+<tr><td>F8</td><td>Budget-breach prediction</td><td>Date budget is exceeded on each trajectory</td><td><code>/forecast/{tid}/budget-breach</code></td></tr>
+<tr><td>F9</td><td>Anomaly detection</td><td>Days outside the seasonal prediction band, attributed to a driver service/RG</td><td><code>/insights/{tid}/anomalies</code></td></tr>
+<tr><td>F10</td><td>Chargeback / showback</td><td>Allocate spend by tag dimension; distribute shared/untagged cost (proportional/even/showback); per-group budgets</td><td><code>/insights/{tid}/chargeback</code></td></tr>
+<tr><td>F11</td><td>Business insights digest</td><td>Fuse waste+anomaly+budget+chargeback+forecast into ranked bilingual statements + efficiency score</td><td><code>/insights/{tid}/digest</code></td></tr>
+<tr><td>F12</td><td>Budgets</td><td>First-class budget objects (tenant or tag-scoped) with live status + forecast projection</td><td><code>/budgets/{tid}*</code></td></tr>
+<tr><td>F13</td><td>PDF reports</td><td>Bilingual monthly PDF generated to Blob, downloaded via 1h SAS URL</td><td><code>/reports/{tid}*</code></td></tr>
+<tr><td>F14</td><td>Multi-cloud ingestion</td><td>Provider adapters (Azure, AWS, GCP, Alibaba, OCI) normalize native billing onto the FOCUS standard</td><td>provider layer</td></tr>
+<tr><td>F15</td><td>AI/LLM cost tracking</td><td>Amazon Bedrock, OpenAI, and Anthropic spend tracked as first-class FOCUS "AI and Machine Learning" category</td><td><code>/multicloud/{tid}/spend</code></td></tr>
+<tr><td>F16</td><td>Cross-cloud spend</td><td>Unified spend grouped by provider with AI/LLM broken out, localised labels</td><td><code>/multicloud/{tid}/spend</code></td></tr>
+<tr><td>F17</td><td>100% allocation</td><td>Rule chain (tag → tag-map → account → name-pattern → shared split) leaves €0 unallocated, fully auditable</td><td><code>/multicloud/{tid}/allocate</code></td></tr>
+<tr><td>F18</td><td>Commitment management</td><td>Coverage, utilization, idle-commitment waste, and conservative purchase recommendations across providers (RI/SP/CUD)</td><td><code>/multicloud/{tid}/commitments</code></td></tr>
+<tr><td>F19</td><td>Multilingual UI</td><td>Eight EU languages (EN/IT/DE/FR/ES/NL/PT/PL) via label catalog + per-request localisation</td><td><code>/multicloud/labels</code></td></tr>
+<tr><td>F20</td><td>Multi-cloud drill-down</td><td>Portfolio → Provider → Account/Subscription → Service → Resource, aggregated by level over FOCUS records</td><td><code>/drilldown/{tid}</code></td></tr>
+<tr><td>F21</td><td>Resource-level anomalies</td><td>Flags the specific resource whose daily cost spiked (Holt-Winters band or robust median+MAD), with a noise floor</td><td><code>/drilldown/{tid}/resource-anomalies</code></td></tr>
+<tr><td>F22</td><td>Alert rules &amp; events</td><td>Five rule types (budget, spend spike, resource anomaly, waste, idle commitment); tamper-evident event log; in-app/webhook/email channels</td><td><code>/alerts/{tid}/*</code></td></tr>
+<tr><td>F23</td><td>Rightsizing engine</td><td>CloudLens's own CPU+memory recommendations with cross-family downgrades and a headroom buffer — not a resold advisor</td><td><code>/optimization/{tid}/rightsizing</code></td></tr>
+<tr><td>F24</td><td>Scheduling</td><td>On/off schedule recommendations for non-prod 24/7 resources (nights &amp; weekends), quantified savings</td><td><code>/optimization/{tid}/scheduling</code></td></tr>
+<tr><td>F25</td><td>Utilization dashboards</td><td>Estate-wide CPU/memory with over-capacity scoring on the binding dimension; reclaimable spend</td><td><code>/optimization/{tid}/utilization</code></td></tr>
+<tr><td>F26</td><td>Realized-savings ledger</td><td>Closes the ROI loop: identified → actioned → realized on the bill, with realization rate</td><td><code>/optimization/{tid}/savings/*</code></td></tr>
+<tr><td>F27</td><td>Tamper-evident audit log</td><td>SHA-256 hash-chained, append-only record of security &amp; change events; integrity verifiable</td><td><code>/admin/audit</code></td></tr>
+<tr><td>F28</td><td>SOC 2 control matrix</td><td>Trust Services Criteria mapped to CloudLens controls with implementation status</td><td><code>/admin/compliance/matrix</code></td></tr>
+<tr><td>F29</td><td>CLI evidence export</td><td>Per-control CLI commands that prove a control is live on the deployed resources; export logs itself</td><td><code>/admin/compliance/evidence-export</code></td></tr>
+<tr><td>F30</td><td>Tenant isolation enforcement</td><td>Bearer token scoped to tenant A is rejected (403) for tenant B (require_tenant_scope)</td><td>auth layer</td></tr>
+</tbody></table>
+
+<h3>1.4 Non-functional requirements</h3>
+<table class="data">
+<thead><tr><th>Attribute</th><th>Requirement</th></tr></thead>
+<tbody>
+<tr><td>Cost</td><td>~€27–48/month at 10 tenants (&lt;6% of Starter plan revenue)</td></tr>
+<tr><td>Isolation</td><td>Tenant data partitioned by <code>tenant_id</code> at every layer; cross-tenant queries structurally prevented</td></tr>
+<tr><td>Security</td><td>Read-only SP (Reader + Cost Management Reader); managed identity for all internal calls; no secrets in code</td></tr>
+<tr><td>Availability</td><td>Scale-to-zero; cold-start tolerated; rate-limiting never fails the request (degrades to default plan)</td></tr>
+<tr><td>Observability</td><td>Structured JSON logs with request_id; health endpoint with Cosmos dependency check</td></tr>
+<tr><td>Localisation</td><td>All recommendations and insights bilingual EN/IT</td></tr>
+</tbody></table>
+
+  
+<h2 id="arch">2. Architecture</h2>
+
+<h3 id="hld">2.1 High-level design (HLD)</h3>
+<p>Five logical layers map to Azure services. Customer subscriptions are accessed read-only via
+service principals; a nightly Container Apps Job pulls and processes data inline (no message queue);
+the FastAPI backend serves the API; Cosmos/Blob/Key Vault persist data; a Static Web App renders the
+console.</p>
+<div class="mermaid">
+flowchart TB
+  subgraph CUST["Customer Azure Tenants (read-only)"]
+    SUB1["Subscription A"]
+    SUB2["Subscription B"]
+  end
+  subgraph AZAPI["Azure Platform APIs"]
+    CM["Cost Management API"]
+    ADV["Advisor API"]
+    RG["Resource Graph API"]
+  end
+  subgraph CL["CloudLens (single Resource Group, scale-to-zero)"]
+    JOB["Ingestion Job<br/>(ACA Job, 02:00 UTC, inline)"]
+    API["FastAPI Backend<br/>(Container Apps)"]
+    subgraph STORE["Storage layer"]
+      COSMOS[("Cosmos DB<br/>4 containers, serverless")]
+      BLOB[("Blob Storage<br/>PDF reports")]
+      KV[("Key Vault<br/>SP credentials")]
+    end
+    FE["Static Web App<br/>Drill-down + Forecast + Insights"]
+  end
+  SUB1 & SUB2 -->|service principal| CM & ADV & RG
+  CM & ADV & RG -->|nightly pull| JOB
+  JOB -->|waste engine, persist| COSMOS
+  JOB -->|read SP creds| KV
+  API --> COSMOS & BLOB & KV
+  FE -->|Bearer JWT| API
+  classDef store fill:#14463f,stroke:#2dd4bf,color:#e6edf3;
+  class COSMOS,BLOB,KV store;
+
+</div>
+
+<h3 id="lld">2.2 Low-level design (LLD) — component map</h3>
+<p>Routers depend on cross-cutting middleware (auth, rate-limit, exceptions, logging) and delegate to
+services. The insights layer composes the anomaly, chargeback, and forecast services.</p>
+<div class="mermaid">
+flowchart LR
+  subgraph ROUTERS["Routers (/api/v1)"]
+    R1["tenants"]
+    R2["costs / waste"]
+    R4["forecast"]
+    R5["insights"]
+    R6["budgets"]
+    R10["multicloud"]
+    R11["drilldown"]
+    R12["alerts"]
+    R13["optimization"]
+    R14["admin / compliance"]
+    R8["ingest / health"]
+  end
+  subgraph MW["Cross-cutting"]
+    AUTH["auth<br/>API-key + JWKS<br/>+ tenant scope"]
+    RL["rate_limit<br/>token bucket"]
+    EXC["exceptions<br/>typed"]
+    LOG["logging + audit<br/>structlog + hash chain"]
+  end
+  subgraph SERVICES["Services"]
+    S1["azure_cost / providers<br/>(AWS/GCP/Alibaba/OCI/AI)"]
+    S3["waste_engine<br/>12 rules"]
+    S4["forecast"]
+    S5["anomaly<br/>tenant + resource"]
+    S6["chargeback / allocation"]
+    S7["insights"]
+    SC["commitments"]
+    SO["rightsizing / scheduling<br/>/ utilization"]
+    SK["compliance + audit"]
+    S8["cosmos / blob / keyvault"]
+  end
+  ROUTERS --> MW
+  R1 --> S8
+  R2 --> S8
+  R4 --> S4
+  R5 --> S5 & S6 & S7 & S4
+  R6 --> S4 & S8
+  R10 --> S1 & S6 & SC
+  R11 --> S5 & S8
+  R12 --> S5 & S8
+  R13 --> SO & S8
+  R14 --> SK & S8
+  R8 --> S1 & S3 & S8
+  S4 --> S5
+  S5 & S6 & S4 --> S7
+
+</div>
+
+<h3 id="erd">2.3 Data model (ERD)</h3>
+<p>Four Cosmos containers, all partitioned by <code>tenant_id</code> (tenants by <code>id</code>).
+Budgets are co-located in the waste_items container, discriminated by <code>type='budget'</code>.</p>
+<div class="mermaid">
+erDiagram
+  TENANTS ||--o{ COST_RECORDS : tenant_id
+  TENANTS ||--o{ WASTE_ITEMS : tenant_id
+  TENANTS ||--o{ REPORTS : tenant_id
+  TENANTS ||--o{ BUDGETS : tenant_id
+  TENANTS {
+    string id PK
+    string tenant_name
+    string plan_tier
+    bool active
+  }
+  COST_RECORDS {
+    string id PK
+    string tenant_id FK
+    date record_date
+    float cost_eur
+    map tags
+    int ttl "90d"
+  }
+  WASTE_ITEMS {
+    string id PK
+    string tenant_id FK
+    string waste_type
+    float saving_eur
+    string priority
+  }
+  REPORTS {
+    string id PK
+    string tenant_id FK
+    string status
+    string blob_url
+  }
+  BUDGETS {
+    string id PK
+    string tenant_id FK
+    float amount_eur
+    string scope_dimension
+  }
+
+</div>
+
+<h3 id="class">2.4 Class diagram — domain models</h3>
+<div class="mermaid">
+classDiagram
+  class TenantConfig {
+    +str id
+    +str tenant_name
+    +list~str~ subscription_ids
+    +PlanTier plan_tier
+    +str alert_email
+    +bool active
+    +str sp_secret_ref
+    +datetime last_ingested_at
+    +to_cosmos()
+    +from_cosmos()
+  }
+  class CostRecord {
+    +str id
+    +str tenant_id
+    +date record_date
+    +str service_name
+    +str resource_id
+    +str resource_group
+    +float cost_eur
+    +dict tags
+    +int ttl
+  }
+  class WasteItem {
+    +str id
+    +str tenant_id
+    +str resource_id
+    +WasteType waste_type
+    +float monthly_cost_eur
+    +float saving_eur
+    +Priority priority
+    +str recommendation
+    +str recommendation_it
+    +dict evidence
+    +datetime resolved_at
+  }
+  class ReportMeta {
+    +str id
+    +str tenant_id
+    +date period_start
+    +date period_end
+    +float total_spend_eur
+    +float total_waste_eur
+    +ReportStatus status
+    +str blob_url
+  }
+  class Budget {
+    +str id
+    +str tenant_id
+    +str name
+    +float amount_eur
+    +str scope_dimension
+    +str scope_value
+    +int warning_threshold_pct
+  }
+  TenantConfig "1" --> "*" CostRecord : owns
+  TenantConfig "1" --> "*" WasteItem : owns
+  TenantConfig "1" --> "*" ReportMeta : owns
+  TenantConfig "1" --> "*" Budget : owns
+  CostRecord ..> WasteItem : analysed into
+  WasteItem ..> ReportMeta : summarised in
+
+</div>
+
+<h3 id="proc">2.5 Process flows</h3>
+<h4>2.5.1 Nightly ingestion</h4>
+<div class="mermaid">
+sequenceDiagram
+  participant SCH as ACA Scheduler
+  participant JOB as Ingestion Job
+  participant KV as Key Vault
+  participant AZ as Azure APIs
+  participant WE as Waste Engine
+  participant DB as Cosmos DB
+  SCH->>JOB: trigger 02:00 UTC
+  loop for each active tenant
+    JOB->>KV: get sp-creds-{tenant_id}
+    KV-->>JOB: client_id / secret / tenant
+    JOB->>AZ: Cost Management query (daily)
+    AZ-->>JOB: columnar cost rows
+    JOB->>AZ: Resource Graph (state + tags, bulk KQL)
+    AZ-->>JOB: disk/IP/snapshot state + tags
+    JOB->>JOB: parse (name-based), enrich w/ tags
+    JOB->>DB: bulk upsert cost_records (TTL 90d)
+    JOB->>WE: run 12 rules (asyncio.gather)
+    WE-->>JOB: waste items (ranked by saving)
+    JOB->>DB: upsert waste_items
+    JOB->>DB: update tenant.last_ingested_at
+  end
+
+</div>
+<h4>2.5.2 Tenant onboarding</h4>
+<div class="mermaid">
+sequenceDiagram
+  participant C as Customer
+  participant OPS as CloudLens Ops
+  participant API as CloudLens API
+  participant KV as Key Vault
+  participant DB as Cosmos DB
+  C->>C: az ad sp create-for-rbac (Reader)
+  C->>C: assign Cost Management Reader
+  C->>OPS: share client_id / secret / tenant (secure)
+  OPS->>KV: store sp-creds-{tenant_id}
+  OPS->>API: POST /api/v1/tenants (X-API-Key)
+  API->>API: validate SP format + email
+  API->>KV: store SP creds (deterministic id)
+  API->>DB: upsert tenant config
+  API-->>OPS: 201 TenantConfig
+  note over API,DB: First ingest at next 02:00 UTC,<br/>or POST /ingest/{id} on demand
+
+</div>
+<h4>2.5.3 Authenticated read request</h4>
+<div class="mermaid">
+sequenceDiagram
+  participant FE as Frontend SPA
+  participant API as FastAPI
+  participant RL as Rate limiter
+  participant DB as Cosmos DB
+  FE->>API: GET /api/v1/insights/{tid}/digest (Bearer)
+  API->>API: verify JWT (JWKS) + tenant scope
+  API->>RL: check per-tenant bucket
+  alt within limit
+    API->>DB: query cost/waste/tags
+    DB-->>API: rows
+    API->>API: fuse waste+anomaly+chargeback+forecast
+    API-->>FE: 200 InsightDigest (ranked, bilingual)
+  else exceeded
+    API-->>FE: 429 Retry-After
+  end
+
+</div>
+
+<h3 id="state">2.6 State flows</h3>
+<h4>2.6.1 Waste item lifecycle</h4>
+<div class="mermaid">
+stateDiagram-v2
+  [*] --> Open: detected by waste engine
+  Open --> Snoozed: PATCH resolve (snooze 30d)
+  Snoozed --> Open: snooze expires
+  Open --> Resolved: PATCH resolve (resolved_by)
+  Snoozed --> Resolved: PATCH resolve
+  Resolved --> [*]
+  Open --> Open: re-detected next ingest (refreshed)
+
+</div>
+<h4>2.6.2 Report lifecycle</h4>
+<div class="mermaid">
+stateDiagram-v2
+  [*] --> pending: POST /reports/generate
+  pending --> generating: background task starts
+  generating --> ready: PDF built + uploaded to Blob
+  generating --> failed: build/upload error
+  ready --> [*]: download via 1h SAS URL
+  failed --> [*]
+
+</div>
+<h4>2.6.3 Budget status</h4>
+<div class="mermaid">
+stateDiagram-v2
+  [*] --> ok: consumed < warning_threshold
+  ok --> warning: consumed >= warning_threshold
+  ok --> projected_breach: forecast >= 100%
+  warning --> breach: consumed >= 100%
+  warning --> projected_breach: forecast >= 100%
+  projected_breach --> breach: consumed >= 100%
+  breach --> ok: new month / budget raised
+  warning --> ok: new month
+  projected_breach --> ok: remediation lowers run-rate
+
+</div>
+<h4>2.6.4 Tenant lifecycle</h4>
+<div class="mermaid">
+stateDiagram-v2
+  [*] --> Active: POST /tenants (active=true)
+  Active --> Active: nightly ingest
+  Active --> Inactive: DELETE (soft, active=false)
+  Inactive --> Active: PATCH active=true
+  Inactive --> [*]: data retained (TTL on cost_records)
+
+</div>
+
+  
+<h2 id="multicloud">3. Multi-Cloud &amp; AI/LLM</h2>
+<p class="lead">CloudLens ingests five clouds plus AI/LLM vendors and normalizes everything onto the
+FinOps Open Cost and Usage Specification (FOCUS) — the FinOps Foundation's open billing standard.
+Normalizing to FOCUS (rather than a bespoke schema) is what makes cross-cloud allocation,
+commitment analysis, and unit economics work uniformly across providers.</p>
+<div class="mermaid">
+flowchart TB
+  subgraph SRC["Provider billing sources"]
+    AZ["Azure<br/>Cost Management"]
+    AWS["AWS<br/>Cost Explorer / CUR"]
+    GCP["GCP<br/>BigQuery export"]
+    ALI["Alibaba<br/>BSS OpenAPI"]
+    OCI["OCI<br/>Usage API"]
+    AI["AI/LLM<br/>Bedrock / OpenAI / Anthropic"]
+  end
+  NORM["FOCUS normalizer<br/>billed / effective / list cost,<br/>service category, commitments, tags"]
+  subgraph CORE["Provider-agnostic core"]
+    ALLOC["Allocation engine<br/>100% via rule chain"]
+    COMMIT["Commitment manager<br/>coverage / utilization / recs"]
+    FORE["Forecast / anomaly / insights"]
+  end
+  AZ --> NORM
+  AWS --> NORM
+  GCP --> NORM
+  ALI --> NORM
+  OCI --> NORM
+  AI --> NORM
+  NORM -->|FocusRecord| ALLOC
+  NORM -->|FocusRecord| COMMIT
+  NORM -->|FocusRecord| FORE
+
+</div>
+<h3>3.1 Provider adapters</h3>
+<table class="data">
+<thead><tr><th>Provider</th><th>Native source</th><th>Key normalization</th></tr></thead>
+<tbody>
+<tr><td>Microsoft Azure</td><td>Cost Management query</td><td>name-based column parser to FOCUS</td></tr>
+<tr><td>Amazon Web Services</td><td>Cost Explorer / CUR (FOCUS export)</td><td>amortized below unblended implies Savings Plan discount</td></tr>
+<tr><td>Google Cloud</td><td>BigQuery billing export</td><td>negative credits imply Committed Use Discount</td></tr>
+<tr><td>Alibaba Cloud</td><td>BSS OpenAPI (DescribeInstanceBill)</td><td>Subscription implies Reserved commitment</td></tr>
+<tr><td>Oracle Cloud (OCI)</td><td>Usage API (RequestSummarizedUsages)</td><td>compartment maps to sub-account</td></tr>
+<tr><td>Anthropic</td><td>Admin Cost Report API</td><td>service_category = AI and Machine Learning</td></tr>
+<tr><td>OpenAI</td><td>Organization Costs API</td><td>service_category = AI and Machine Learning</td></tr>
+<tr><td>Amazon Bedrock</td><td>via AWS billing path</td><td>re-tagged from Compute to AI and Machine Learning</td></tr>
+</tbody></table>
+
+<h3>3.2 FOCUS record (normalized schema)</h3>
+<table class="data">
+<thead><tr><th>FOCUS field</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>billed_cost</code></td><td>What appears on the invoice</td></tr>
+<tr><td><code>effective_cost</code></td><td>Amortized cost incl. commitments — the figure used for allocation/forecast</td></tr>
+<tr><td><code>list_cost</code></td><td>Cost at public on-demand rates (for savings calc)</td></tr>
+<tr><td><code>service_category</code></td><td>Compute / Storage / Databases / Networking / AI and Machine Learning / ...</td></tr>
+<tr><td><code>commitment_discount_type</code></td><td>Reserved / Savings Plan / Committed Use Discount / Spot</td></tr>
+<tr><td><code>sub_account_id</code></td><td>AWS account / GCP project / Azure subscription / OCI compartment</td></tr>
+<tr><td><code>tags</code></td><td>resource tags, used by the allocation engine</td></tr>
+</tbody></table>
+
+<h3>3.3 100% allocation — rule chain</h3>
+<p>Real environments are 40-70% tagged, so tag-only chargeback leaves a large unallocated bucket.
+CloudLens applies an ordered rule chain to every record, then distributes the residual, so the final
+unallocated total is zero and every euro records which rule assigned it (auditable):</p>
+<table class="data">
+<thead><tr><th>Order</th><th>Rule</th><th>Signal</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Direct tag</td><td>record carries the allocation tag (cost_center=...)</td></tr>
+<tr><td>2</td><td>Tag inheritance</td><td>another tag implies the cost-center (team=payments to engineering)</td></tr>
+<tr><td>3</td><td>Account / project</td><td>sub_account_id maps to a cost-center</td></tr>
+<tr><td>4</td><td>Name pattern</td><td>resource/service name regex (^prod-erp- to erp)</td></tr>
+<tr><td>5</td><td>Shared split</td><td>residual distributed proportionally or evenly to 100%</td></tr>
+</tbody></table>
+
+<h3>3.4 Commitment management</h3>
+<p>Across all providers: <strong>coverage</strong> (% of eligible compute/database spend covered by a
+commitment vs. on-demand), <strong>utilization</strong> (% of held commitments actually used — idle
+reservations are waste), and conservative <strong>purchase recommendations</strong> that commit only the
+stable on-demand baseline, never the peak, so a recommendation never over-commits a customer.</p>
+
+<h3>3.5 Localisation (i18n)</h3>
+<p>Eight EU languages: English, Italian, German, French, Spanish, Dutch, Portuguese, Polish. A label
+catalog is served via <code>GET /api/v1/multicloud/labels?lang=</code> for frontend bootstrap; the
+spend endpoint also returns localised labels per request.</p>
+
+<h2 id="mapping">4. Interface Data Mapping</h2>
+<p class="lead">How external provider data maps through the system to API responses. This is the
+contract every integration point depends on.</p>
+
+<h3>4.1 Azure Cost Management → CostRecord</h3>
+<p>The Cost Management query returns columnar data; the parser is <strong>strictly name-based</strong>
+(column order varies by query) with safe defaults for absent columns.</p>
+<table class="data">
+<thead><tr><th>Azure column (aliases)</th><th>CostRecord field</th><th>Transform</th></tr></thead>
+<tbody>
+<tr><td>Cost, CostUSD, PreTaxCost</td><td><code>cost_eur</code></td><td>float; default 0.0; mandatory</td></tr>
+<tr><td>UsageDate, Date, BillingMonth</td><td><code>record_date</code></td><td>date; mandatory</td></tr>
+<tr><td>ResourceId</td><td><code>resource_id</code></td><td>lower-cased</td></tr>
+<tr><td>ResourceGroupName, ResourceGroup</td><td><code>resource_group</code></td><td>lower-cased</td></tr>
+<tr><td>ServiceName</td><td><code>service_name</code></td><td>verbatim</td></tr>
+<tr><td>ResourceLocation, Location</td><td><code>location</code></td><td>verbatim</td></tr>
+<tr><td>Currency, BillingCurrency</td><td><code>currency</code></td><td>default "EUR"</td></tr>
+<tr><td>UsageQuantity, Quantity</td><td><code>quantity</code></td><td>float; default 0.0</td></tr>
+<tr><td>(Resource Graph bulk query)</td><td><code>tags</code></td><td>joined by lower-cased resource_id</td></tr>
+</tbody></table>
+
+<h3>4.2 Resource Graph → waste-engine context</h3>
+<table class="data">
+<thead><tr><th>KQL collector</th><th>Returns</th><th>Consumed by rule(s)</th></tr></thead>
+<tbody>
+<tr><td>disk_states</td><td>{resource_id: state}</td><td>unattached_disk</td></tr>
+<tr><td>ip_associations</td><td>{resource_id: is_associated}</td><td>orphan_public_ip</td></tr>
+<tr><td>snapshot_ages</td><td>{resource_id: age_days}</td><td>old_snapshots</td></tr>
+<tr><td>lb_backend_counts</td><td>{resource_id: count}</td><td>unused_load_balancer</td></tr>
+<tr><td>storage_access_tiers</td><td>{resource_id: tier}</td><td>cold_storage</td></tr>
+<tr><td>cert_expiries</td><td>{resource_id: days_to_expiry}</td><td>expired_cert</td></tr>
+<tr><td>vm_power_states</td><td>{resource_id: state}</td><td>idle_vm</td></tr>
+<tr><td>resource_tags</td><td>{resource_id: {k:v}}</td><td>cost-record enrichment, chargeback</td></tr>
+</tbody></table>
+
+<h3>4.3 Cosmos persistence map</h3>
+<table class="data">
+<thead><tr><th>Container</th><th>Partition key</th><th>Document types</th><th>TTL</th></tr></thead>
+<tbody>
+<tr><td>tenants</td><td><code>/id</code></td><td>tenant</td><td>none</td></tr>
+<tr><td>cost_records</td><td><code>/tenant_id</code></td><td>cost_record</td><td>90 days</td></tr>
+<tr><td>waste_items</td><td><code>/tenant_id</code></td><td>waste_item, budget</td><td>none</td></tr>
+<tr><td>reports</td><td><code>/tenant_id</code></td><td>report</td><td>none</td></tr>
+</tbody></table>
+
+<h3>4.4 Error code mapping</h3>
+<table class="data">
+<thead><tr><th>Exception</th><th>HTTP</th><th>error_code</th><th>When</th></tr></thead>
+<tbody>
+<tr><td>NotFoundError</td><td>404</td><td>NOT_FOUND</td><td>document missing</td></tr>
+<tr><td>ValidationError</td><td>422</td><td>VALIDATION_ERROR</td><td>bad body/param</td></tr>
+<tr><td>ConflictError</td><td>409</td><td>CONFLICT</td><td>duplicate tenant name</td></tr>
+<tr><td>UnauthorizedError</td><td>401</td><td>UNAUTHORIZED</td><td>missing/invalid token or key</td></tr>
+<tr><td>ForbiddenError</td><td>403</td><td>FORBIDDEN</td><td>token not scoped to tenant</td></tr>
+<tr><td>RateLimitError</td><td>429</td><td>RATE_LIMITED</td><td>per-tenant limit exceeded</td></tr>
+<tr><td>AzureAPIError</td><td>502</td><td>AZURE_API_ERROR</td><td>Cost/Advisor/Graph failure</td></tr>
+<tr><td>CosmosError / StorageError / KeyVaultError</td><td>503</td><td>*_ERROR</td><td>dependency failure after retries</td></tr>
+</tbody></table>
+
+<h2 id="optimization">5. Optimization</h2>
+<p class="lead">CloudLens generates its <em>own</em> cost-reduction recommendations rather than reselling a
+provider's advisor. Four engines turn per-resource utilization and cost into actionable savings.</p>
+<div class="mermaid">
+flowchart LR
+  subgraph IN["Per-resource signals"]
+    COST["billed cost"]
+    CPU["CPU peak %"]
+    MEM["memory peak %"]
+    ENV["environment tag"]
+  end
+  subgraph ENG["Optimization engines"]
+    UTIL["Utilization<br/>over-capacity score"]
+    RIGHT["Rightsizing<br/>CPU+mem, cross-family"]
+    SCHED["Scheduling<br/>non-prod on/off"]
+  end
+  LEDGER["Savings ledger<br/>identified to actioned to realized"]
+  COST --> UTIL
+  CPU --> UTIL
+  MEM --> UTIL
+  COST --> RIGHT
+  CPU --> RIGHT
+  MEM --> RIGHT
+  ENV --> SCHED
+  COST --> SCHED
+  UTIL --> LEDGER
+  RIGHT --> LEDGER
+  SCHED --> LEDGER
+
+</div>
+
+<h3 id="rightsize">5.1 Rightsizing (CPU + memory, cross-family)</h3>
+<p>For each compute resource the engine takes observed CPU and memory peaks, the current SKU, and the
+billed cost, applies a 30% headroom buffer, and searches an instance catalog for the cheapest SKU that
+satisfies <strong>both</strong> dimensions — including cross-family moves. Using memory is a deliberate edge:
+memory-bound workloads (analytics, in-memory DBs, ML) are where CPU-only tools wrongly downsize.</p>
+<div class="mermaid">
+flowchart TB
+  A["Resource + CPU/mem peak + current SKU + cost"] --> B["required vCPU = current vCPU x cpu% x 1.3"]
+  A --> C["required mem = current mem x mem% x 1.3"]
+  B --> D{"both near zero?"}
+  C --> D
+  D -->|yes| T["recommend TERMINATE"]
+  D -->|no| E["scan catalog cheapest-first"]
+  E --> F{"cheapest SKU with<br/>vCPU and mem >= required<br/>and cheaper?"}
+  F -->|found| G["recommend DOWNSIZE<br/>(may be cross-family)"]
+  F -->|none| H["NO CHANGE (well-sized)"]
+
+</div>
+<table class="data">
+<thead><tr><th>Outcome</th><th>Condition</th></tr></thead>
+<tbody>
+<tr><td>Terminate</td><td>CPU &lt; 1% and memory &lt; 2% over the window</td></tr>
+<tr><td>Downsize</td><td>a cheaper SKU covers required vCPU + memory (may be cross-family)</td></tr>
+<tr><td>No change</td><td>nothing cheaper satisfies the memory/CPU requirement</td></tr>
+</tbody></table>
+<p>Confidence scales with the observation window (30+ days = high; a 14-day window on a monthly-seasonal
+workload is down-weighted). Endpoint: <code>GET /optimization/{tid}/rightsizing</code>.</p>
+
+<h3>5.2 Scheduling</h3>
+<p>Non-production resources running 24/7 (168h/week) that are only used in working hours are flagged for an
+on/off schedule — Mon–Fri 08:00–20:00 (60h) saves ~64%. Production is never scheduled. An activity-profile
+mode computes the minimal covering schedule when hourly data exists.
+Endpoint: <code>GET /optimization/{tid}/scheduling</code>.</p>
+
+<h3>5.3 Utilization &amp; over-capacity</h3>
+<p>An estate-wide CPU/memory view with a per-resource over-capacity score (0–100) computed on the
+<em>binding</em> dimension — a box at 85% memory / 10% CPU is "hot", not wasteful — so reclaimable spend is
+never overstated. Endpoint: <code>GET /optimization/{tid}/utilization</code>.</p>
+
+<h3>5.4 Realized-savings ledger</h3>
+<p>Closes the ROI loop every mature FinOps tool has: each opportunity moves identified → actioned → realized,
+with a realization rate and per-category rollup, so finance sees what actually landed on the bill.
+Endpoints: <code>POST /optimization/{tid}/savings</code>, <code>.../savings/{id}/action</code>,
+<code>GET .../savings/ledger</code>.</p>
+
+<h2 id="security">6. Security &amp; Compliance</h2>
+<p class="lead">CloudLens is read-only by architecture and built to be SOC 2 audit-ready. It cannot
+self-certify — a SOC 1/SOC 2 attestation is issued by a licensed CPA firm over a defined period — but it
+implements the technical controls and produces the evidence that audit requires.</p>
+
+<h3>6.1 Authentication &amp; tenant isolation</h3>
+<table class="data">
+<thead><tr><th>Control</th><th>Mechanism</th><th>Criterion</th></tr></thead>
+<tbody>
+<tr><td>Authentication</td><td>Azure AD bearer (JWKS-validated) for tenant endpoints; API key for operator endpoints</td><td>CC6.1</td></tr>
+<tr><td>Tenant isolation</td><td><code>require_tenant_scope</code> rejects (403) a token scoped to tenant A accessing tenant B; every Cosmos query is partition-keyed by tenant_id</td><td>CC6.1</td></tr>
+<tr><td>Least privilege</td><td>Customer SPs are read-only; internal calls use a managed identity, no stored secrets</td><td>CC6.2</td></tr>
+<tr><td>Injection resistance</td><td>All Cosmos queries are parameterized; enum/range validation on inputs</td><td>secure coding</td></tr>
+</tbody></table>
+
+<h3>6.2 Tamper-evident audit log</h3>
+<p>Security- and change-relevant events (tenant/budget/alert-rule CRUD, waste resolutions, ingest, report
+download, evidence export) are written to an append-only audit trail. Each record is SHA-256 hash-chained to
+the previous one for its tenant, so any alteration or back-dating breaks the chain and is detectable.</p>
+<div class="mermaid">
+flowchart LR
+  E1["event 1<br/>tenant_created<br/>hash=H1"] -->|prev_hash=H1| E2["event 2<br/>budget_updated<br/>hash=H2"]
+  E2 -->|prev_hash=H2| E3["event 3<br/>alert_rule_created<br/>hash=H3"]
+  E3 -->|prev_hash=H3| E4["event 4<br/>evidence_exported<br/>hash=H4"]
+  V["verify_chain()<br/>recompute every hash,<br/>check prev links"] -.->|intact?| E1
+
+</div>
+<p>Verify integrity at <code>GET /admin/compliance/audit-integrity/{tid}</code>; query the trail at
+<code>GET /admin/audit</code>. Records carry a 2-year TTL for SOC 2 evidence retention.</p>
+
+<h3>6.3 Encryption &amp; secrets</h3>
+<table class="data">
+<thead><tr><th>Control</th><th>Setting</th><th>Criterion</th></tr></thead>
+<tbody>
+<tr><td>In transit</td><td>TLS 1.2+ enforced; Storage HTTPS-only</td><td>CC6.6</td></tr>
+<tr><td>At rest</td><td>Cosmos/Blob/Key Vault encrypted; Storage infrastructure (double) encryption</td><td>CC6.7</td></tr>
+<tr><td>Secrets</td><td>SP creds + API key only in Key Vault (purge protection on); none in code/config/logs</td><td>CC6.8</td></tr>
+<tr><td>Backup</td><td>Cosmos continuous backup (point-in-time restore); Key Vault soft-delete</td><td>A1.2</td></tr>
+</tbody></table>
+
+<h3>6.4 SOC 2 control matrix &amp; CLI evidence export</h3>
+<p>The admin surface exposes a control matrix mapping Trust Services Criteria (CC1–CC8, Availability,
+Confidentiality) to CloudLens controls with an implementation status (implemented / partial /
+needs-org-process). For each technical control it generates the exact <code>az</code>/<code>curl</code>
+commands an auditor runs against the deployed resources to prove the control is live, with expected output.
+The evidence-pack export (<code>POST /admin/compliance/evidence-export</code>) bundles the matrix with the
+audit-integrity result and logs its own execution. ~80% of controls are satisfied in code/infra; the
+remainder require organizational policy (training, background checks) that software cannot provide.</p>
+
+
+  
+<h2 id="api">7. API Reference</h2>
+<p class="lead">Generated from the live OpenAPI 3.1 specification (42 paths).
+The machine-readable spec ships as <code>CloudLens_openapi.json</code>. Base path <code>/api/v1</code>.
+Interactive docs at <code>/docs</code> (non-prod only).</p>
+<h3>7.1 Authentication</h3>
+<table class="data">
+<thead><tr><th>Scheme</th><th>Header</th><th>Used by</th></tr></thead>
+<tbody>
+<tr><td>Internal API key</td><td><code>X-API-Key</code></td><td>Tenant management, manual ingest (operator)</td></tr>
+<tr><td>Azure AD bearer (JWKS)</td><td><code>Authorization: Bearer</code></td><td>All per-tenant read endpoints; scope enforced against token claim</td></tr>
+</tbody></table>
+<h3>7.2 Rate limiting</h3>
+<p>Per-tenant token bucket: Starter 60 / Growth 200 / Enterprise 600 requests per minute. Exceeding
+returns <code>429</code> with <code>Retry-After</code>. Limiting never fails open into a crash — a plan
+lookup failure degrades to the Growth limit.</p>
+<h3 class="api-group">tenants</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/tenants/</code></td><td>List Tenants</td><td>API key</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/tenants/</code></td><td>Create Tenant</td><td>API key</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/tenants/{tenant_id}</code></td><td>Get Tenant</td><td>API key</td></tr>
+<tr><td><span class="method patch">PATCH</span></td><td><code>/api/v1/tenants/{tenant_id}</code></td><td>Update Tenant</td><td>API key</td></tr>
+<tr><td><span class="method delete">DELETE</span></td><td><code>/api/v1/tenants/{tenant_id}</code></td><td>Delete Tenant</td><td>API key</td></tr>
+</tbody></table>
+<h3 class="api-group">costs</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/costs/{tenant_id}</code></td><td>Get Cost Summary</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/costs/{tenant_id}/breakdown</code></td><td>Get Cost Breakdown</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/costs/{tenant_id}/trend</code></td><td>Get Cost Trend</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">waste</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method patch">PATCH</span></td><td><code>/api/v1/waste/{item_id}/resolve</code></td><td>Resolve Waste Item</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/waste/{tenant_id}</code></td><td>List Waste Items</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">forecast</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/forecast/{tenant_id}</code></td><td>Get Spend Forecast</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/forecast/{tenant_id}/budget-breach</code></td><td>Get Budget Breach</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/forecast/{tenant_id}/cost-of-inaction</code></td><td>Get Cost Of Inaction</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/forecast/{tenant_id}/roadmap</code></td><td>Get Remediation Roadmap</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">insights</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/insights/{tenant_id}/anomalies</code></td><td>Get Anomalies</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/insights/{tenant_id}/chargeback</code></td><td>Get Chargeback</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/insights/{tenant_id}/digest</code></td><td>Get Insight Digest</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">budgets</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/budgets/{tenant_id}</code></td><td>List Budgets</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/budgets/{tenant_id}</code></td><td>Create Budget</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/budgets/{tenant_id}/{budget_id}</code></td><td>Get Budget</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method patch">PATCH</span></td><td><code>/api/v1/budgets/{tenant_id}/{budget_id}</code></td><td>Update Budget</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method delete">DELETE</span></td><td><code>/api/v1/budgets/{tenant_id}/{budget_id}</code></td><td>Delete Budget</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/budgets/{tenant_id}/{budget_id}/status</code></td><td>Budget Status</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">reports</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/reports/{report_id}/download</code></td><td>Get Download Url</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/reports/{tenant_id}</code></td><td>List Reports</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/reports/{tenant_id}/generate</code></td><td>Trigger Report</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">ingest</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/ingest/{tenant_id}</code></td><td>Trigger Ingest</td><td>API key</td></tr>
+</tbody></table>
+<h3 class="api-group">health</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/health/</code></td><td>Health Check</td><td>none</td></tr>
+</tbody></table>
+<h3 class="api-group">admin</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/admin/audit</code></td><td>Get Audit</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/admin/compliance/audit-integrity/{tenant_id}</code></td><td>Audit Integrity</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/admin/compliance/evidence-export</code></td><td>Evidence Export</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/admin/compliance/matrix</code></td><td>Compliance Matrix</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">alerts</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/alerts/{tenant_id}/events</code></td><td>List Events</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/alerts/{tenant_id}/events/{event_id}/acknowledge</code></td><td>Acknowledge Event</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/alerts/{tenant_id}/rules</code></td><td>List Rules</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/alerts/{tenant_id}/rules</code></td><td>Create Rule</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method patch">PATCH</span></td><td><code>/api/v1/alerts/{tenant_id}/rules/{rule_id}</code></td><td>Update Rule</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method delete">DELETE</span></td><td><code>/api/v1/alerts/{tenant_id}/rules/{rule_id}</code></td><td>Delete Rule</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">drilldown</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/drilldown/{tenant_id}</code></td><td>Drilldown</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/drilldown/{tenant_id}/resource-anomalies</code></td><td>Resource Anomalies</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">multicloud</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/multicloud/labels</code></td><td>Labels</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/multicloud/{tenant_id}/allocate</code></td><td>Allocate</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/multicloud/{tenant_id}/commitments</code></td><td>Commitments</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/multicloud/{tenant_id}/spend</code></td><td>Multicloud Spend</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">optimization</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/optimization/{tenant_id}/rightsizing</code></td><td>Rightsizing</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/optimization/{tenant_id}/savings</code></td><td>Create Savings Record</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/optimization/{tenant_id}/savings/ledger</code></td><td>Savings Ledger</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/optimization/{tenant_id}/savings/{record_id}/action</code></td><td>Mark Actioned</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/optimization/{tenant_id}/scheduling</code></td><td>Scheduling</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/optimization/{tenant_id}/utilization</code></td><td>Utilization</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 class="api-group">Core schemas</h3>
+<h4 class="schema-name"><code>TenantCreate</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>tenant_name</code></td><td class="typ">string</td><td class="req">✓</td><td>Display name of the customer</td></tr>
+<tr><td><code>subscription_ids</code></td><td class="typ">array&lt;string&gt;</td><td class="req">✓</td><td>Azure subscription IDs to monitor</td></tr>
+<tr><td><code>plan_tier</code></td><td class="typ">PlanTier</td><td class="req"></td><td></td></tr>
+<tr><td><code>alert_email</code></td><td class="typ">string</td><td class="req">✓</td><td>Recipient of weekly digest and alerts</td></tr>
+<tr><td><code>active</code></td><td class="typ">boolean</td><td class="req"></td><td></td></tr>
+<tr><td><code>sp_client_id</code></td><td class="typ">string</td><td class="req">✓</td><td>Service principal client ID</td></tr>
+<tr><td><code>sp_client_secret</code></td><td class="typ">string</td><td class="req">✓</td><td>Service principal secret (stored to Key Vault)</td></tr>
+<tr><td><code>sp_tenant_id</code></td><td class="typ">string</td><td class="req">✓</td><td>Customer Azure AD tenant ID</td></tr>
+</tbody></table>
+<h4 class="schema-name"><code>TenantConfig</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>tenant_name</code></td><td class="typ">string</td><td class="req">✓</td><td>Display name of the customer</td></tr>
+<tr><td><code>subscription_ids</code></td><td class="typ">array&lt;string&gt;</td><td class="req">✓</td><td>Azure subscription IDs to monitor</td></tr>
+<tr><td><code>plan_tier</code></td><td class="typ">PlanTier</td><td class="req"></td><td></td></tr>
+<tr><td><code>alert_email</code></td><td class="typ">string</td><td class="req">✓</td><td>Recipient of weekly digest and alerts</td></tr>
+<tr><td><code>active</code></td><td class="typ">boolean</td><td class="req"></td><td></td></tr>
+<tr><td><code>id</code></td><td class="typ">string</td><td class="req"></td><td></td></tr>
+<tr><td><code>type</code></td><td class="typ">string</td><td class="req"></td><td>Cosmos discriminator</td></tr>
+<tr><td><code>sp_secret_ref</code></td><td class="typ">string</td><td class="req">✓</td><td>Key Vault secret name for SP credentials</td></tr>
+<tr><td><code>created_at</code></td><td class="typ">string</td><td class="req"></td><td></td></tr>
+<tr><td><code>updated_at</code></td><td class="typ">string</td><td class="req"></td><td></td></tr>
+<tr><td><code>last_ingested_at</code></td><td class="typ">string?</td><td class="req"></td><td></td></tr>
+<tr><td><code>last_ingest_error</code></td><td class="typ">string?</td><td class="req"></td><td></td></tr>
+</tbody></table>
+<h4 class="schema-name"><code>WasteItem</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>id</code></td><td class="typ">string</td><td class="req"></td><td></td></tr>
+<tr><td><code>type</code></td><td class="typ">string</td><td class="req"></td><td></td></tr>
+<tr><td><code>tenant_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>subscription_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>resource_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>resource_name</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>resource_group</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>resource_type</code></td><td class="typ">string</td><td class="req"></td><td></td></tr>
+<tr><td><code>waste_type</code></td><td class="typ">WasteType</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>monthly_cost_eur</code></td><td class="typ">number</td><td class="req">✓</td><td>Current monthly cost of this resource</td></tr>
+<tr><td><code>saving_eur</code></td><td class="typ">number</td><td class="req">✓</td><td>Estimated saving if remediated</td></tr>
+<tr><td><code>saving_pct</code></td><td class="typ">number</td><td class="req"></td><td>Saving as % of current cost</td></tr>
+<tr><td><code>priority</code></td><td class="typ">Priority</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>recommendation</code></td><td class="typ">string</td><td class="req">✓</td><td>Human-readable action (EN)</td></tr>
+<tr><td><code>recommendation_it</code></td><td class="typ">string</td><td class="req">✓</td><td>Raccomandazione in italiano</td></tr>
+<tr><td><code>advisor_ref</code></td><td class="typ">string?</td><td class="req"></td><td>Azure Advisor recommendation ID</td></tr>
+<tr><td><code>evidence</code></td><td class="typ">object</td><td class="req"></td><td>Supporting metrics: cpu_avg, disk_state, etc.</td></tr>
+<tr><td><code>detected_at</code></td><td class="typ">string</td><td class="req"></td><td></td></tr>
+<tr><td><code>resolved_at</code></td><td class="typ">string?</td><td class="req"></td><td></td></tr>
+<tr><td><code>resolved_by</code></td><td class="typ">string?</td><td class="req"></td><td></td></tr>
+<tr><td><code>snoozed_until</code></td><td class="typ">string?</td><td class="req"></td><td></td></tr>
+</tbody></table>
+<h4 class="schema-name"><code>CostSummary</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>tenant_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>period_start</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>period_end</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>total_cost_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>previous_period_cost_eur</code></td><td class="typ">number?</td><td class="req"></td><td></td></tr>
+<tr><td><code>change_pct</code></td><td class="typ">number?</td><td class="req"></td><td></td></tr>
+<tr><td><code>top_services</code></td><td class="typ">array&lt;object&gt;</td><td class="req"></td><td></td></tr>
+<tr><td><code>top_resource_groups</code></td><td class="typ">array&lt;object&gt;</td><td class="req"></td><td></td></tr>
+</tbody></table>
+<h4 class="schema-name"><code>SpendForecastResponse</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>tenant_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>method</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>horizon_days</code></td><td class="typ">integer</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>history_days</code></td><td class="typ">integer</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>mape</code></td><td class="typ">number?</td><td class="req"></td><td>Backtest mean abs % error</td></tr>
+<tr><td><code>confidence</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>month_end_projection</code></td><td class="typ">number?</td><td class="req"></td><td></td></tr>
+<tr><td><code>points</code></td><td class="typ">array&lt;ForecastPointModel&gt;</td><td class="req"></td><td></td></tr>
+<tr><td><code>notes</code></td><td class="typ">array&lt;string&gt;</td><td class="req"></td><td></td></tr>
+</tbody></table>
+<h4 class="schema-name"><code>TrajectoryResponse</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>tenant_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>horizon_days</code></td><td class="typ">integer</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>daily_waste_burn_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>cumulative_inaction_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>monthly_recoverable_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>annual_recoverable_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>baseline</code></td><td class="typ">array&lt;ForecastPointModel&gt;</td><td class="req"></td><td></td></tr>
+<tr><td><code>optimized</code></td><td class="typ">array&lt;ForecastPointModel&gt;</td><td class="req"></td><td></td></tr>
+<tr><td><code>notes</code></td><td class="typ">array&lt;string&gt;</td><td class="req"></td><td></td></tr>
+</tbody></table>
+<h4 class="schema-name"><code>AnomalyResponse</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>tenant_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>method</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>scanned_days</code></td><td class="typ">integer</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>total_anomalous_excess_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>anomalies</code></td><td class="typ">array&lt;AnomalyModel&gt;</td><td class="req"></td><td></td></tr>
+<tr><td><code>notes</code></td><td class="typ">array&lt;string&gt;</td><td class="req"></td><td></td></tr>
+</tbody></table>
+<h4 class="schema-name"><code>ChargebackResponse</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>tenant_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>dimension</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>strategy</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>period_start</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>period_end</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>total_spend_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>tagged_spend_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>untagged_spend_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>tagging_coverage_pct</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>groups</code></td><td class="typ">array&lt;AllocationGroupModel&gt;</td><td class="req"></td><td></td></tr>
+<tr><td><code>notes</code></td><td class="typ">array&lt;string&gt;</td><td class="req"></td><td></td></tr>
+</tbody></table>
+<h4 class="schema-name"><code>InsightDigestResponse</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>tenant_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>monthly_spend_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>monthly_recoverable_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>efficiency_score</code></td><td class="typ">integer</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>headline_summary</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>headline_summary_it</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>insights</code></td><td class="typ">array&lt;InsightModel&gt;</td><td class="req"></td><td></td></tr>
+</tbody></table>
+<h4 class="schema-name"><code>BudgetCreate</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>tenant_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>name</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>amount_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>period</code></td><td class="typ">string</td><td class="req"></td><td></td></tr>
+<tr><td><code>scope_dimension</code></td><td class="typ">string?</td><td class="req"></td><td>Tag key, e.g. cost_center</td></tr>
+<tr><td><code>scope_value</code></td><td class="typ">string?</td><td class="req"></td><td>Tag value, e.g. engineering</td></tr>
+<tr><td><code>warning_threshold_pct</code></td><td class="typ">integer</td><td class="req"></td><td></td></tr>
+</tbody></table>
+<h4 class="schema-name"><code>BudgetStatus</code></h4>
+<table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>budget_id</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>name</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>amount_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>spend_to_date_eur</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>consumed_pct</code></td><td class="typ">number</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>projected_month_end_eur</code></td><td class="typ">number?</td><td class="req"></td><td></td></tr>
+<tr><td><code>projected_consumed_pct</code></td><td class="typ">number?</td><td class="req"></td><td></td></tr>
+<tr><td><code>status</code></td><td class="typ">string</td><td class="req">✓</td><td></td></tr>
+<tr><td><code>breach_date</code></td><td class="typ">string?</td><td class="req"></td><td></td></tr>
+<tr><td><code>scope</code></td><td class="typ">string</td><td class="req"></td><td></td></tr>
+<tr><td><code>headroom_eur</code></td><td class="typ">number?</td><td class="req"></td><td></td></tr>
+</tbody></table>
+
+  
+<h2 id="deploy">8. Deployment Guide</h2>
+<p class="lead">One script provisions everything and deploys the app. It is idempotent and fail-fast.</p>
+
+<h3>5.1 Prerequisites</h3>
+<table class="data">
+<thead><tr><th>Tool</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>az</code> (logged in)</td><td>Azure control plane + ACR build</td></tr>
+<tr><td><code>terraform</code> ≥ 1.9</td><td>Infrastructure provisioning</td></tr>
+<tr><td><code>docker</code></td><td>(only if building locally; the script uses <code>az acr build</code>)</td></tr>
+<tr><td><code>jq</code></td><td>Parsing az output in the script</td></tr>
+</tbody></table>
+<p>The subscription needs Owner/Contributor + the ability to create user-assigned identities and role
+assignments.</p>
+
+<h3>5.2 One-command deploy</h3>
+<pre><code>export TF_VAR_internal_api_key="$(openssl rand -hex 32)"
+./deploy.sh prod        # or: dev | staging</code></pre>
+
+<h3>5.3 What the script does</h3>
+<div class="mermaid">
+flowchart TB
+  A["./deploy.sh prod"] --> B["0. Validate prereqs<br/>az / terraform / docker / jq"]
+  B --> C["1. Bootstrap tfstate<br/>RG + storage account"]
+  C --> D["2. az acr build<br/>push image :SHA + :latest"]
+  D --> E["3. terraform apply<br/>provision all resources"]
+  E --> F["4. Deploy frontend<br/>Static Web Apps"]
+  F --> G["5. Smoke test<br/>GET /health"]
+  G --> H{"healthy?"}
+  H -->|yes| I["6. Summary<br/>API URL + next steps"]
+  H -->|no| J["Rollback / inspect logs"]
+
+</div>
+<table class="data">
+<thead><tr><th>Phase</th><th>Action</th><th>Idempotent because</th></tr></thead>
+<tbody>
+<tr><td>0 Validate</td><td>Check tools, env, login; read names from tfvars</td><td>read-only checks</td></tr>
+<tr><td>1 State backend</td><td>Create RG + storage for Terraform state</td><td>create-if-not-exists</td></tr>
+<tr><td>2 Image</td><td><code>az acr build</code> → push <code>:SHA</code> + <code>:latest</code></td><td>ACR created if absent; tags overwrite</td></tr>
+<tr><td>3 Apply</td><td><code>terraform apply</code> pinning the SHA image tag</td><td>Terraform state reconciles</td></tr>
+<tr><td>4 Frontend</td><td>Deploy to Static Web Apps</td><td>SWA created if absent</td></tr>
+<tr><td>5 Smoke test</td><td><code>GET /api/v1/health</code> (12×5s retries)</td><td>idempotent read</td></tr>
+<tr><td>6 Summary</td><td>Print API URL, identity, next steps</td><td>—</td></tr>
+</tbody></table>
+
+<h3>5.4 Resources provisioned (Terraform)</h3>
+<table class="data">
+<thead><tr><th>Resource</th><th>SKU / mode</th><th>Cost note</th></tr></thead>
+<tbody>
+<tr><td>Container App (API)</td><td>Consumption, min 0 / max 5</td><td>scale-to-zero</td></tr>
+<tr><td>Container App Job (ingest)</td><td>Cron 02:00 UTC</td><td>pay per run</td></tr>
+<tr><td>Cosmos DB</td><td>Serverless, 4 containers</td><td>pay per RU</td></tr>
+<tr><td>Storage account</td><td>Standard LRS</td><td>reports only</td></tr>
+<tr><td>Key Vault</td><td>Standard, purge protection</td><td>SP creds</td></tr>
+<tr><td>Container Registry</td><td>Basic</td><td>fixed ~€5</td></tr>
+<tr><td>Log Analytics</td><td>PerGB2018, daily cap</td><td>cap prevents runaway</td></tr>
+<tr><td>User-assigned identity</td><td>—</td><td>all internal auth</td></tr>
+<tr><td>Static Web App</td><td>Free</td><td>€0</td></tr>
+</tbody></table>
+
+<h3>5.5 CI/CD</h3>
+<table class="data">
+<thead><tr><th>Workflow</th><th>Trigger</th><th>Stages</th></tr></thead>
+<tbody>
+<tr><td>backend.yml</td><td>push to app/**</td><td>pytest → docker build → push ACR → deploy ACA → health → rollback</td></tr>
+<tr><td>infra.yml</td><td>push to infra/**</td><td>fmt/validate → plan → PR comment → manual approval → apply</td></tr>
+</tbody></table>
+<p>Auth uses GitHub OIDC federated credentials — no stored client secrets.</p>
+
+<h3>5.6 Post-deploy</h3>
+<p>Onboard a tenant (Section 7), then either wait for the 02:00 UTC ingest or trigger it:</p>
+<pre><code>curl -X POST "$API_URL/api/v1/ingest/&lt;tenant_id&gt;" -H "X-API-Key: $TF_VAR_internal_api_key"</code></pre>
+
+  
+<h2 id="wiring">9. Frontend Wiring Guide</h2>
+<p class="lead">All console views ship with mock data shaped to the exact API responses. Going live means
+swapping the mock arrays/objects for <code>fetch()</code> — the render functions are unchanged.</p>
+
+<h3>9.1 Auth bootstrap (MSAL)</h3>
+<pre><code>// acquire an Azure AD token for the API scope, then attach to every call
+const token = await msalInstance.acquireTokenSilent({scopes: [API_SCOPE]});
+const authHeaders = { "Authorization": `Bearer ${token.accessToken}` };
+// operator-only views (compliance admin) use the internal API key instead
+const adminHeaders = { "X-API-Key": OPERATOR_KEY };</code></pre>
+
+<h3>9.2 View → endpoint map</h3>
+<table class="data">
+<thead><tr><th>View</th><th>UI element</th><th>Endpoint</th><th>Maps to</th></tr></thead>
+<tbody>
+<tr><td rowspan="5">explorer.html</td><td>Provider rows</td><td><code>GET /drilldown/{tid}?level=provider</code></td><td>children[]</td></tr>
+<tr><td>Drill provider→account→service→resource</td><td><code>GET /drilldown/{tid}?level=&amp;provider=&amp;account=&amp;service=</code></td><td>children[] + next_level</td></tr>
+<tr><td>Resource anomaly badges/drawers</td><td>inline on <code>level=resource</code> (or <code>/drilldown/{tid}/resource-anomalies</code>)</td><td>child.anomaly</td></tr>
+<tr><td>Alerts tab (events + rules)</td><td><code>GET /alerts/{tid}/events</code>, <code>/alerts/{tid}/rules</code></td><td>EVENTS / RULES</td></tr>
+<tr><td>Budgets tab</td><td><code>GET /budgets/{tid}</code> + <code>POST /budgets/{tid}</code></td><td>BUDGETS[]</td></tr>
+<tr><td rowspan="4">optimization.html</td><td>Utilization heatmap + KPIs</td><td><code>GET /optimization/{tid}/utilization</code></td><td>summary, resources[]</td></tr>
+<tr><td>Rightsizing recommendations</td><td><code>GET /optimization/{tid}/rightsizing</code></td><td>recommendations[]</td></tr>
+<tr><td>Scheduling recommendations</td><td><code>GET /optimization/{tid}/scheduling</code></td><td>recommendations[]</td></tr>
+<tr><td>Savings ledger funnel</td><td><code>GET /optimization/{tid}/savings/ledger</code></td><td>LEDGER</td></tr>
+<tr><td rowspan="3">compliance_admin.html<br/>(operator)</td><td>Control matrix + CLI evidence</td><td><code>GET /admin/compliance/matrix</code></td><td>MATRIX.controls[]</td></tr>
+<tr><td>Audit-integrity badge</td><td><code>GET /admin/compliance/audit-integrity/{tid}</code></td><td>intact, records</td></tr>
+<tr><td>Evidence-pack export</td><td><code>POST /admin/compliance/evidence-export</code></td><td>downloaded pack</td></tr>
+<tr><td rowspan="4">forecast.html</td><td>Hero + curves</td><td><code>GET /forecast/{tid}/cost-of-inaction</code></td><td>baseline[], opt[]</td></tr>
+<tr><td>Accuracy / month-end</td><td><code>GET /forecast/{tid}</code></td><td>mape, month_end_projection</td></tr>
+<tr><td>Roadmap phases</td><td><code>GET /forecast/{tid}/roadmap</code></td><td>phases[]</td></tr>
+<tr><td>Budget tip</td><td><code>GET /forecast/{tid}/budget-breach?monthly_budget=</code></td><td>breach dates</td></tr>
+<tr><td rowspan="2">insights.html</td><td>Exec summary + insights</td><td><code>GET /insights/{tid}/digest</code></td><td>DIGEST</td></tr>
+<tr><td>Chargeback panel</td><td><code>GET /insights/{tid}/chargeback?strategy=</code></td><td>CHARGEBACK[strategy]</td></tr>
+<tr><td>multicloud.html</td><td>Provider bars, AI/LLM, commitments, allocation</td><td><code>GET /multicloud/{tid}/spend</code>, <code>/allocate</code>, <code>/commitments</code></td><td>SPEND / ALLOC / COMMIT</td></tr>
+</tbody></table>
+
+<h3>9.3 Worked example — wiring the explorer drill-down</h3>
+<pre><code>// before (mock): getChildren(level, keys, parentSpend) returns canned children
+// after (live): one call per drill level, filters carry the path
+async function getChildren(level, keys, _parent) {
+  const [provider, account, service] = keys;
+  const qs = new URLSearchParams({ level });
+  if (provider) qs.set("provider", provider);
+  if (account)  qs.set("account", account);
+  if (service)  qs.set("service", service);
+  const res = await fetch(`${API}/api/v1/drilldown/${TID}?${qs}`, { headers: authHeaders });
+  const body = await res.json();
+  return body.children;   // already includes .anomaly at the resource level
+}</code></pre>
+<p>The render functions take the same shape either way, so only the data source changes.</p>
+
+<h3>9.4 Error handling</h3>
+<table class="data">
+<thead><tr><th>Status</th><th>UI behaviour</th></tr></thead>
+<tbody>
+<tr><td>401 / 403</td><td>Re-acquire token; if still failing, sign out (403 also = wrong tenant scope)</td></tr>
+<tr><td>429</td><td>Back off using <code>Retry-After</code>; show a soft "refreshing" state</td></tr>
+<tr><td>5xx</td><td>Show last-known data with a stale badge; retry with backoff</td></tr>
+</tbody></table>
+
+  
+<h2 id="user">10. User Guide</h2>
+<p class="lead">How to use CloudLens day to day, by role.</p>
+
+<h3>10.1 Onboarding a tenant (operator)</h3>
+<ol class="steps">
+<li><strong>Customer</strong> creates a read-only service principal in their Azure AD:
+<pre><code>az ad sp create-for-rbac --name "cloudlens-readonly" \
+  --role "Reader" --scopes "/subscriptions/&lt;SUB_ID&gt;"</code></pre></li>
+<li><strong>Customer</strong> adds the cost role:
+<pre><code>az role assignment create --assignee "&lt;client_id&gt;" \
+  --role "Cost Management Reader" --scope "/subscriptions/&lt;SUB_ID&gt;"</code></pre></li>
+<li><strong>Customer</strong> shares <code>client_id</code>, <code>client_secret</code>, <code>tenant_id</code> over a secure channel.</li>
+<li><strong>Operator</strong> stores them in Key Vault as <code>sp-creds-{tenant_id}</code> and registers the tenant via <code>POST /api/v1/tenants</code>.</li>
+<li>First ingest runs at 02:00 UTC, or trigger it immediately with <code>POST /api/v1/ingest/{tenant_id}</code>.</li>
+</ol>
+<p>Full commands are in <code>TENANT_ONBOARDING.md</code> (and its PDF). For other clouds, the customer
+provisions the equivalent read-only role (AWS Cost Explorer read / GCP Billing Viewer / OCI usage read).</p>
+
+<h3>10.2 The multi-cloud explorer (engineering)</h3>
+<p>Drill from the portfolio total down to a single resource across every cloud:
+<strong>Portfolio → Provider → Account/Subscription → Service → Resource</strong>. The pinned breadcrumb lets
+you jump back to any level. Each row shows spend and its share of the level. At the resource level, a
+resource flagged as a cost <strong>anomaly</strong> carries a red/amber badge — click it to open a drawer
+showing actual vs. expected daily cost, the excess, the z-score, the date, and the detection method. The
+<strong>Alerts</strong> tab lists triggered events and rules; the <strong>Budgets</strong> tab creates and
+tracks budgets (scopable to a provider or account, not just tags).</p>
+<p><strong>Reading a resource cost anomaly.</strong> The drawer fields map directly to the detector's output:</p>
+<table class="data">
+<thead><tr><th>Field</th><th>What it means</th></tr></thead>
+<tbody>
+<tr><td>Actual (day)</td><td>The resource's cost on the flagged day.</td></tr>
+<tr><td>Expected</td><td>What the model predicted for that day from the resource's own history.</td></tr>
+<tr><td>Excess</td><td>Actual − Expected — the euro size of the spike (cleared the ≥€10 / ≥25% noise floor).</td></tr>
+<tr><td>Z-score</td><td>How many standard deviations of the resource's normal noise the spike represents. Flags at ≥2σ, "high" at ≥3.5σ; 6σ is a near-certain anomaly, not chance.</td></tr>
+<tr><td>Date</td><td>The day the anomaly occurred (the engine scans the last few days).</td></tr>
+<tr><td>Method</td><td><code>holt_winters</code> (seasonal model, ≥16 days of history) or <code>median_mad</code> (robust fallback for sparse resources). Tells you how strong the "expected" baseline is.</td></tr>
+</tbody></table>
+<p>Worked example: a VM at <code>€1,076</code> actual vs <code>€419</code> expected is <code>+€657</code>
+excess at <code>6σ</code> via <code>holt_winters</code> — a high-confidence spike worth investigating.</p>
+
+<h3>10.3 The forecast view (finance / CFO)</h3>
+<p>The hero is the <strong>cost of inaction</strong>: the cumulative spend you forgo by not acting, plus a
+per-day burn figure. The chart shows two diverging curves — "do nothing" vs. "if you act" — with the gap
+shaded. Below, the <strong>remediation roadmap</strong> shows the monthly run-rate bending down as each phase
+lands, and a <strong>budget-breach</strong> line predicts the date you exceed budget on each trajectory. Every
+forecast carries a backtest MAPE so you know how much to trust it.</p>
+
+<h3>10.4 The optimization console (engineering / FinOps)</h3>
+<p>Four tabs answer "where can we save and are we over-capacitied?". <strong>Utilization</strong> is an
+estate heatmap with a per-resource over-capacity score on the binding (CPU-or-memory) dimension.
+<strong>Rightsizing</strong> lists CloudLens's own CPU+memory recommendations — downsize (often cross-family),
+terminate, with the saving and confidence. <strong>Scheduling</strong> shows non-prod 24/7 resources that can
+shut down nights and weekends and the % saved. The <strong>Savings ledger</strong> tracks identified →
+actioned → realized so you can prove ROI on the bill.</p>
+
+<h3>10.5 The business-insights console (FinOps lead)</h3>
+<p>The <strong>efficiency score</strong> (0–100) and a one-paragraph executive summary lead. The
+<strong>ranked insights</strong> list fuses waste, anomalies, budgets, allocation, and forecast into
+plain-language statements ordered by severity × € impact, each with a recommended action. The
+<strong>chargeback</strong> panel allocates spend to cost-centres — toggle proportional / even / showback —
+showing direct vs. allocated-shared spend, budget status, and tagging coverage.</p>
+
+<h3>10.6 The compliance admin (operator)</h3>
+<p>Operator-only (API-key). Shows the SOC 2 control matrix; expand any control to see the exact
+<code>az</code>/<code>curl</code> commands that prove it is live on the deployed resources, with expected
+output. An audit-integrity badge verifies the hash-chained audit log is intact, and the evidence-pack export
+bundles the matrix and integrity result (and logs its own execution). It states prominently that it is an
+audit-readiness aid, not a SOC report.</p>
+
+<h3>10.7 Acting on a waste finding</h3>
+<table class="data">
+<thead><tr><th>Action</th><th>Effect</th><th>API</th></tr></thead>
+<tbody>
+<tr><td>Resolve</td><td>Marks the finding resolved with actor + timestamp; removed from open lists</td><td><code>PATCH /waste/{id}/resolve</code></td></tr>
+<tr><td>Snooze 30d</td><td>Hidden for 30 days; reappears if still wasteful</td><td><code>PATCH /waste/{id}/resolve</code> (snooze)</td></tr>
+</tbody></table>
+<p>Resolved findings still count toward historical savings realised.</p>
+
+<h3>10.8 Setting a budget</h3>
+<pre><code>curl -X POST "$API/api/v1/budgets/&lt;tid&gt;" -H "Authorization: Bearer &lt;jwt&gt;" \
+  -H "Content-Type: application/json" -d '{
+    "tenant_id": "&lt;tid&gt;", "name": "Engineering", "amount_eur": 11000,
+    "scope_dimension": "cost_center", "scope_value": "engineering" }'</code></pre>
+<p>Check status (spend-to-date + forecast projection) any time:
+<code>GET /api/v1/budgets/&lt;tid&gt;/&lt;budget_id&gt;/status</code>.</p>
+
+<h3>7.7 Reading a monthly report</h3>
+<p>Generate with <code>POST /api/v1/reports/{tid}/generate</code> (returns immediately, status
+<code>pending</code>). Poll <code>GET /api/v1/reports/{tid}</code> until status is <code>ready</code>, then
+download via the 1-hour SAS URL from <code>GET /api/v1/reports/{report_id}/download</code>.</p>
+
+  
+<h2 id="glossary">11. Glossary</h2>
+<table class="data">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>Showback</td><td>Reporting each team's cloud cost for visibility, without formally charging it back</td></tr>
+<tr><td>Chargeback</td><td>Allocating cloud cost (including shared) to teams as an internal charge</td></tr>
+<tr><td>Cost of inaction</td><td>Cumulative spend forgone by not remediating known waste</td></tr>
+<tr><td>MAPE</td><td>Mean absolute percentage error — the forecast's backtested accuracy</td></tr>
+<tr><td>Efficiency score</td><td>0–100 index; 100 = no detectable waste</td></tr>
+<tr><td>Waste ratio</td><td>Recoverable spend as a percentage of total spend</td></tr>
+<tr><td>Run-rate</td><td>Annualised/monthly projected spend at the current pace</td></tr>
+<tr><td>SP</td><td>Service principal — the read-only identity CloudLens uses per customer</td></tr>
+<tr><td>Z-score (σ)</td><td>How far an observed value sits above the model's expectation, in standard deviations of the resource's own historical noise. The resource-anomaly engine flags at ≥2σ and escalates to "high" at ≥3.5σ — so a 6σ reading is far past the alarm line and almost never occurs by chance.</td></tr>
+<tr><td>Method (anomaly)</td><td>Which detector produced the expected figure: <code>holt_winters</code> (triple-exponential smoothing with weekly seasonality, used when ≥16 days of history exist) or <code>median_mad</code> (robust median + median-absolute-deviation, the fallback for sparse/new resources). Surfaced so the reader can judge how much to trust the expectation.</td></tr>
+<tr><td>Holt-Winters</td><td>A forecasting method (triple exponential smoothing) that models level, trend, and seasonality — CloudLens uses an additive, weekly-seasonal variant for both spend forecasts and resource-anomaly bands.</td></tr>
+<tr><td>Excess (anomaly)</td><td>Actual cost on the day minus the expected cost — the euro size of the spike. A noise floor (≥€10 and ≥25% above expected) suppresses trivial blips.</td></tr>
+<tr><td>Over-capacity score</td><td>0–100 measure of how over-provisioned a resource is, computed on the binding dimension (the higher of CPU or memory utilization), so a memory-bound box isn't falsely flagged as wasteful.</td></tr>
+</tbody></table>
+<p class="footer-note">CloudLens — Multi-Cloud FinOps Managed Service · Technical Documentation v1.1 · June 2026 · CONFIDENTIAL</p>
+
+</main>
+<script>
+mermaid.initialize({startOnLoad:true, theme:'dark',
+  themeVariables:{darkMode:true, background:'#131b24', primaryColor:'#18222e',
+  primaryTextColor:'#e6edf3', primaryBorderColor:'#2dd4bf', lineColor:'#647386',
+  fontFamily:'Space Grotesk', fontSize:'13px'}});
+</script>
+</body></html>

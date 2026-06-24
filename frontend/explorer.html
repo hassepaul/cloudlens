@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;
+--aws:#ff9900;--azure:#0078d4;--gcp:#ea4335;--alibaba:#ff6a00;--oci:#c74634;--ai:#a78bfa;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1120px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+.tabs{display:flex;gap:4px;border:1px solid var(--line);border-radius:9px;padding:3px}
+.tabs button{background:transparent;border:0;color:var(--txt2);font-family:var(--mono);font-size:12px;padding:6px 13px;border-radius:6px;cursor:pointer}
+.tabs button.on{background:var(--panel2);color:var(--teal)}
+.view{display:none}.view.on{display:block}
+/* breadcrumb */
+.crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px;font-family:var(--mono);font-size:12.5px}
+.crumb a{color:var(--blue);cursor:pointer;text-decoration:none;padding:3px 9px;border:1px solid var(--lineSoft);border-radius:7px;background:var(--bg2)}
+.crumb a:hover{border-color:var(--blue)}
+.crumb .sep{color:var(--txt3)}
+.crumb .cur{color:var(--txt);padding:3px 9px}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:16px 18px;margin-bottom:14px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:13px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.lvl-label{font-size:11px;color:var(--txt3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em}
+/* rows */
+.row{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:9px;cursor:pointer;border:1px solid transparent}
+.row:hover{background:var(--bg2);border-color:var(--lineSoft)}
+.row.anom{border-color:var(--redDim)}
+.row .ic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-family:var(--mono);font-size:9.5px;font-weight:700;color:#0b0f14;flex-shrink:0}
+.row .nm{flex:1;min-width:0}
+.row .nm .t{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .nm .s{font-size:11px;color:var(--txt3);font-family:var(--mono)}
+.row .bar{width:120px;height:6px;background:var(--line);border-radius:3px;overflow:hidden;flex-shrink:0}
+.row .bar i{display:block;height:100%;border-radius:3px}
+.row .amt{font-family:var(--mono);font-size:13.5px;font-weight:600;min-width:84px;text-align:right}
+.row .chev{color:var(--txt3);font-size:14px;width:14px;text-align:center}
+.anom-badge{font-family:var(--mono);font-size:9.5px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--redDim);color:var(--red);white-space:nowrap}
+.anom-badge.medium{background:var(--amberDim);color:var(--amber)}
+/* anomaly detail drawer */
+.drawer{background:var(--bg2);border:1px solid var(--redDim);border-radius:10px;padding:14px 16px;margin-top:8px}
+.drawer .dh{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:10px}
+.drawer .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.drawer .g{background:var(--panel);border-radius:8px;padding:9px 11px}
+.drawer .g .l{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em}
+.drawer .g .v{font-family:var(--mono);font-size:15px;font-weight:600;margin-top:2px}
+/* alerts */
+.alert{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--lineSoft)}
+.alert:last-child{border-bottom:0}
+.alert .sev{width:4px;border-radius:2px;flex-shrink:0}
+.alert.critical .sev{background:var(--red)}.alert.high .sev{background:var(--amber)}.alert.medium .sev{background:var(--blue)}
+.alert .c{flex:1}.alert .c .t{font-size:13px;font-weight:450}
+.alert .c .m{font-size:11px;color:var(--txt3);font-family:var(--mono);margin-top:3px}
+.alert .imp{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber)}
+.alert .ack{font-size:10px;font-family:var(--mono);color:var(--teal);border:1px solid var(--tealDim);border-radius:6px;padding:3px 8px;cursor:pointer;background:transparent}
+/* forms */
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form .full{grid-column:1/-1}
+.form label{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px}
+.form input,.form select{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);
+font-family:var(--body);font-size:13px;padding:9px 11px;outline:none}
+.form input:focus,.form select:focus{border-color:var(--teal)}
+.btn{background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);font-family:var(--mono);font-size:12px;
+padding:9px 16px;border-radius:8px;cursor:pointer}
+.btn:hover{background:#1a5c50}
+.rule{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--lineSoft)}
+.rule:last-child{border-bottom:0}
+.rule .nm{flex:1;font-size:13px}.rule .nm .s{font-size:11px;color:var(--txt3);font-family:var(--mono)}
+.rule .tog{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:6px}
+.rule .tog.on{background:var(--tealDim);color:var(--teal)}.rule .tog.off{background:var(--panel2);color:var(--txt3)}
+.note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2 class="sr-only">CloudLens multi-cloud explorer: drill from provider to account to service to resource, with anomaly detection, budget setup, and alerts</h2>
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · Explorer</h1>
+    <div class="tabs">
+      <button class="on" onclick="tab('explore',this)">Drill-down</button>
+      <button onclick="tab('alerts',this)">Alerts</button>
+      <button onclick="tab('budget',this)">Budgets</button>
+    </div>
+  </div>
+
+  <!-- DRILL-DOWN -->
+  <div class="view on" id="v-explore">
+    <div class="crumb" id="crumb"></div>
+    <div class="card">
+      <h2><span id="lvl-title">Cloud providers</span><span class="lvl-label" id="lvl-total"></span></h2>
+      <div id="rows"></div>
+      <div class="note" id="anom-note"></div>
+    </div>
+  </div>
+
+  <!-- ALERTS -->
+  <div class="view" id="v-alerts">
+    <div class="card">
+      <h2>⚠ Recent alert events</h2>
+      <div id="events"></div>
+    </div>
+    <div class="card">
+      <h2>⚙ Alert rules</h2>
+      <div id="rules"></div>
+      <div class="note">Channels: in-app (always on) · webhook (Slack/Teams) · email (needs SMTP/SendGrid/ACS integration).</div>
+    </div>
+  </div>
+
+  <!-- BUDGET SETUP -->
+  <div class="view" id="v-budget">
+    <div class="card">
+      <h2>+ Create budget</h2>
+      <div class="form">
+        <div><label>Name</label><input id="b-name" value="Engineering" /></div>
+        <div><label>Amount (€/month)</label><input id="b-amount" type="number" value="11000" /></div>
+        <div><label>Scope</label><select id="b-scope">
+          <option value="tenant">Whole tenant</option>
+          <option value="cost_center" selected>Cost center</option>
+          <option value="provider">Cloud provider</option>
+          <option value="sub_account_id">Account / subscription</option>
+        </select></div>
+        <div><label>Scope value</label><input id="b-value" value="engineering" /></div>
+        <div><label>Warning at (%)</label><input id="b-warn" type="number" value="85" /></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn" onclick="createBudget()">Create budget ↗</button></div>
+      </div>
+      <div class="note" id="b-note"></div>
+    </div>
+    <div class="card">
+      <h2>◷ Existing budgets</h2>
+      <div id="budgets"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
+const PROV={'Amazon Web Services':{ic:'AWS',c:'var(--aws)'},'Microsoft Azure':{ic:'AZ',c:'var(--azure)'},
+'Google Cloud':{ic:'GCP',c:'var(--gcp)'},'Alibaba Cloud':{ic:'ALI',c:'var(--alibaba)'},
+'Oracle Cloud Infrastructure':{ic:'OCI',c:'var(--oci)'}};
+function tab(v,el){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  document.getElementById('v-'+v).classList.add('on');
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+
+/* Data model shaped to GET /drilldown/{t}?level=&provider=&account=&service=
+   The real endpoint aggregates FOCUS records by level for any provider; this mock
+   generates the same shape for every provider path so all drill-downs work. */
+const PROVIDERS=[
+  {key:'Amazon Web Services',spend_eur:18600,pct:38.6},
+  {key:'Microsoft Azure',spend_eur:14200,pct:29.5},
+  {key:'Google Cloud',spend_eur:8100,pct:16.8},
+  {key:'Alibaba Cloud',spend_eur:3400,pct:7.1},
+  {key:'Oracle Cloud Infrastructure',spend_eur:1700,pct:3.5},
+];
+/* provider-specific accounts, services, and resource name prefixes */
+const SHAPE={
+  'Amazon Web Services':{
+    accounts:['111122223333 · prod','444455556666 · staging'],
+    services:['Amazon EC2','Amazon RDS','Amazon S3','AWS Lambda','Amazon Bedrock'],
+    rprefix:'i-0', rsuffix:['web','api','batch','worker'],
+  },
+  'Microsoft Azure':{
+    accounts:['sub-prod-01 · Production','sub-dev-02 · Dev/Test'],
+    services:['Virtual Machines','Azure SQL Database','Blob Storage','App Service','Azure OpenAI'],
+    rprefix:'vm-', rsuffix:['app','sql','web','func'],
+  },
+  'Google Cloud':{
+    accounts:['acme-prod · Production','acme-data · Analytics'],
+    services:['Compute Engine','BigQuery','Cloud SQL','Cloud Storage','Vertex AI'],
+    rprefix:'gce-', rsuffix:['svc','etl','api','ml'],
+  },
+  'Alibaba Cloud':{
+    accounts:['acc-5821 · prod','acc-5822 · test'],
+    services:['ECS','ApsaraDB RDS','OSS','Function Compute'],
+    rprefix:'i-rj9', rsuffix:['ecs','db','cache'],
+  },
+  'Oracle Cloud Infrastructure':{
+    accounts:['prod-compartment','shared-compartment'],
+    services:['Compute','Autonomous Database','Object Storage','Load Balancer'],
+    rprefix:'ocid1.instance.', rsuffix:['node','adb','lb'],
+  },
+};
+/* deterministic pseudo-hash so spends/anomalies are stable across re-renders */
+function hash(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0;}return h;}
+/* split a parent spend across named children by descending weights */
+function split(parentSpend,names,salt){
+  const weights=names.map((n,i)=>1/(i+1.4)+(hash(salt+n)%30)/100);
+  const sum=weights.reduce((a,b)=>a+b,0);
+  return names.map((n,i)=>({name:n,spend:Math.round(parentSpend*weights[i]/sum)}));
+}
+function getChildren(level,keys,parentSpend){
+  if(level==='provider') return PROVIDERS.map(p=>({...p,next_level:'account'}));
+  const prov=keys[0]; const shp=SHAPE[prov]||SHAPE['Amazon Web Services'];
+  if(level==='account'){
+    return split(parentSpend,shp.accounts,prov).map(c=>({key:c.name,spend_eur:c.spend,next_level:'service'}));
+  }
+  if(level==='service'){
+    return split(parentSpend,shp.services,keys[1]).map(c=>({key:c.name,spend_eur:c.spend,next_level:'resource'}));
+  }
+  /* resource level: generate resources, inject anomalies deterministically */
+  const svc=keys[2]; const base=hash(keys.join('|'));
+  const n=3+(base%2);
+  const names=[];for(let i=0;i<n;i++){names.push(`${shp.rprefix}${(base+i).toString(16).slice(0,4)} · ${shp.rsuffix[i%shp.rsuffix.length]}-${svc.split(' ').pop().toLowerCase()}-${i+1}`);}
+  const rows=split(parentSpend,names,svc).map((c,i)=>({key:c.name,spend_eur:c.spend,anomaly:null}));
+  /* anomaly on top resource when hash even; a medium on another when divisible by 3 */
+  if(rows.length && base%2===0){
+    const exp=Math.round(rows[0].spend_eur*0.35), act=Math.round(rows[0].spend_eur*0.9);
+    rows[0].anomaly={severity:'high',actual_eur:act,expected_eur:exp,excess_eur:act-exp,
+      z_score:(4+(base%4)).toFixed(1)*1,day:'2026-06-15',method:'holt_winters'};
+  }
+  if(rows.length>2 && base%3===0){
+    const exp=Math.round(rows[2].spend_eur*0.5), act=Math.round(rows[2].spend_eur*0.85);
+    rows[2].anomaly={severity:'medium',actual_eur:act,expected_eur:exp,excess_eur:act-exp,
+      z_score:(3+(base%2)).toFixed(1)*1,day:'2026-06-16',method:'median_mad'};
+  }
+  return rows;
+}
+function pct(spend,total){return total>0?Math.round(spend/total*1000)/10:0;}
+
+let PATH=[];  // [{key,nextLevel,spend}]
+function renderCrumb(){
+  const parts=['<a onclick="goto(-1)">Portfolio</a>'];
+  PATH.forEach((p,i)=>{parts.push('<span class="sep">→</span>');
+    if(i<PATH.length-1)parts.push(`<a onclick="goto(${i})">${p.key}</a>`);
+    else parts.push(`<span class="cur">${p.key}</span>`);});
+  document.getElementById('crumb').innerHTML=parts.join('');
+}
+function goto(i){PATH=i<0?[]:PATH.slice(0,i+1);render();}
+function drill(key,nextLevel,spend){if(!nextLevel)return;PATH.push({key,nextLevel,spend});render();}
+function iconFor(level,key){
+  if(level==='provider'){const m=PROV[key]||{ic:'?',c:'var(--txt3)'};return `<span class="ic" style="background:${m.c}">${m.ic}</span>`;}
+  const map={account:['ACC','var(--blue)'],service:['SVC','var(--teal)'],resource:['RES','var(--purple)']};
+  const [t,c]=map[level]||['?','var(--txt3)'];return `<span class="ic" style="background:${c}">${t}</span>`;}
+function render(){
+  renderCrumb();
+  const lvl=PATH.length===0?'provider':PATH[PATH.length-1].nextLevel;
+  const keys=PATH.map(p=>p.key);
+  const parentSpend=PATH.length===0?0:PATH[PATH.length-1].spend;
+  const title=PATH.length===0?'Cloud providers':PATH[PATH.length-1].key;
+  document.getElementById('lvl-title').textContent=title;
+  let kids=getChildren(lvl,keys,parentSpend);
+  const total=kids.reduce((s,k)=>s+k.spend_eur,0);
+  kids.forEach(k=>k.pct=pct(k.spend_eur,total));
+  kids.sort((a,b)=>b.spend_eur-a.spend_eur);
+  document.getElementById('lvl-total').textContent=`${kids.length} ${lvl}${kids.length===1?'':'s'} · ${EUR(total)}`;
+  const max=Math.max(...kids.map(k=>k.spend_eur),1);
+  let anomCount=0;
+  document.getElementById('rows').innerHTML=kids.map((k,idx)=>{
+    const a=k.anomaly;if(a)anomCount++;
+    const col=lvl==='provider'?(PROV[k.key]||{}).c||'var(--teal)':'var(--teal)';
+    const badge=a?`<span class="anom-badge ${a.severity}">⚠ ${a.severity==='high'?'ANOMALY':'watch'} +${EUR(a.excess_eur)}</span>`:'';
+    const drawer=a?`<div class="drawer" id="dr-${idx}" style="display:none">
+      <div class="dh">⚠ Resource cost anomaly — ${k.key.split('·').pop().trim()}</div>
+      <div class="grid">
+        <div class="g"><div class="l">Actual (day)</div><div class="v" style="color:var(--red)">${EUR(a.actual_eur)}</div></div>
+        <div class="g"><div class="l">Expected</div><div class="v">${EUR(a.expected_eur)}</div></div>
+        <div class="g"><div class="l">Excess</div><div class="v" style="color:var(--amber)">+${EUR(a.excess_eur)}</div></div>
+        <div class="g"><div class="l">Z-score</div><div class="v">${a.z_score}σ</div></div>
+        <div class="g"><div class="l">Date</div><div class="v" style="font-size:12px">${a.day}</div></div>
+        <div class="g"><div class="l">Method</div><div class="v" style="font-size:11px">${a.method}</div></div>
+      </div></div>`:'';
+    const next=k.next_level||(lvl==='resource'?null:'service');
+    const safeKey=k.key.replace(/'/g,"\\'");
+    const click=a?`onclick="toggleDrawer(${idx})"`:(next?`onclick="drill('${safeKey}','${next}',${k.spend_eur})"`:'');
+    return `<div class="row ${a?'anom':''}" ${click}>
+      ${iconFor(lvl,k.key)}
+      <div class="nm"><div class="t">${k.key} ${badge}</div><div class="s">${k.pct}% of level</div></div>
+      <div class="bar"><i style="width:${k.spend_eur/max*100}%;background:${col}"></i></div>
+      <div class="amt">${EUR(k.spend_eur)}</div>
+      <div class="chev">${next&&!a?'›':(a?'⌄':'')}</div>
+    </div>${drawer}`;
+  }).join('');
+  document.getElementById('anom-note').textContent=anomCount?
+    `${anomCount} resource anomaly(ies) flagged at this level — click a flagged row to see why.`:'';
+}
+function toggleDrawer(i){const d=document.getElementById('dr-'+i);if(d)d.style.display=d.style.display==='none'?'block':'none';}
+
+/* alerts */
+const EVENTS=[
+  {severity:'critical',title:"Budget 'Engineering' at 112% of €11,000",meta:'budget_breach · 2026-06-16',imp:1320,ack:false},
+  {severity:'high',title:"Resource 'web-prod-03' spiked to €240 (expected €96)",meta:'resource_anomaly · AWS/prod · 2026-06-15',imp:144,ack:false},
+  {severity:'high',title:'Spend spike €1,240 on 2026-06-08 (driver: Virtual Machines)',meta:'spend_spike · 4.2σ',imp:1240,ack:true},
+  {severity:'medium',title:'Idle commitment €640/mo exceeds threshold €500',meta:'commitment_idle',imp:640,ack:false},
+];
+const RULES=[
+  {name:'Budget breach ≥ 90%',type:'budget_breach',ch:'in_app, email',on:true},
+  {name:'Resource anomaly ≥ 3σ (AWS prod)',type:'resource_anomaly',ch:'in_app, webhook',on:true},
+  {name:'Recoverable waste ≥ €5,000',type:'waste_threshold',ch:'in_app',on:true},
+  {name:'Idle commitment ≥ €500',type:'commitment_idle',ch:'in_app',on:false},
+];
+function renderAlerts(){
+  document.getElementById('events').innerHTML=EVENTS.map((e,i)=>`<div class="alert ${e.severity}">
+    <div class="sev"></div>
+    <div class="c"><div class="t">${e.title}</div><div class="m">${e.meta}</div></div>
+    <div class="imp">${EUR(e.imp)}</div>
+    ${e.ack?'<span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">ack’d</span>':`<button class="ack" onclick="ackEvent(${i})">ack</button>`}
+  </div>`).join('');
+  document.getElementById('rules').innerHTML=RULES.map(r=>`<div class="rule">
+    <div class="nm"><div>${r.name}</div><div class="s">${r.type} · ${r.ch}</div></div>
+    <span class="tog ${r.on?'on':'off'}">${r.on?'enabled':'disabled'}</span></div>`).join('');
+}
+function ackEvent(i){EVENTS[i].ack=true;renderAlerts();}
+
+/* budgets */
+const BUDGETS=[
+  {name:'Engineering',scope:'cost_center=engineering',amount:11000,spend:12320,pct:112,status:'breach'},
+  {name:'AWS prod account',scope:'sub_account_id=111122223333',amount:14000,spend:11800,pct:84,status:'warning'},
+  {name:'Tenant total',scope:'tenant',amount:60000,spend:45800,pct:76,status:'ok'},
+];
+function budColor(p){return p>=100?'var(--red)':p>=85?'var(--amber)':'var(--teal)';}
+function renderBudgets(){
+  document.getElementById('budgets').innerHTML=BUDGETS.map(b=>`<div class="rule">
+    <div class="nm"><div>${b.name}</div><div class="s">${b.scope}</div></div>
+    <div style="width:140px"><div style="height:7px;background:var(--line);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100,b.pct)}%;background:${budColor(b.pct)};border-radius:4px"></i></div>
+      <div style="font-size:10px;color:var(--txt3);font-family:var(--mono);margin-top:3px">${EUR(b.spend)} / ${EUR(b.amount)}</div></div>
+    <div style="font-family:var(--mono);font-weight:600;color:${budColor(b.pct)};min-width:42px;text-align:right">${b.pct}%</div></div>`).join('');
+}
+function createBudget(){
+  const name=document.getElementById('b-name').value;
+  const amount=document.getElementById('b-amount').value;
+  const scope=document.getElementById('b-scope').value;
+  const value=document.getElementById('b-value').value;
+  const scopeStr=scope==='tenant'?'tenant':`${scope}=${value}`;
+  BUDGETS.unshift({name,scope:scopeStr,amount:+amount,spend:0,pct:0,status:'ok'});
+  renderBudgets();
+  document.getElementById('b-note').textContent=`Created "${name}" (${EUR(+amount)}/mo, scope ${scopeStr}). Wires to POST /api/v1/budgets/{tenant}.`;
+}
+
+render();renderAlerts();renderBudgets();
+</script>
+</body>
+</html>
