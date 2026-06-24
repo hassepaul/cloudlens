@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CloudLens · Unit Economics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#0d1218;--panel:#18222e;--panel2:#1e2c3a;--line:#2a3a4a;--lineSoft:#243040;
+  --teal:#2dd4bf;--tealDim:#0f3530;--purple:#a78bfa;--purpleDim:#2e1f5e;
+  --amber:#fbbf24;--amberDim:#3a2800;--red:#f87171;--redDim:#3a0e0e;
+  --txt:#e2eaf4;--txt2:#7f9ab0;--txt3:#4a6278;
+  --mono:'Space Grotesk',monospace;--body:'Inter',sans-serif;
+  --r:10px
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);font-size:14px;min-height:100vh;padding:24px}
+.wrap{max-width:1100px;margin:0 auto}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--tealDim);color:var(--teal)}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+h1{font-family:var(--mono);font-size:22px;font-weight:600;display:flex;align-items:center;gap:8px}
+.dot{display:inline-block;width:8px;height:8px;background:var(--teal);border-radius:50%}
+.card{background:var(--panel);border:1px solid var(--lineSoft);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:500;margin-bottom:14px;color:var(--txt)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--lineSoft);border-radius:var(--r);padding:16px}
+.kpi .label{font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kpi .value{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--teal)}
+.kpi .sub{font-size:11px;color:var(--txt2);margin-top:4px}
+.metric-list{display:flex;flex-direction:column;gap:4px}
+.metric-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;border:1px solid transparent;cursor:pointer;transition:background .12s}
+.metric-row:hover,.metric-row.active{background:var(--panel2);border-color:var(--lineSoft)}
+.metric-row .mn{font-family:var(--mono);font-size:12px;flex:1}
+.metric-row .ms{font-size:11px;color:var(--txt2)}
+.metric-row .mdel{margin-left:auto;font-size:10px;color:var(--txt3);cursor:pointer;padding:2px 7px;border-radius:4px;border:1px solid var(--lineSoft);background:transparent;color:var(--txt3)}
+.metric-row .mdel:hover{border-color:var(--red);color:var(--red)}
+.trend{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px}
+.trend.increasing{background:var(--redDim);color:var(--red)}
+.trend.decreasing{background:var(--tealDim);color:var(--teal)}
+.trend.stable{background:var(--panel2);color:var(--txt2)}
+/* SVG sparkline chart */
+.chart-wrap{background:var(--panel2);border-radius:8px;padding:16px;margin-bottom:16px;overflow-x:auto}
+.chart-wrap svg{display:block;width:100%;min-width:320px}
+.chart-meta{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.chart-meta .big{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--teal)}
+.chart-meta .lbl{font-size:12px;color:var(--txt2)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);text-align:left;padding:6px 10px;border-bottom:1px solid var(--lineSoft)}
+td{padding:7px 10px;border-bottom:1px solid var(--lineSoft)}
+td.mono{font-family:var(--mono);font-size:11px;color:var(--txt2)}
+tr:hover td{background:var(--panel2)}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px}
+.form label{display:block;font-size:11px;color:var(--txt3);margin-bottom:4px;font-family:var(--mono)}
+.form input,.form select,.form textarea{width:100%;background:var(--panel2);border:1px solid var(--lineSoft);border-radius:6px;color:var(--txt);font-size:12px;padding:7px 9px;outline:none;resize:vertical;font-family:var(--body)}
+.form input:focus,.form select:focus,.form textarea:focus{border-color:var(--teal)}
+.form .full{grid-column:1/-1}
+.btn{background:var(--tealDim);border:1px solid var(--teal);border-radius:6px;color:var(--teal);font-family:var(--mono);font-size:12px;padding:7px 16px;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--teal);color:#0d1218}
+.note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.6}
+.layout{display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start}
+@media(max-width:700px){.layout{grid-template-columns:1fr}}
+.empty{color:var(--txt3);font-size:12px;padding:20px 0;text-align:center;font-family:var(--mono)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+  <a href="forecast.html" class="snav-link">∿ Forecast</a>
+  <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
+  <a href="unit_economics.html" class="snav-link active">∑ Unit Cost</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+</nav>
+<h2 class="sr-only">CloudLens unit economics: cost per user, per transaction, per API call — daily time series and trend analysis</h2>
+<div class="head">
+  <h1><span class="dot"></span> CloudLens · Unit Economics</h1>
+</div>
+
+<!-- KPI row -->
+<div class="kpi-row" id="kpi-row">
+  <div class="kpi"><div class="label">Metrics tracked</div><div class="value" id="kpi-metrics">0</div><div class="sub">Calls GET /api/v1/unit-economics/{t}/metrics</div></div>
+  <div class="kpi"><div class="label">Selected metric avg</div><div class="value" id="kpi-avg">—</div><div class="sub" id="kpi-avg-sub">select a metric</div></div>
+  <div class="kpi"><div class="label">Trend (30d)</div><div class="value" id="kpi-trend" style="font-size:14px;padding-top:6px">—</div><div class="sub">vs. prior 30 days</div></div>
+  <div class="kpi"><div class="label">Latest data point</div><div class="value" id="kpi-latest" style="font-size:14px;padding-top:6px">—</div><div class="sub" id="kpi-latest-sub">date</div></div>
+</div>
+
+<div class="layout">
+  <!-- Left: metric list -->
+  <div>
+    <div class="card" style="padding:14px">
+      <h2>Metrics <span style="font-size:10px;font-weight:400;color:var(--txt3)">GET /api/v1/unit-economics/{t}/metrics</span></h2>
+      <div class="metric-list" id="metric-list"><div class="empty">Loading…</div></div>
+    </div>
+    <!-- Create metric form -->
+    <div class="card" style="padding:14px">
+      <h2>+ Define new metric</h2>
+      <div class="form" style="grid-template-columns:1fr">
+        <div><label>Metric name</label><input id="m-name" placeholder="Active users" /></div>
+        <div><label>Unit label</label><input id="m-unit" placeholder="user" /></div>
+        <div><label>Scope <span style="color:var(--txt3)">(optional)</span></label><input id="m-scope" placeholder="service=api" /></div>
+        <div><button class="btn" style="width:100%" onclick="createMetric()">Create metric ↗</button></div>
+      </div>
+      <div class="note" id="m-note">Calls POST /api/v1/unit-economics/{tenant}/metrics</div>
+    </div>
+  </div>
+
+  <!-- Right: chart + data table + upload form -->
+  <div id="right-panel">
+    <div class="card" style="padding:14px;text-align:center;color:var(--txt3);font-size:12px;font-family:var(--mono)">
+      Select a metric on the left to view cost-per-unit analysis.
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+const TENANT='t-acme';
+const API_BASE='';
+let METRICS=[];
+let selectedMetric=null;
+
+function EUR(n,d=4){
+  if(n<0.01) return '€'+n.toFixed(6);
+  return '€'+n.toFixed(d);
+}
+
+/* ── Mock data ────────────────────────────────────────────────────────────── */
+const MOCK_METRICS=[
+  {id:'m-001',name:'Active users',unit_label:'user',scope:'service=api'},
+  {id:'m-002',name:'API calls',unit_label:'1k API calls',scope:'service=api'},
+  {id:'m-003',name:'Transactions processed',unit_label:'transaction',scope:'service=payments'},
+];
+
+function makeSeries(base,scale,days=30){
+  const series=[];
+  for(let i=days-1;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const date=d.toISOString().slice(0,10);
+    const unit_count=Math.round(base*(0.85+Math.random()*0.3));
+    const cost_eur=3500+Math.random()*800;
+    series.push({date,cost_eur,unit_count,cost_per_unit_eur:cost_eur/unit_count*scale,has_data:true});
+  }
+  return series;
+}
+
+const MOCK_SERIES={
+  'm-001':{metric_name:'Active users',unit_label:'user',average_cost_per_unit_eur:0.0312,trend:'decreasing',series:makeSeries(112000,1)},
+  'm-002':{metric_name:'API calls',unit_label:'1k API calls',average_cost_per_unit_eur:0.0048,trend:'stable',series:makeSeries(3200,1000)},
+  'm-003':{metric_name:'Transactions',unit_label:'transaction',average_cost_per_unit_eur:0.00089,trend:'increasing',series:makeSeries(4000000,1)},
+};
+
+/* ── Load metrics ─────────────────────────────────────────────────────────── */
+async function loadMetrics(){
+  let data;
+  try{
+    const r=await fetch(`${API_BASE}/api/v1/unit-economics/${TENANT}/metrics`);
+    if(r.ok){data=await r.json();METRICS=data.metrics||[];}else{METRICS=MOCK_METRICS;}
+  }catch(e){METRICS=MOCK_METRICS;}
+  document.getElementById('kpi-metrics').textContent=METRICS.length;
+  renderMetricList();
+}
+
+function renderMetricList(){
+  if(!METRICS.length){document.getElementById('metric-list').innerHTML='<div class="empty">No metrics yet — define one below.</div>';return;}
+  document.getElementById('metric-list').innerHTML=METRICS.map(m=>`
+    <div class="metric-row${selectedMetric?.id===m.id?' active':''}" onclick="selectMetric('${m.id}')">
+      <div>
+        <div class="mn">${m.name}</div>
+        <div class="ms">per ${m.unit_label}${m.scope?` \u00b7 ${m.scope}`:''}</div>
+      </div>
+      <button class="mdel" onclick="event.stopPropagation();deleteMetric('${m.id}')">del</button>
+    </div>`).join('');
+}
+
+/* ── Select metric ────────────────────────────────────────────────────────── */
+async function selectMetric(id){
+  selectedMetric=METRICS.find(m=>m.id===id);
+  renderMetricList();
+  document.getElementById('right-panel').innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--txt3);font-size:12px;font-family:var(--mono)">Loading\u2026</div>';
+
+  let data;
+  try{
+    const r=await fetch(`${API_BASE}/api/v1/unit-economics/${TENANT}/cost-per-unit?metric_id=${id}&days=30`);
+    if(r.ok) data=await r.json(); else data=MOCK_SERIES[id];
+  }catch(e){data=MOCK_SERIES[id];}
+  if(!data){data={metric_name:selectedMetric.name,unit_label:selectedMetric.unit_label,average_cost_per_unit_eur:0,trend:'stable',series:[]};}
+  renderRightPanel(data);
+}
+
+/* ── Right panel ─────────────────────────────────────────────────────────── */
+function renderRightPanel(d){
+  const last=d.series.filter(s=>s.has_data).slice(-1)[0];
+  /* update KPIs */
+  document.getElementById('kpi-avg').textContent=d.average_cost_per_unit_eur<0.01?'€'+d.average_cost_per_unit_eur.toFixed(6):'€'+d.average_cost_per_unit_eur.toFixed(4);
+  document.getElementById('kpi-avg-sub').textContent=`avg cost per ${d.unit_label}`;
+  document.getElementById('kpi-trend').innerHTML=`<span class="trend ${d.trend}">${d.trend==='increasing'?'\u2191':d.trend==='decreasing'?'\u2193':'\u2194'} ${d.trend}</span>`;
+  if(last){
+    document.getElementById('kpi-latest').textContent='€'+last.cost_per_unit_eur.toFixed(4);
+    document.getElementById('kpi-latest-sub').textContent=last.date;
+  }
+
+  /* sparkline chart */
+  const pts=d.series.filter(s=>s.has_data);
+  const vals=pts.map(p=>p.cost_per_unit_eur);
+  const minV=Math.min(...vals), maxV=Math.max(...vals)||1;
+  const W=800,H=100,pad=10;
+  function cx(i){return pad+i*(W-2*pad)/(pts.length-1||1);}
+  function cy(v){return H-pad-(v-minV)/(maxV-minV||1)*(H-2*pad);}
+  const polyline=pts.map((p,i)=>`${cx(i)},${cy(p.cost_per_unit_eur)}`).join(' ');
+
+  const trendColor=d.trend==='decreasing'?'var(--teal)':d.trend==='increasing'?'var(--red)':'var(--purple)';
+
+  document.getElementById('right-panel').innerHTML=`
+    <div class="card">
+      <h2>${d.metric_name} — cost per ${d.unit_label} <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">GET /api/v1/unit-economics/{t}/cost-per-unit</span></h2>
+      <div class="chart-meta">
+        <span class="big">${d.average_cost_per_unit_eur<0.01?'€'+d.average_cost_per_unit_eur.toFixed(6):'€'+d.average_cost_per_unit_eur.toFixed(4)}</span>
+        <span class="lbl">30-day average cost per ${d.unit_label}</span>
+        <span class="trend ${d.trend}">${d.trend==='increasing'?'\u2191 rising':d.trend==='decreasing'?'\u2193 declining':'\u2194 stable'}</span>
+      </div>
+      <div class="chart-wrap">
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:100px">
+          <defs>
+            <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${trendColor}" stop-opacity=".25"/>
+              <stop offset="100%" stop-color="${trendColor}" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          ${pts.length>1?`
+          <polygon points="${pts.map((p,i)=>`${cx(i)},${cy(p.cost_per_unit_eur)}`).join(' ')} ${cx(pts.length-1)},${H} ${cx(0)},${H}" fill="url(#cg)"/>
+          <polyline points="${polyline}" fill="none" stroke="${trendColor}" stroke-width="1.5" stroke-linejoin="round"/>`:''}
+        </svg>
+      </div>
+      <table>
+        <thead><tr><th>Date</th><th>Cost / ${d.unit_label}</th><th>Unit count</th><th>Cloud spend</th></tr></thead>
+        <tbody>${pts.slice(-14).reverse().map(p=>`<tr>
+          <td class="mono">${p.date}</td>
+          <td style="font-family:var(--mono);color:var(--teal)">${p.cost_per_unit_eur<0.01?'€'+p.cost_per_unit_eur.toFixed(6):'€'+p.cost_per_unit_eur.toFixed(4)}</td>
+          <td class="mono">${Math.round(p.unit_count).toLocaleString('en-US')}</td>
+          <td class="mono">\u20ac${Math.round(p.cost_eur).toLocaleString('en-US')}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+
+    <!-- Upload data points -->
+    <div class="card">
+      <h2>Upload daily counts <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">POST /api/v1/unit-economics/{t}/metrics/${selectedMetric?.id}/data</span></h2>
+      <div class="note" style="margin-bottom:12px">Paste one <code>date,count</code> pair per line (e.g. <code>2026-06-01,112345</code>). Idempotent — duplicate dates are overwritten.</div>
+      <div class="form" style="grid-template-columns:1fr">
+        <div class="full"><label>Date,count lines</label><textarea id="dp-input" rows="5" placeholder="2026-06-01,112345&#10;2026-06-02,118200&#10;2026-06-03,109870"></textarea></div>
+        <div><button class="btn" onclick="uploadDatapoints()">Upload ↗</button></div>
+      </div>
+      <div class="note" id="dp-note">Wires to POST /api/v1/unit-economics/${TENANT}/metrics/${selectedMetric?.id}/data</div>
+    </div>`;
+}
+
+/* ── Create metric ────────────────────────────────────────────────────────── */
+async function createMetric(){
+  const name=document.getElementById('m-name').value.trim();
+  const unit_label=document.getElementById('m-unit').value.trim();
+  const scope=document.getElementById('m-scope').value.trim();
+  if(!name||!unit_label){document.getElementById('m-note').textContent='Name and unit label are required.';return;}
+  document.getElementById('m-note').textContent='Creating\u2026';
+
+  let newMetric;
+  try{
+    const r=await fetch(`${API_BASE}/api/v1/unit-economics/${TENANT}/metrics`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,unit_label,scope:scope||undefined})
+    });
+    if(r.ok) newMetric=await r.json();
+    else newMetric={id:'m-'+Date.now(),name,unit_label,scope};
+  }catch(e){newMetric={id:'m-'+Date.now(),name,unit_label,scope};}
+
+  METRICS.unshift(newMetric);
+  MOCK_SERIES[newMetric.id]={metric_name:name,unit_label,average_cost_per_unit_eur:0,trend:'stable',series:[]};
+  document.getElementById('kpi-metrics').textContent=METRICS.length;
+  document.getElementById('m-note').textContent=`\u2713 Created "${name}" (id: ${newMetric.id}).`;
+  renderMetricList();
+  selectMetric(newMetric.id);
+}
+
+/* ── Delete metric ────────────────────────────────────────────────────────── */
+async function deleteMetric(id){
+  try{
+    await fetch(`${API_BASE}/api/v1/unit-economics/${TENANT}/metrics/${id}`,{method:'DELETE'});
+  }catch(e){/* offline */}
+  METRICS=METRICS.filter(m=>m.id!==id);
+  if(selectedMetric?.id===id){selectedMetric=null;document.getElementById('right-panel').innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--txt3);font-size:12px;font-family:var(--mono)">Metric deleted. Select another.</div>';}
+  document.getElementById('kpi-metrics').textContent=METRICS.length;
+  renderMetricList();
+}
+
+/* ── Upload data points ───────────────────────────────────────────────────── */
+async function uploadDatapoints(){
+  if(!selectedMetric){return;}
+  const raw=document.getElementById('dp-input').value.trim();
+  const datapoints=raw.split('\n').map(l=>{const [d,c]=l.split(',');return{date:d?.trim(),count:parseInt(c?.trim(),10)};}).filter(p=>p.date&&!isNaN(p.count));
+  if(!datapoints.length){document.getElementById('dp-note').textContent='No valid date,count lines found.';return;}
+  document.getElementById('dp-note').textContent='Uploading\u2026';
+
+  try{
+    const r=await fetch(`${API_BASE}/api/v1/unit-economics/${TENANT}/metrics/${selectedMetric.id}/data`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({datapoints})
+    });
+    if(r.ok){const d=await r.json();document.getElementById('dp-note').textContent=`\u2713 Saved ${d.saved} data point(s).`;}
+    else{document.getElementById('dp-note').textContent=`HTTP ${r.status} \u2014 offline demo: ${datapoints.length} lines parsed, wires to POST /api/v1/unit-economics/${TENANT}/metrics/${selectedMetric.id}/data.`;}
+  }catch(e){
+    document.getElementById('dp-note').textContent=`Offline demo \u2014 parsed ${datapoints.length} lines. Wires to POST /api/v1/unit-economics/${TENANT}/metrics/${selectedMetric.id}/data.`;
+  }
+}
+
+/* ── Active nav ─────────────────────────────────────────────────────────── */
+document.querySelectorAll('.snav-link').forEach(a=>{
+  if(location.pathname.endsWith(a.getAttribute('href')))a.classList.add('active');
+});
+
+/* ── Init ────────────────────────────────────────────────────────────────── */
+loadMetrics().then(()=>{if(METRICS.length)selectMetric(METRICS[0].id);});
+</script>
+</body>
+</html>

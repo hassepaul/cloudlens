@@ -69,10 +69,23 @@ color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1
 .catrow:last-child{border-bottom:0}.catrow .nm{flex:1;text-transform:capitalize}
 .catrow .v{font-family:var(--mono);min-width:70px;text-align:right}
 .note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.5}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--tealDim);color:var(--teal)}
 </style>
 </head>
 <body>
 <div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+  <a href="forecast.html" class="snav-link">∿ Forecast</a>
+  <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
+  <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+</nav>
   <h2 class="sr-only">CloudLens optimization: utilization heatmap with over-capacity scoring, CPU and memory rightsizing recommendations, scheduling, and realized-savings ledger</h2>
   <div class="head">
     <h1><span class="dot"></span> CloudLens · Optimization</h1>

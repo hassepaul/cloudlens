@@ -88,7 +88,33 @@
   .bud .ti{flex:1;min-width:0}
   .bud .ti b{font-size:13.5px;display:block}.bud .ti span{font-size:11px;color:var(--txt3);font-family:var(--mono)}
   .bud .gauge{flex:1.4;max-width:200px}
-  .bud .gauge .tr{height:8px;background:var(--line);border-radius:4px;overflow:hidden;position:relative}
+  /* AI analyst */
+  .ai-panel{background:linear-gradient(135deg,#1a1430 0,var(--bg2) 100%);border:1px solid var(--purpleDim);border-radius:13px;padding:18px 20px;margin-top:16px}
+  .ai-panel h2{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--purple);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .ai-anom-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--lineSoft);cursor:pointer}
+  .ai-anom-row:last-child{border-bottom:0}
+  .ai-anom-row:hover .ai-explain-btn{opacity:1}
+  .ai-explain-btn{opacity:.5;font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:6px;background:var(--purpleDim);color:var(--purple);border:1px solid var(--purple);cursor:pointer;transition:opacity .12s}
+  .ai-explain-btn:hover{opacity:1;background:#3d2870}
+  .ai-result{background:var(--panel);border:1px solid var(--purpleDim);border-radius:10px;padding:16px 18px;margin-top:14px;display:none}
+  .ai-result.visible{display:block}
+  .ai-result .expl{font-size:14px;line-height:1.65;color:var(--txt);margin-bottom:14px}
+  .ai-result .factors{list-style:none;padding:0;margin-bottom:14px}
+  .ai-result .factors li{display:flex;gap:8px;font-size:12.5px;color:var(--txt2);padding:4px 0;border-bottom:1px solid var(--lineSoft)}
+  .ai-result .factors li:last-child{border-bottom:0}
+  .ai-result .factors li::before{content:'→';color:var(--purple);flex-shrink:0}
+  .ai-action{background:var(--bg2);border-left:3px solid var(--teal);padding:10px 13px;border-radius:0 7px 7px 0;font-size:12.5px;color:var(--teal)}
+  .conf-badge{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;padding:2px 8px;border-radius:6px;letter-spacing:.04em}
+  .conf-badge.high{background:var(--tealDim);color:var(--teal)}.conf-badge.medium{background:var(--amberDim);color:var(--amber)}.conf-badge.low{background:var(--redDim);color:var(--red)}
+  .ai-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .ai-spin{display:inline-block;width:14px;height:14px;border:2px solid var(--purpleDim);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* sitenav */
+  .sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+  .snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+  .snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--tealDim);color:var(--teal)}
+
+.bud .gauge .tr{height:8px;background:var(--line);border-radius:4px;overflow:hidden;position:relative}
   .bud .gauge .tr i{display:block;height:100%;border-radius:4px}
   .bud .gauge .marks{font-size:10px;color:var(--txt3);font-family:var(--mono);margin-top:3px;display:flex;justify-content:space-between}
   .bud .pc{font-family:var(--mono);font-size:14px;font-weight:600;min-width:48px;text-align:right}
@@ -100,6 +126,16 @@
 </head>
 <body>
 <div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+  <a href="forecast.html" class="snav-link">∿ Forecast</a>
+  <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
+  <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+</nav><div class="wrap">
   <h2 class="sr-only">CloudLens business insights console — anomaly detection, chargeback, budgets, and executive insights</h2>
 
   <div class="head">
@@ -162,6 +198,18 @@
       <button class="addbtn" onclick="sendPrompt('Create a new budget for CloudLens')">+ new budget</button>
     </div>
     <div id="budgets"></div>
+  </div>
+
+  <!-- AI COST ANALYST -->
+  <div class="ai-panel">
+    <h2>✦ AI Cost Analyst <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">— GPT-4o root-cause explanation · Calls POST /api/v1/insights/{tenant_id}/explain</span></h2>
+    <div style="font-size:12.5px;color:var(--txt2);margin-bottom:14px;line-height:1.6">
+      Click <b style="color:var(--purple)">Explain ✦</b> on any detected anomaly to get a plain-English root-cause analysis.
+      CloudLens feeds z-score, service-level deltas, resource-group breakdowns, and optional deployment events to GPT-4o.
+      Falls back to deterministic rule-based explanation if no API key is configured — same API contract.
+    </div>
+    <div id="ai-anoms"></div>
+    <div class="ai-result" id="ai-result"></div>
   </div>
 </div>
 
@@ -279,6 +327,108 @@ document.getElementById('strategy').addEventListener('click',e=>{
 });
 
 renderDigest(); renderChargeback(); renderBudgets();
+
+/* ── Active nav ── */
+document.querySelectorAll('.snav-link').forEach(a=>{if(location.pathname.endsWith(a.getAttribute('href')))a.classList.add('active');});
+
+/* ═══════════════════════════════════════════════════════════
+   AI COST ANALYST
+   Calls POST /api/v1/insights/{tenant_id}/explain
+   Falls back to rule-based explanation when LLM not configured.
+   ═══════════════════════════════════════════════════════════ */
+const TENANT='t-acme';
+const API_BASE='';  // set to 'https://your-api.azurecontainerapps.io' in production
+
+/* Anomalies shaped to match the /insights/{t}/anomalies API response */
+const AI_ANOMALIES=[
+  {day:'2026-06-08',actual_eur:3420,expected_eur:2180,excess_eur:1240,z_score:4.2,
+   direction:'spike',severity:'high',
+   drivers:[
+     {dimension:'service',name:'Virtual Machines',delta_eur:890,share_pct:72,baseline_eur:1100,anomaly_day_eur:1990},
+     {dimension:'resource_group',name:'rg-staging',delta_eur:350,share_pct:28,baseline_eur:420,anomaly_day_eur:770},
+   ],trailing_7d_avg_eur:2220},
+  {day:'2026-06-15',actual_eur:2890,expected_eur:2200,excess_eur:690,z_score:2.6,
+   direction:'spike',severity:'medium',
+   drivers:[
+     {dimension:'service',name:'Azure OpenAI',delta_eur:690,share_pct:100,baseline_eur:80,anomaly_day_eur:770},
+   ],trailing_7d_avg_eur:2210},
+];
+
+let activeAI=null;
+
+function renderAIPanel(){
+  document.getElementById('ai-anoms').innerHTML=AI_ANOMALIES.map((a,i)=>`
+    <div class="ai-anom-row" onclick="runExplain(${i})">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--txt3);min-width:80px">${a.day}</span>
+      <span style="font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:5px;background:${a.severity==='high'?'var(--redDim)':'var(--amberDim)'};color:${a.severity==='high'?'var(--red)':'var(--amber)'}">${a.severity.toUpperCase()}</span>
+      <span style="flex:1;font-size:13px">${a.direction==='spike'?'↑':'↓'} €${Math.round(a.excess_eur).toLocaleString()} excess · z=${a.z_score}σ</span>
+      <span style="font-size:12px;color:var(--txt3)">${a.drivers[0]?.name||'—'}</span>
+      <button class="ai-explain-btn" onclick="event.stopPropagation();runExplain(${i})">Explain ✦</button>
+    </div>`).join('');
+}
+
+async function runExplain(idx){
+  const a=AI_ANOMALIES[idx];
+  if(activeAI===idx){const r=document.getElementById('ai-result');r.classList.toggle('visible');return;}
+  activeAI=idx;
+  const r=document.getElementById('ai-result');
+  r.innerHTML=`<div class="ai-meta"><span class="ai-spin"></span><span style="color:var(--txt3);font-size:12px">Asking AI analyst…</span></div>`;
+  r.classList.add('visible');
+
+  let data;
+  try{
+    const resp=await fetch(`${API_BASE}/api/v1/insights/${TENANT}/explain`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        anomaly_day:a.day,actual_eur:a.actual_eur,expected_eur:a.expected_eur,
+        excess_eur:a.excess_eur,z_score:a.z_score,direction:a.direction,
+        severity:a.severity,drivers:a.drivers,trailing_7d_avg_eur:a.trailing_7d_avg_eur,
+      })
+    });
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    data=await resp.json();
+  } catch(e){
+    /* graceful offline demo fallback */
+    data=_mockExplain(a,e.message);
+  }
+  renderExplanation(data);
+}
+
+function _mockExplain(a,err){
+  const pct=Math.round(a.excess_eur/a.expected_eur*100);
+  const drv=a.drivers[0];
+  return {
+    anomaly_day:a.day,
+    explanation:`On ${a.day}, cloud spend reached €${Math.round(a.actual_eur).toLocaleString()} — ${pct}% above the Holt-Winters seasonal forecast of €${Math.round(a.expected_eur).toLocaleString()} (z-score: ${a.z_score}σ). The primary driver was ${drv?.name||'an unattributed resource group'}, which increased by €${Math.round(drv?.delta_eur||0).toLocaleString()}, accounting for ${drv?.share_pct||0}% of the spike.`,
+    confidence:'medium',
+    factors:a.drivers.map(d=>`${d.name}: +€${Math.round(d.delta_eur).toLocaleString()} (${d.share_pct}% of spike)`),
+    action_recommendation:`Drill into ${drv?.dimension?.replace('_',' ')||'the service'} '${drv?.name||'—'}' to identify the specific resources responsible and determine if the spend was planned.`,
+    generated_by:'rule_based (offline demo)',
+    cached:false,
+    note:`${API_BASE?'API error: '+err:'Running in offline demo mode — set API_BASE in the JS to connect to the live API.'}`
+  };
+}
+
+function renderExplanation(data){
+  const r=document.getElementById('ai-result');
+  const confColor={high:'var(--teal)',medium:'var(--amber)',low:'var(--red)'}[data.confidence]||'var(--txt3)';
+  const isLLM=data.generated_by&&!data.generated_by.startsWith('rule_based');
+  r.innerHTML=`
+    <div class="ai-meta">
+      <span class="conf-badge ${data.confidence}">${data.confidence} confidence</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">via ${data.generated_by||'rule_based'}${data.cached?' · cached':''}</span>
+      ${data.note?`<span style="font-size:10px;color:var(--amber)">ⓘ ${data.note}</span>`:''}
+    </div>
+    <div class="ai-result expl">${data.explanation}</div>
+    ${data.factors?.length?`
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);margin-bottom:8px;font-family:var(--mono)">Contributing factors</div>
+    <ul class="factors">${data.factors.map(f=>`<li>${f}</li>`).join('')}</ul>`:''}
+    <div class="ai-action">→ ${data.action_recommendation}</div>`;
+  r.classList.add('visible');
+}
+
+renderAIPanel();
 </script>
 </body>
 </html>

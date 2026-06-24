@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CloudLens · Kubernetes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#0d1218;--panel:#18222e;--panel2:#1e2c3a;--line:#2a3a4a;--lineSoft:#243040;
+  --teal:#2dd4bf;--tealDim:#0f3530;--purple:#a78bfa;--purpleDim:#2e1f5e;
+  --amber:#fbbf24;--amberDim:#3a2800;--red:#f87171;--redDim:#3a0e0e;
+  --txt:#e2eaf4;--txt2:#7f9ab0;--txt3:#4a6278;
+  --mono:'Space Grotesk',monospace;--body:'Inter',sans-serif;
+  --r:10px
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);font-size:14px;min-height:100vh;padding:24px}
+.wrap{max-width:1100px;margin:0 auto}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--tealDim);color:var(--teal)}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+h1{font-family:var(--mono);font-size:22px;font-weight:600;display:flex;align-items:center;gap:8px}
+.dot{display:inline-block;width:8px;height:8px;background:var(--teal);border-radius:50%}
+.card{background:var(--panel);border:1px solid var(--lineSoft);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:500;margin-bottom:14px;color:var(--txt)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--lineSoft);border-radius:var(--r);padding:16px}
+.kpi .label{font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kpi .value{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--teal)}
+.kpi .sub{font-size:11px;color:var(--txt2);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);text-align:left;padding:6px 10px;border-bottom:1px solid var(--lineSoft)}
+td{padding:8px 10px;border-bottom:1px solid var(--lineSoft);color:var(--txt)}
+td.mono{font-family:var(--mono);font-size:11px;color:var(--txt2)}
+tr:hover td{background:var(--panel2)}
+.bar-wrap{width:100px;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:inline-block}
+.bar-fill{height:100%;border-radius:3px;background:var(--teal)}
+.badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px}
+.badge.healthy{background:var(--tealDim);color:var(--teal)}
+.badge.warn{background:var(--amberDim);color:var(--amber)}
+.badge.error{background:var(--redDim);color:var(--red)}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px}
+.form label{display:block;font-size:11px;color:var(--txt3);margin-bottom:4px;font-family:var(--mono)}
+.form input,.form select{width:100%;background:var(--panel2);border:1px solid var(--lineSoft);border-radius:6px;color:var(--txt);font-size:12px;padding:7px 9px;outline:none}
+.form input:focus,.form select:focus{border-color:var(--teal)}
+.btn{background:var(--tealDim);border:1px solid var(--teal);border-radius:6px;color:var(--teal);font-family:var(--mono);font-size:12px;padding:7px 16px;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--teal);color:#0d1218}
+.tabs{display:flex;gap:4px}
+.tabs button{font-family:var(--mono);font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--lineSoft);background:transparent;color:var(--txt2);cursor:pointer}
+.tabs button.on{background:var(--tealDim);border-color:var(--teal);color:var(--teal)}
+.view{display:none}.view.on{display:block}
+.cluster-sel{display:flex;align-items:center;gap:10px}
+.cluster-sel label{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.cluster-sel select{background:var(--panel2);border:1px solid var(--lineSoft);border-radius:6px;color:var(--txt);font-size:12px;padding:5px 9px;outline:none;font-family:var(--mono)}
+.cluster-sel select:focus{border-color:var(--teal)}
+.note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.6}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+  <a href="forecast.html" class="snav-link">∿ Forecast</a>
+  <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="kubernetes.html" class="snav-link active">⎈ Kubernetes</a>
+  <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+</nav>
+<h2 class="sr-only">CloudLens Kubernetes: OpenCost/Kubecost pod-level cost allocation by namespace and workload</h2>
+<div class="head">
+  <h1><span class="dot"></span> CloudLens · Kubernetes</h1>
+  <div class="cluster-sel">
+    <label>Cluster</label>
+    <select id="cluster-sel" onchange="loadAllocation()">
+      <option value="aks-prod">aks-prod (AKS, West Europe)</option>
+      <option value="aks-staging">aks-staging (AKS, UK South)</option>
+    </select>
+    <div class="tabs">
+      <button class="on" onclick="vtab('namespaces',this)">Namespaces</button>
+      <button onclick="vtab('workloads',this)">Workloads</button>
+      <button onclick="vtab('register',this)">+ Register</button>
+    </div>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="kpi-row">
+  <div class="kpi"><div class="label">Total K8s spend (7d)</div><div class="value" id="kpi-total">€0</div><div class="sub" id="kpi-sub">loading…</div></div>
+  <div class="kpi"><div class="label">Registered clusters</div><div class="value" id="kpi-clusters">2</div><div class="sub">OpenCost / Kubecost endpoints</div></div>
+  <div class="kpi"><div class="label">Namespaces tracked</div><div class="value" id="kpi-ns">0</div><div class="sub">with cost allocation data</div></div>
+  <div class="kpi"><div class="label">Top namespace</div><div class="value" id="kpi-top-ns" style="font-size:14px;padding-top:4px">—</div><div class="sub" id="kpi-top-pct">% of cluster spend</div></div>
+</div>
+
+<!-- NAMESPACES view -->
+<div class="view on" id="v-namespaces">
+  <div class="card">
+    <h2>Namespace cost breakdown <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">GET /api/v1/k8s/{tenant}/allocation/namespaces?cluster_id=…&days=7</span></h2>
+    <table>
+      <thead><tr><th>Namespace</th><th>7d spend</th><th>Share</th><th>Distribution</th><th>Status</th></tr></thead>
+      <tbody id="ns-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- WORKLOADS view -->
+<div class="view" id="v-workloads">
+  <div class="card">
+    <h2>Workload cost breakdown <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">GET /api/v1/k8s/{tenant}/allocation?aggregate=deployment&cluster_id=…</span></h2>
+    <table>
+      <thead><tr><th>Workload</th><th>Namespace</th><th>7d spend</th><th>Share</th><th>Distribution</th></tr></thead>
+      <tbody id="wl-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- REGISTER view -->
+<div class="view" id="v-register">
+  <div class="card">
+    <h2>Register OpenCost / Kubecost endpoint <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">POST /api/v1/k8s/{tenant}/clusters</span></h2>
+    <div class="form">
+      <div><label>Cluster name</label><input id="c-name" placeholder="my-aks-cluster" /></div>
+      <div><label>OpenCost / Kubecost URL</label><input id="c-url" placeholder="http://opencost.monitoring.svc:9003" /></div>
+      <div><label>Cloud provider</label>
+        <select id="c-provider">
+          <option value="azure">Azure (AKS)</option>
+          <option value="aws">AWS (EKS)</option>
+          <option value="gcp">GCP (GKE)</option>
+        </select>
+      </div>
+      <div><label>Region</label><input id="c-region" placeholder="westeurope" /></div>
+      <div style="align-self:flex-end"><button class="btn" onclick="registerCluster()">Register ↗</button></div>
+    </div>
+    <div class="note" id="reg-note">
+      CloudLens calls the OpenCost Allocation API on demand.
+      The endpoint must be reachable from the CloudLens backend (or VPN/private endpoint for private clusters).
+      Allocation data is paginated in 1-day windows and stored as FocusRecords in Cosmos DB.
+    </div>
+  </div>
+  <div class="card">
+    <h2>Registered clusters <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">GET /api/v1/k8s/{tenant}/clusters</span></h2>
+    <table>
+      <thead><tr><th>Cluster ID</th><th>URL</th><th>Provider</th><th>Region</th><th>Status</th></tr></thead>
+      <tbody id="clusters-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+const TENANT='t-acme';
+const API_BASE='';
+
+/* ── Mock data (shaped to API responses) ─────────────────────────────────── */
+/* GET /api/v1/k8s/{t}/allocation/namespaces — {total_cost_eur, namespaces:[]} */
+const MOCK_NS={
+  'aks-prod':{total_cost_eur:4280,namespaces:[
+    {namespace:'production',cost_eur:1820,pct:42.5},
+    {namespace:'staging',cost_eur:980,pct:22.9},
+    {namespace:'monitoring',cost_eur:640,pct:14.9},
+    {namespace:'kube-system',cost_eur:420,pct:9.8},
+    {namespace:'ingress-nginx',cost_eur:230,pct:5.4},
+    {namespace:'cert-manager',cost_eur:190,pct:4.4},
+  ]},
+  'aks-staging':{total_cost_eur:1140,namespaces:[
+    {namespace:'staging',cost_eur:680,pct:59.6},
+    {namespace:'monitoring',cost_eur:280,pct:24.6},
+    {namespace:'kube-system',cost_eur:180,pct:15.8},
+  ]},
+};
+/* GET /api/v1/k8s/{t}/allocation?aggregate=deployment */
+const MOCK_WL={
+  'aks-prod':[
+    {workload:'api-server',namespace:'production',cost_eur:740,pct:17.3},
+    {workload:'web-frontend',namespace:'production',cost_eur:560,pct:13.1},
+    {workload:'worker-pool',namespace:'production',cost_eur:520,pct:12.1},
+    {workload:'prometheus',namespace:'monitoring',cost_eur:380,pct:8.9},
+    {workload:'nginx-controller',namespace:'ingress-nginx',cost_eur:230,pct:5.4},
+    {workload:'api-server',namespace:'staging',cost_eur:420,pct:9.8},
+    {workload:'web-frontend',namespace:'staging',cost_eur:340,pct:7.9},
+    {workload:'grafana',namespace:'monitoring',cost_eur:260,pct:6.1},
+    {workload:'kube-dns',namespace:'kube-system',cost_eur:220,pct:5.1},
+    {workload:'metrics-server',namespace:'kube-system',cost_eur:200,pct:4.7},
+  ],
+  'aks-staging':[
+    {workload:'api-server',namespace:'staging',cost_eur:380,pct:33.3},
+    {workload:'web-frontend',namespace:'staging',cost_eur:300,pct:26.3},
+    {workload:'prometheus',namespace:'monitoring',cost_eur:280,pct:24.6},
+    {workload:'kube-dns',namespace:'kube-system',cost_eur:180,pct:15.8},
+  ],
+};
+const MOCK_CLUSTERS=[
+  {cluster_id:'aks-prod',url:'http://opencost.monitoring.svc:9003',provider:'azure',region:'westeurope',status:'healthy'},
+  {cluster_id:'aks-staging',url:'http://opencost.monitoring.svc:9003',provider:'azure',region:'uksouth',status:'healthy'},
+];
+
+/* ── State ────────────────────────────────────────────────────────────────── */
+let currentCluster='aks-prod';
+let currentView='namespaces';
+
+function EUR(n){return '\u20ac'+Math.round(n).toLocaleString('en-US');}
+
+/* ── Tab switch ──────────────────────────────────────────────────────────── */
+function vtab(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));
+  document.getElementById('v-'+id).classList.add('on');
+  btn.classList.add('on');
+  currentView=id;
+  if(id==='register')renderClusters();
+}
+
+/* ── Load allocation from API (falls back to mock) ───────────────────────── */
+async function loadAllocation(){
+  currentCluster=document.getElementById('cluster-sel').value;
+  let nsData, wlData;
+
+  try{
+    const [r1,r2]=await Promise.all([
+      fetch(`${API_BASE}/api/v1/k8s/${TENANT}/allocation/namespaces?cluster_id=${currentCluster}&days=7`),
+      fetch(`${API_BASE}/api/v1/k8s/${TENANT}/allocation?cluster_id=${currentCluster}&days=7&aggregate=deployment`),
+    ]);
+    if(r1.ok) nsData=await r1.json(); else nsData=null;
+    if(r2.ok) wlData=await r2.json(); else wlData=null;
+  }catch(e){nsData=null;wlData=null;}
+
+  /* fall back to mock when API is not connected */
+  if(!nsData) nsData=MOCK_NS[currentCluster];
+  if(!wlData) wlData={by_workload:MOCK_WL[currentCluster],total_cost_eur:nsData.total_cost_eur};
+
+  renderKPIs(nsData);
+  renderNamespaces(nsData);
+  renderWorkloads(wlData);
+}
+
+function renderKPIs(d){
+  document.getElementById('kpi-total').textContent=EUR(d.total_cost_eur||0);
+  document.getElementById('kpi-sub').textContent=`7-day window \u00b7 ${currentCluster}`;
+  const ns=d.namespaces||[];
+  document.getElementById('kpi-ns').textContent=ns.length;
+  if(ns.length){
+    document.getElementById('kpi-top-ns').textContent=ns[0].namespace;
+    document.getElementById('kpi-top-pct').textContent=`${ns[0].pct.toFixed(1)}% of cluster spend`;
+  }
+}
+
+function renderNamespaces(d){
+  const rows=d.namespaces||[];
+  const max=rows[0]?.cost_eur||1;
+  document.getElementById('ns-tbody').innerHTML=rows.map(r=>`<tr>
+    <td class="mono">${r.namespace}</td>
+    <td style="font-family:var(--mono);font-size:12px;color:var(--teal)">${EUR(r.cost_eur)}</td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--txt2)">${r.pct.toFixed(1)}%</td>
+    <td><span class="bar-wrap"><i class="bar-fill" style="width:${Math.round(r.cost_eur/max*100)}%"></i></span></td>
+    <td><span class="badge healthy">active</span></td>
+  </tr>`).join('');
+}
+
+function renderWorkloads(d){
+  const rows=d.by_workload||[];
+  const max=rows[0]?.cost_eur||1;
+  document.getElementById('wl-tbody').innerHTML=rows.map(r=>`<tr>
+    <td class="mono">${r.workload}</td>
+    <td class="mono" style="color:var(--txt2)">${r.namespace}</td>
+    <td style="font-family:var(--mono);font-size:12px;color:var(--teal)">${EUR(r.cost_eur)}</td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--txt2)">${r.pct.toFixed(1)}%</td>
+    <td><span class="bar-wrap"><i class="bar-fill" style="width:${Math.round(r.cost_eur/max*100)}%"></i></span></td>
+  </tr>`).join('');
+}
+
+function renderClusters(){
+  document.getElementById('clusters-tbody').innerHTML=MOCK_CLUSTERS.map(c=>`<tr>
+    <td class="mono">${c.cluster_id}</td>
+    <td class="mono" style="color:var(--txt3);font-size:10px">${c.url}</td>
+    <td class="mono">${c.provider}</td>
+    <td class="mono">${c.region}</td>
+    <td><span class="badge healthy">${c.status}</span></td>
+  </tr>`).join('');
+}
+
+/* ── Register cluster ─────────────────────────────────────────────────────── */
+async function registerCluster(){
+  const name=document.getElementById('c-name').value.trim();
+  const url=document.getElementById('c-url').value.trim();
+  const provider=document.getElementById('c-provider').value;
+  const region=document.getElementById('c-region').value.trim();
+  if(!name||!url){document.getElementById('reg-note').textContent='Cluster name and URL are required.';return;}
+
+  document.getElementById('reg-note').textContent='Registering\u2026';
+  try{
+    const r=await fetch(`${API_BASE}/api/v1/k8s/${TENANT}/clusters`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cluster_id:name,opencost_url:url,provider,region})
+    });
+    if(r.ok){
+      const d=await r.json();
+      document.getElementById('reg-note').textContent=`\u2713 Registered "${d.cluster_id}" (status: ${d.status}).`;
+      MOCK_CLUSTERS.push({cluster_id:d.cluster_id,url,provider,region,status:'healthy'});
+      renderClusters();
+      document.getElementById('kpi-clusters').textContent=MOCK_CLUSTERS.length;
+    }else{
+      document.getElementById('reg-note').textContent=`API error HTTP ${r.status} \u2014 offline demo mode.`;
+      MOCK_CLUSTERS.push({cluster_id:name,url,provider,region,status:'healthy'});
+      renderClusters();
+    }
+  }catch(e){
+    document.getElementById('reg-note').textContent=`Offline demo \u2014 registered "${name}" locally. Wires to POST /api/v1/k8s/${TENANT}/clusters.`;
+    MOCK_CLUSTERS.push({cluster_id:name,url,provider,region,status:'healthy'});
+    renderClusters();
+    document.getElementById('kpi-clusters').textContent=MOCK_CLUSTERS.length;
+  }
+}
+
+/* ── Active nav ─────────────────────────────────────────────────────────── */
+document.querySelectorAll('.snav-link').forEach(a=>{
+  if(location.pathname.endsWith(a.getAttribute('href')))a.classList.add('active');
+});
+
+loadAllocation();
+</script>
+</body>
+</html>

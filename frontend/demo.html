@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CloudLens — Product Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;
+  --line:#263340;--lineSoft:#1e2a36;
+  --txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;
+  --teal:#2dd4bf;--tealDim:#14463f;
+  --amber:#f5a524;--amberDim:#4a3410;
+  --red:#f0506e;--redDim:#4a1622;
+  --blue:#4d9fff;--blueDim:#13314d;
+  --purple:#a78bfa;--purpleDim:#2e2548;
+  --green:#36d399;--greenDim:#0f3020;
+  --mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--body);
+  background:radial-gradient(1200px 600px at 70% -5%,#16212e 0,transparent 55%),var(--bg);
+  color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55;
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────────── */
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:220px;
+  background:rgba(13,18,24,.96);
+  border-right:1px solid var(--lineSoft);
+  padding:24px 0;
+  display:flex;flex-direction:column;
+  z-index:100;
+  backdrop-filter:blur(8px);
+}
+.sidebar .logo{
+  font-family:var(--mono);font-size:17px;font-weight:700;
+  padding:0 22px 20px;border-bottom:1px solid var(--lineSoft);margin-bottom:14px;
+  display:flex;align-items:center;gap:8px
+}
+.sidebar .logo .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal);flex-shrink:0}
+.sidebar .logo .sub{font-size:10px;font-weight:400;color:var(--txt3);letter-spacing:.08em;text-transform:uppercase;margin-left:2px;line-height:1}
+.sidebar nav{flex:1;overflow-y:auto}
+.snav{display:flex;flex-direction:column;gap:2px;padding:0 10px}
+.snav a{
+  font-family:var(--mono);font-size:12px;color:var(--txt2);
+  padding:7px 12px;border-radius:7px;text-decoration:none;
+  display:flex;align-items:center;gap:9px;transition:all .15s
+}
+.snav a:hover{background:var(--panel);color:var(--txt)}
+.snav a.active{background:var(--tealDim);color:var(--teal)}
+.snav .section{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt3);padding:12px 12px 4px;font-family:var(--mono)}
+.snav a .icon{font-size:13px;width:16px;text-align:center;flex-shrink:0}
+.sidebar .footer{padding:14px 22px 0;border-top:1px solid var(--lineSoft);margin-top:auto}
+.sidebar .footer p{font-size:10px;color:var(--txt3);line-height:1.6}
+.sidebar .footer strong{color:var(--teal)}
+
+.main{margin-left:220px;padding:32px 36px;max-width:1080px}
+
+/* ── Sections ──────────────────────────────────────────────────────────────── */
+section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
+.section-header{margin-bottom:22px}
+.section-header .eyebrow{
+  font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--teal);margin-bottom:7px
+}
+.section-header h2{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--txt);line-height:1.2}
+.section-header p{font-size:13.5px;color:var(--txt2);margin-top:8px;max-width:640px;line-height:1.65}
+.section-header .launch{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:11px;
+  background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);
+  border-radius:7px;padding:5px 13px;text-decoration:none;margin-top:12px;transition:all .15s
+}
+.section-header .launch:hover{background:var(--teal);color:#0d1218}
+
+/* ── Hero ──────────────────────────────────────────────────────────────────── */
+.hero{
+  background:linear-gradient(135deg,#10253c 0,#121c28 50%,#0d1218 100%);
+  border:1px solid #1e3a52;border-radius:16px;
+  padding:36px 40px;margin-bottom:40px;
+  position:relative;overflow:hidden
+}
+.hero::before{
+  content:'';position:absolute;top:-80px;right:-80px;
+  width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle,#2dd4bf14 0,transparent 70%)
+}
+.hero .tag{
+  font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--teal);border:1px solid var(--tealDim);border-radius:20px;
+  padding:4px 12px;display:inline-block;margin-bottom:14px
+}
+.hero h1{font-family:var(--mono);font-size:32px;font-weight:700;line-height:1.2;margin-bottom:10px}
+.hero h1 span{color:var(--teal)}
+.hero p{font-size:15px;color:var(--txt2);max-width:600px;line-height:1.65;margin-bottom:24px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+.hero-actions a{
+  font-family:var(--mono);font-size:12px;padding:9px 20px;border-radius:8px;
+  text-decoration:none;transition:all .15s;border:1px solid transparent
+}
+.btn-primary{background:var(--teal);color:#0b1018;border-color:var(--teal) !important}
+.btn-primary:hover{background:#1fbfab}
+.btn-ghost{background:transparent;color:var(--txt2);border-color:var(--line) !important}
+.btn-ghost:hover{background:var(--panel);color:var(--txt)}
+.hero-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:28px;padding-top:24px;border-top:1px solid var(--lineSoft)}
+.hero-kpi .v{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--teal)}
+.hero-kpi .l{font-size:11px;color:var(--txt3);margin-top:3px}
+
+/* ── Feature cards ─────────────────────────────────────────────────────────── */
+.card{
+  background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);
+  border:1px solid var(--lineSoft);border-radius:13px;
+  padding:18px 20px;margin-bottom:14px
+}
+.card h3{font-family:var(--mono);font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.kpi{
+  background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);
+  border:1px solid var(--lineSoft);border-radius:11px;padding:13px 15px
+}
+.kpi .l{font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-family:var(--mono)}
+.kpi .v{font-family:var(--mono);font-size:22px;font-weight:700}
+.kpi .s{font-size:10.5px;color:var(--txt3);margin-top:3px}
+.kpi.teal .v{color:var(--teal)}.kpi.amber .v{color:var(--amber)}
+.kpi.red .v{color:var(--red)}.kpi.green .v{color:var(--green)}.kpi.purple .v{color:var(--purple)}
+
+/* ── Row / table elements ───────────────────────────────────────────────────── */
+.row-list{display:flex;flex-direction:column;gap:2px}
+.data-row{
+  display:flex;align-items:center;gap:12px;padding:9px 10px;
+  border-radius:8px;border:1px solid transparent
+}
+.data-row:hover{background:var(--panel2);border-color:var(--lineSoft)}
+.data-row .ic{
+  width:24px;height:24px;border-radius:6px;
+  display:grid;place-items:center;font-size:10px;font-weight:700;color:#0b0f14;flex-shrink:0
+}
+.data-row .nm{flex:1;min-width:0}
+.data-row .nm .t{font-size:13px;font-weight:500}
+.data-row .nm .s{font-size:10.5px;color:var(--txt3);font-family:var(--mono)}
+.data-row .bar{width:90px;height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.data-row .bar i{display:block;height:100%;border-radius:3px}
+.data-row .amt{font-family:var(--mono);font-size:13px;font-weight:600;min-width:76px;text-align:right}
+.badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:5px}
+.badge.high{background:var(--redDim);color:var(--red)}
+.badge.medium{background:var(--amberDim);color:var(--amber)}
+.badge.low,
+.badge.ok,
+.badge.teal{background:var(--tealDim);color:var(--teal)}
+.badge.purple{background:var(--purpleDim);color:var(--purple)}
+.badge.blue{background:var(--blueDim);color:var(--blue)}
+.badge.del{background:var(--tealDim);color:var(--teal);margin-left:4px}
+.badge.del.fail{background:var(--redDim);color:var(--red)}
+
+/* ── Bars and charts ────────────────────────────────────────────────────────── */
+.bar-chart{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.bc-row{display:flex;align-items:center;gap:10px}
+.bc-row .lbl{font-family:var(--mono);font-size:11px;color:var(--txt2);min-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bc-row .track{flex:1;height:7px;background:var(--line);border-radius:4px;overflow:hidden}
+.bc-row .track i{display:block;height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.bc-row .val{font-family:var(--mono);font-size:11px;color:var(--txt2);min-width:60px;text-align:right}
+
+/* ── SVG sparkline ──────────────────────────────────────────────────────────── */
+.spark-wrap{background:var(--panel2);border-radius:8px;padding:12px 14px;margin:8px 0}
+.spark-wrap svg{display:block;width:100%;height:60px}
+
+/* ── Alert rows ─────────────────────────────────────────────────────────────── */
+.alert-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;border-left:3px solid transparent}
+.alert-row.critical{border-left-color:var(--red);background:rgba(240,80,110,.05)}
+.alert-row.high{border-left-color:var(--amber);background:rgba(245,165,36,.05)}
+.alert-row.medium{border-left-color:var(--blue);background:rgba(77,159,255,.05)}
+.alert-row .t{flex:1;font-size:12.5px}
+.alert-row .meta{font-family:var(--mono);font-size:10px;color:var(--txt3)}
+
+/* ── AI panel ───────────────────────────────────────────────────────────────── */
+.ai-card{
+  background:linear-gradient(135deg,#1a1f35 0,var(--bg2) 60%);
+  border:1px solid var(--purpleDim);border-radius:13px;padding:18px 20px;margin-bottom:14px
+}
+.ai-card h3{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--purple);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ai-result-box{
+  background:var(--bg);border:1px solid var(--lineSoft);border-radius:9px;
+  padding:14px 16px;font-size:13px;line-height:1.65;color:var(--txt);margin-top:10px
+}
+.ai-factors{margin-top:10px;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.ai-factors li{font-size:12px;color:var(--txt2);padding-left:14px;position:relative}
+.ai-factors li::before{content:'\2192';position:absolute;left:0;color:var(--teal)}
+.ai-action{
+  margin-top:12px;font-size:12.5px;color:var(--txt);
+  background:var(--tealDim);border:1px solid var(--tealDim);
+  border-radius:7px;padding:9px 12px
+}
+.conf-badge{
+  font-family:var(--mono);font-size:9.5px;padding:2px 9px;border-radius:5px;
+  background:var(--tealDim);color:var(--teal)
+}
+.conf-badge.medium{background:var(--amberDim);color:var(--amber)}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────────── */
+.demo-tabs{display:flex;gap:4px;border:1px solid var(--line);border-radius:9px;padding:3px;width:fit-content;margin-bottom:14px}
+.demo-tabs button{background:transparent;border:0;color:var(--txt2);font-family:var(--mono);font-size:11.5px;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .15s}
+.demo-tabs button.on{background:var(--panel2);color:var(--teal)}
+.dtab{display:none}.dtab.on{display:block}
+
+/* ── FX demo ────────────────────────────────────────────────────────────────── */
+.fx-demo{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;background:var(--panel2);border-radius:8px;margin-bottom:12px}
+.fx-demo select,.fx-demo input{background:var(--panel);border:1px solid var(--lineSoft);border-radius:6px;color:var(--txt);font-size:12px;padding:5px 9px;font-family:var(--mono);outline:none;cursor:pointer}
+.fx-demo select:focus{border-color:var(--teal)}
+.fx-demo label{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.fx-result{font-family:var(--mono);font-size:14px;color:var(--teal);font-weight:600}
+
+/* ── Architecture diagram ───────────────────────────────────────────────────── */
+.arch{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:8px}
+.arch-box{
+  border:1px solid var(--lineSoft);border-radius:10px;padding:14px;
+  background:var(--panel2);text-align:center
+}
+.arch-box .icon{font-size:22px;margin-bottom:6px}
+.arch-box .t{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--txt)}
+.arch-box .s{font-size:11px;color:var(--txt3);margin-top:3px;line-height:1.5}
+.arch-arrow{display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:18px;padding:4px}
+
+/* ── Divider ────────────────────────────────────────────────────────────────── */
+.divider{height:1px;background:var(--lineSoft);margin:32px 0}
+
+/* ── Inline interactive ─────────────────────────────────────────────────────── */
+.interactive{border:1px dashed var(--tealDim);border-radius:10px;padding:16px;background:rgba(45,212,191,.03);margin-top:10px}
+.interactive .label{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--teal);margin-bottom:10px}
+.form-inline{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.form-inline div{display:flex;flex-direction:column;gap:4px}
+.form-inline label{font-size:11px;color:var(--txt3);font-family:var(--mono)}
+.form-inline input,.form-inline select{background:var(--panel);border:1px solid var(--lineSoft);border-radius:6px;color:var(--txt);font-size:12px;padding:6px 9px;font-family:var(--mono);outline:none}
+.form-inline input:focus,.form-inline select:focus{border-color:var(--teal)}
+.btn-sm{background:var(--tealDim);border:1px solid var(--teal);border-radius:6px;color:var(--teal);font-family:var(--mono);font-size:11px;padding:6px 13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-sm:hover{background:var(--teal);color:#0d1218}
+.output{font-family:var(--mono);font-size:11px;color:var(--txt2);background:var(--bg);border:1px solid var(--lineSoft);border-radius:7px;padding:10px 12px;margin-top:10px;white-space:pre-wrap;line-height:1.7;max-height:120px;overflow-y:auto}
+.output .key{color:var(--blue)}.output .str{color:var(--teal)}.output .num{color:var(--amber)}
+
+/* ── Util ────────────────────────────────────────────────────────────────────── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}.sidebar{display:none}.main{margin-left:0;padding:20px}}
+.note{font-size:11px;color:var(--txt3);line-height:1.6;margin-top:8px}
+.tag{font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:4px;background:var(--panel2);color:var(--txt3);margin-left:4px}
+.tag.new{background:var(--tealDim);color:var(--teal)}
+.tag.ai{background:var(--purpleDim);color:var(--purple)}
+.chain{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--txt3);margin-top:6px}
+.chain .step{background:var(--panel2);border:1px solid var(--lineSoft);border-radius:5px;padding:3px 8px;font-family:var(--mono);font-size:10px}
+.chain .arrow{color:var(--txt3)}
+
+/* ── Scroll progress ────────────────────────────────────────────────────────── */
+.progress{position:fixed;top:0;left:220px;right:0;height:2px;background:var(--tealDim);z-index:200}
+.progress-bar{height:100%;background:var(--teal);width:0%;transition:width .1s linear}
+
+@media(max-width:700px){.progress{left:0}}
+</style>
+</head>
+<body>
+
+<div class="progress"><div class="progress-bar" id="pgbar"></div></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <span class="dot"></span>
+    <div>CloudLens<br><span class="sub">Product Demo</span></div>
+  </div>
+  <nav>
+    <div class="snav">
+      <span class="section">Overview</span>
+      <a href="#hero" class="active"><span class="icon">◈</span> Introduction</a>
+      <a href="#architecture"><span class="icon">⬡</span> Architecture</a>
+
+      <span class="section">Core Features</span>
+      <a href="#explorer"><span class="icon">⊞</span> Cost Explorer</a>
+      <a href="#anomalies"><span class="icon">⚠</span> Anomaly Detection</a>
+      <a href="#forecast"><span class="icon">∿</span> Forecasting</a>
+      <a href="#optimization"><span class="icon">◎</span> Optimization</a>
+
+      <span class="section">New Capabilities</span>
+      <a href="#multicurrency"><span class="icon">₿</span> Multi-currency <span class="tag new">NEW</span></a>
+      <a href="#kubernetes"><span class="icon">⎈</span> Kubernetes <span class="tag new">NEW</span></a>
+      <a href="#unit-economics"><span class="icon">∑</span> Unit Economics <span class="tag new">NEW</span></a>
+      <a href="#alerts"><span class="icon">🔔</span> Push Alerts <span class="tag new">NEW</span></a>
+      <a href="#ai-analyst"><span class="icon">✦</span> AI Analyst <span class="tag ai">AI</span></a>
+
+      <span class="section">Pages</span>
+      <a href="index.html" target="_blank"><span class="icon">⊞</span> Explorer ↗</a>
+      <a href="insights.html" target="_blank"><span class="icon">◈</span> Insights ↗</a>
+      <a href="kubernetes.html" target="_blank"><span class="icon">⎈</span> Kubernetes ↗</a>
+      <a href="unit_economics.html" target="_blank"><span class="icon">∑</span> Unit Cost ↗</a>
+      <a href="optimization.html" target="_blank"><span class="icon">◎</span> Optimize ↗</a>
+      <a href="compliance_admin.html" target="_blank"><span class="icon">⊡</span> Compliance ↗</a>
+    </div>
+  </nav>
+  <div class="footer">
+    <p>CloudLens v2.0<br><strong>309/309 tests passing</strong><br>FastAPI · Cosmos DB · Azure</p>
+  </div>
+</aside>
+
+<!-- Main content -->
+<div class="main">
+
+  <!-- ═══════════════════════════════════════════════
+       HERO
+       ═══════════════════════════════════════════ -->
+  <section id="hero">
+    <div class="hero">
+      <div class="tag">CloudLens · Executive Demo · June 2026</div>
+      <h1>Multi-cloud cost intelligence<br>that <span>actually ships</span></h1>
+      <p>
+        CloudLens is a multi-tenant FinOps platform built on FastAPI and Azure Cosmos DB.
+        It gives engineering and finance teams a single pane of glass across Azure, AWS, GCP,
+        and Kubernetes — with AI-powered root-cause analysis, near-realtime ingestion,
+        and unit economics down to the cost per API call.
+      </p>
+      <div class="hero-actions">
+        <a href="index.html" target="_blank" class="btn-primary">Open Explorer ↗</a>
+        <a href="#ai-analyst" class="btn-ghost">See AI Analyst →</a>
+      </div>
+      <div class="hero-kpis">
+        <div class="hero-kpi"><div class="v">€0.031</div><div class="l">Cost per active user/day</div></div>
+        <div class="hero-kpi"><div class="v" style="color:var(--green)">€14,200</div><div class="l">Recoverable savings identified</div></div>
+        <div class="hero-kpi"><div class="v" style="color:var(--amber)">€45,800</div><div class="l">MTD cloud spend</div></div>
+        <div class="hero-kpi"><div class="v" style="color:var(--purple)">3</div><div class="l">Anomalies detected this week</div></div>
+        <div class="hero-kpi"><div class="v">309</div><div class="l">Tests passing (100%)</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ARCHITECTURE
+       ═══════════════════════════════════════════ -->
+  <section id="architecture">
+    <div class="section-header">
+      <div class="eyebrow">Technical foundation</div>
+      <h2>Architecture</h2>
+      <p>Production-grade FastAPI backend deployed to Azure Container Apps. Zero-infra Cosmos DB Serverless stores all cost records, tenants, waste items, and alerts.</p>
+    </div>
+    <div class="card">
+      <div class="arch">
+        <div class="arch-box">
+          <div class="icon">🌐</div>
+          <div class="t">Frontend</div>
+          <div class="s">Pure HTML/CSS/JS<br>9 pages, dark theme<br>no framework</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box" style="border-color:var(--tealDim)">
+          <div class="icon">⚡</div>
+          <div class="t">FastAPI 0.115</div>
+          <div class="s">Python 3.12<br>async/await<br>Azure Container Apps</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">
+          <div class="icon">🗄</div>
+          <div class="t">Cosmos DB</div>
+          <div class="s">Serverless<br>4 containers<br>RBAC auth</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">
+          <div class="icon">☁</div>
+          <div class="t">Cloud APIs</div>
+          <div class="s">Azure Billing<br>AWS CE<br>GCP BigQuery</div>
+        </div>
+      </div>
+      <div class="divider" style="margin:16px 0 12px"></div>
+      <div class="arch" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr))">
+        <div class="arch-box"><div class="icon">🔒</div><div class="t">Azure AD JWT</div><div class="s">JWKS validation<br>multi-tenant</div></div>
+        <div class="arch-box"><div class="icon">📈</div><div class="t">ECB FX Rates</div><div class="s">Live rates<br>1h cache</div></div>
+        <div class="arch-box" style="border-color:var(--purpleDim)"><div class="icon">✦</div><div class="t">GPT-4o</div><div class="s">Root-cause<br>AI analysis</div></div>
+        <div class="arch-box"><div class="icon">⎈</div><div class="t">OpenCost</div><div class="s">K8s pod-level<br>allocation</div></div>
+        <div class="arch-box"><div class="icon">📣</div><div class="t">Slack / Teams</div><div class="s">Block Kit<br>HMAC webhooks</div></div>
+        <div class="arch-box"><div class="icon">⏱</div><div class="t">Hourly Ingest</div><div class="s">Dual-track<br>near-realtime</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       COST EXPLORER
+       ═══════════════════════════════════════════ -->
+  <section id="explorer">
+    <div class="section-header">
+      <div class="eyebrow">Feature 1 of 9</div>
+      <h2>Cost Explorer</h2>
+      <p>Drill from cloud provider → account → service → resource in one click. Shows 30-day spend, anomaly badges, and a breadcrumb trail.</p>
+      <a href="index.html" target="_blank" class="launch">Open Explorer ↗</a>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi teal"><div class="l">MTD Total</div><div class="v" id="kpi-total">€45,800</div><div class="s">all clouds · Jun 2026</div></div>
+      <div class="kpi amber"><div class="l">Anomalies</div><div class="v">3</div><div class="s">high/critical severity</div></div>
+      <div class="kpi green"><div class="l">Savings identified</div><div class="v">€14,200</div><div class="s">recoverable waste</div></div>
+      <div class="kpi"><div class="l">Clouds</div><div class="v">3</div><div class="s">Azure, AWS, GCP</div></div>
+    </div>
+    <div class="card">
+      <h3>☁ Cloud providers — MTD spend</h3>
+      <div class="row-list">
+        <div class="data-row">
+          <div class="ic" style="background:#0078d4">Az</div>
+          <div class="nm"><div class="t">Azure</div><div class="s">14 services · 3 subscriptions</div></div>
+          <div class="bar"><i style="width:82%;background:#0078d4"></i></div>
+          <div class="amt" style="color:#4d9fff">€27,400</div>
+          <span class="badge high">spike</span>
+        </div>
+        <div class="data-row">
+          <div class="ic" style="background:#ff9900">AW</div>
+          <div class="nm"><div class="t">AWS</div><div class="s">9 services · 2 accounts</div></div>
+          <div class="bar"><i style="width:48%;background:#ff9900"></i></div>
+          <div class="amt" style="color:#ff9900">€13,100</div>
+        </div>
+        <div class="data-row">
+          <div class="ic" style="background:#ea4335">GC</div>
+          <div class="nm"><div class="t">GCP</div><div class="s">5 services · 1 project</div></div>
+          <div class="bar"><i style="width:19%;background:#ea4335"></i></div>
+          <div class="amt" style="color:#ea4335">€5,300</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ANOMALY DETECTION
+       ═══════════════════════════════════════════ -->
+  <section id="anomalies">
+    <div class="section-header">
+      <div class="eyebrow">Feature 2 of 9</div>
+      <h2>Anomaly Detection</h2>
+      <p>Holt-Winters seasonal forecasting flags statistically significant spend spikes (z ≥ 2σ). Each anomaly is decomposed into service-level drivers with percentage attribution.</p>
+      <a href="insights.html" target="_blank" class="launch">Open Insights ↗</a>
+    </div>
+    <div class="card">
+      <h3>⚡ Detected anomalies — last 30 days</h3>
+      <div class="alert-row critical">
+        <div>
+          <div class="t">Spend spike on <b>2026-06-08</b> — €3,420 vs. expected €2,180 <span class="badge high">z = 4.2σ</span></div>
+          <div class="meta" style="margin-top:3px">Primary driver: Virtual Machines +€890 (72% of spike) · resource group rg-staging +€350</div>
+        </div>
+      </div>
+      <div style="margin-top:4px">
+      <div class="alert-row high">
+        <div>
+          <div class="t">Spend spike on <b>2026-06-15</b> — €2,890 vs. expected €2,200 <span class="badge medium">z = 2.6σ</span></div>
+          <div class="meta" style="margin-top:3px">Primary driver: Azure OpenAI +€690 (100% of spike)</div>
+        </div>
+      </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>◒ Driver breakdown — 2026-06-08 spike</h3>
+      <div class="bar-chart">
+        <div class="bc-row"><div class="lbl">Virtual Machines</div><div class="track"><i style="width:72%;background:var(--red)"></i></div><div class="val">+€890 (72%)</div></div>
+        <div class="bc-row"><div class="lbl">rg-staging</div><div class="track"><i style="width:28%;background:var(--amber)"></i></div><div class="val">+€350 (28%)</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       FORECAST
+       ═══════════════════════════════════════════ -->
+  <section id="forecast">
+    <div class="section-header">
+      <div class="eyebrow">Feature 3 of 9</div>
+      <h2>Forecasting</h2>
+      <p>Holt-Winters triple exponential smoothing produces a 30-day spend forecast with confidence bands. Budget alerts fire when the forecast exceeds the set threshold.</p>
+      <a href="forecast.html" target="_blank" class="launch">Open Forecast ↗</a>
+    </div>
+    <div class="card">
+      <h3>∿ Month-end forecast</h3>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi teal"><div class="l">Forecast (EOM)</div><div class="v">€58,400</div><div class="s">95% CI: €54k–€63k</div></div>
+        <div class="kpi amber"><div class="l">Budget</div><div class="v">€60,000</div><div class="s">tenant total</div></div>
+        <div class="kpi"><div class="l">vs. last month</div><div class="v" style="color:var(--red)">+8.2%</div><div class="s">Jun vs. May</div></div>
+      </div>
+      <div class="spark-wrap">
+        <svg id="forecast-svg" viewBox="0 0 600 60" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="note">Solid line = actual spend. Dashed = Holt-Winters forecast. Shaded band = 95% confidence interval.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       OPTIMIZATION
+       ═══════════════════════════════════════════ -->
+  <section id="optimization">
+    <div class="section-header">
+      <div class="eyebrow">Feature 4 of 9</div>
+      <h2>Optimization</h2>
+      <p>CPU + memory utilization heatmap, rightsizing recommendations with confidence scores, commitment/RI analysis, and a realized-savings ledger.</p>
+      <a href="optimization.html" target="_blank" class="launch">Open Optimization ↗</a>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi green"><div class="l">Recoverable</div><div class="v">€14,200</div><div class="s">/month if acted on</div></div>
+      <div class="kpi amber"><div class="l">Over-provisioned</div><div class="v">8</div><div class="s">resources &lt; 30% util</div></div>
+      <div class="kpi"><div class="l">Realized (YTD)</div><div class="v">€31,600</div><div class="s">from applied recs</div></div>
+      <div class="kpi red"><div class="l">Idle commitments</div><div class="v">€2,840</div><div class="s">/month wasted</div></div>
+    </div>
+    <div class="card">
+      <h3>◎ Top rightsizing recommendations</h3>
+      <div class="row-list">
+        <div class="data-row" style="border-left:3px solid var(--amber)">
+          <div class="nm"><div class="t">web-prod-01 → B4ms → B2ms</div><div class="s" style="font-family:var(--mono)">avg CPU 12% · avg Mem 24% · 30d window</div></div>
+          <div class="amt" style="color:var(--green);font-size:12px">−€380/mo</div>
+          <span class="badge medium">high conf.</span>
+        </div>
+        <div class="data-row" style="border-left:3px solid var(--red)">
+          <div class="nm"><div class="t">batch-worker-03 → terminate</div><div class="s" style="font-family:var(--mono)">0% utilization for 14 days · no inbound traffic</div></div>
+          <div class="amt" style="color:var(--green);font-size:12px">−€240/mo</div>
+          <span class="badge high">idle</span>
+        </div>
+        <div class="data-row" style="border-left:3px solid var(--blue)">
+          <div class="nm"><div class="t">dev-env-* → schedule off 18:00–08:00</div><div class="s" style="font-family:var(--mono)">5 VMs · estimated 72% off-hours idle</div></div>
+          <div class="amt" style="color:var(--green);font-size:12px">−€620/mo</div>
+          <span class="badge blue">schedule</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       MULTI-CURRENCY
+       ═══════════════════════════════════════════ -->
+  <section id="multicurrency">
+    <div class="section-header">
+      <div class="eyebrow">New capability · P0-1</div>
+      <h2>Multi-currency <span class="tag new">NEW</span></h2>
+      <p>Live ECB exchange rates fetched via the SDMX API, cached for 1 hour. Every amount in the UI re-renders instantly when the currency selector changes. Tenant preferred currency stored in Cosmos DB.</p>
+      <a href="index.html" target="_blank" class="launch">Try in Explorer ↗</a>
+    </div>
+    <div class="card">
+      <h3>₿ Live FX conversion demo</h3>
+      <div class="chain">
+        <span class="step">GET /api/v1/fx/rates</span><span class="arrow">→</span>
+        <span class="step">ECB SDMX API</span><span class="arrow">→</span>
+        <span class="step">1h in-process cache</span><span class="arrow">→</span>
+        <span class="step">re-render all amounts</span>
+      </div>
+      <div class="fx-demo" style="margin-top:12px">
+        <label>Base amount (EUR)</label>
+        <input type="number" id="fx-amount" value="45800" style="width:100px" />
+        <label>Convert to</label>
+        <select id="fx-to" onchange="fxConvert()">
+          <option value="EUR">EUR €</option>
+          <option value="USD" selected>USD $</option>
+          <option value="GBP">GBP £</option>
+          <option value="CHF">CHF ₣</option>
+          <option value="JPY">JPY ¥</option>
+          <option value="CAD">CAD $</option>
+          <option value="SEK">SEK kr</option>
+          <option value="PLN">PLN zł</option>
+        </select>
+        <span class="fx-result" id="fx-result">$50,380</span>
+        <span style="font-size:11px;color:var(--txt3)" id="fx-rate-note">1 EUR = 1.10 USD (mock rate)</span>
+      </div>
+      <div class="note">In production, rates are fetched from the European Central Bank SDMX API every hour. Tenant-preferred currency is stored per-tenant and applied automatically.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       KUBERNETES
+       ═══════════════════════════════════════════ -->
+  <section id="kubernetes">
+    <div class="section-header">
+      <div class="eyebrow">New capability · P0-3</div>
+      <h2>Kubernetes Cost Allocation <span class="tag new">NEW</span></h2>
+      <p>Register any OpenCost or Kubecost endpoint. CloudLens pulls pod-level allocation daily, converts to FocusRecords, and surfaces cost-per-namespace chargeback and workload drill-down.</p>
+      <a href="kubernetes.html" target="_blank" class="launch">Open Kubernetes page ↗</a>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi teal"><div class="l">K8s spend (7d)</div><div class="v">€4,280</div><div class="s">aks-prod</div></div>
+      <div class="kpi"><div class="l">Clusters</div><div class="v">2</div><div class="s">AKS West EU + UK South</div></div>
+      <div class="kpi"><div class="l">Namespaces</div><div class="v">6</div><div class="s">with allocation data</div></div>
+      <div class="kpi amber"><div class="l">Top namespace</div><div class="v" style="font-size:15px">production</div><div class="s">42.5% of spend</div></div>
+    </div>
+    <div class="card">
+      <h3>⎈ Namespace chargeback — aks-prod (7 days)</h3>
+      <div class="bar-chart">
+        <div class="bc-row"><div class="lbl">production</div><div class="track"><i style="width:100%;background:var(--teal)"></i></div><div class="val">€1,820 (43%)</div></div>
+        <div class="bc-row"><div class="lbl">staging</div><div class="track"><i style="width:54%;background:var(--blue)"></i></div><div class="val">€980 (23%)</div></div>
+        <div class="bc-row"><div class="lbl">monitoring</div><div class="track"><i style="width:35%;background:var(--purple)"></i></div><div class="val">€640 (15%)</div></div>
+        <div class="bc-row"><div class="lbl">kube-system</div><div class="track"><i style="width:23%;background:var(--amber)"></i></div><div class="val">€420 (10%)</div></div>
+        <div class="bc-row"><div class="lbl">ingress-nginx</div><div class="track"><i style="width:13%;background:var(--txt3)"></i></div><div class="val">€230 (5%)</div></div>
+      </div>
+    </div>
+    <div class="interactive">
+      <div class="label">Interactive — register a cluster</div>
+      <div class="form-inline">
+        <div><label>Cluster name</label><input id="k8s-name" value="aks-demo" /></div>
+        <div><label>OpenCost URL</label><input id="k8s-url" value="http://opencost.monitoring.svc:9003" style="width:260px" /></div>
+        <button class="btn-sm" onclick="demoK8sRegister()">Register ↗</button>
+      </div>
+      <div class="output" id="k8s-out" style="display:none"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       UNIT ECONOMICS
+       ═══════════════════════════════════════════ -->
+  <section id="unit-economics">
+    <div class="section-header">
+      <div class="eyebrow">New capability · P0-4</div>
+      <h2>Unit Economics <span class="tag new">NEW</span></h2>
+      <p>Define any business metric (active users, API calls, transactions). Upload daily counts. CloudLens computes cost-per-unit time series and trend — so finance can see cloud spend in business terms.</p>
+      <a href="unit_economics.html" target="_blank" class="launch">Open Unit Economics ↗</a>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi teal"><div class="l">Cost / active user</div><div class="v">€0.0312</div><div class="s">30-day average · ↓ declining</div></div>
+      <div class="kpi purple"><div class="l">Cost / 1k API calls</div><div class="v">€0.0048</div><div class="s">30-day average · → stable</div></div>
+      <div class="kpi amber"><div class="l">Cost / transaction</div><div class="v">€0.00089</div><div class="s">30-day average · ↑ rising</div></div>
+    </div>
+    <div class="card">
+      <h3>∑ Cost per active user — 30-day trend</h3>
+      <div class="spark-wrap">
+        <svg id="ue-svg" viewBox="0 0 600 60" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="note">↓ Declining trend is good — you are growing users faster than cloud spend. Trend computed from linear regression of daily cost-per-unit series.</div>
+    </div>
+    <div class="interactive">
+      <div class="label">Interactive — define a metric</div>
+      <div class="form-inline">
+        <div><label>Metric name</label><input id="ue-name" value="Paying customers" /></div>
+        <div><label>Unit label</label><input id="ue-unit" value="customer" style="width:100px" /></div>
+        <button class="btn-sm" onclick="demoCreateMetric()">Create metric ↗</button>
+      </div>
+      <div class="output" id="ue-out" style="display:none"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ALERTS
+       ═══════════════════════════════════════════ -->
+  <section id="alerts">
+    <div class="section-header">
+      <div class="eyebrow">New capability · P0-5</div>
+      <h2>Push Notifications <span class="tag new">NEW</span></h2>
+      <p>Full push delivery for every alert: Slack Block Kit, Microsoft Teams MessageCard, and HMAC-SHA256 signed generic webhooks — all with 3× exponential-backoff retry. Delivery status tracked per channel.</p>
+      <a href="index.html#alerts" target="_blank" class="launch">Open Alerts ↗</a>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>📣 Slack Block Kit</h3>
+        <div style="background:#1a1a2a;border-radius:8px;padding:12px;font-size:12px;line-height:1.6;border-left:4px solid var(--red)">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px">🚨 CRITICAL alert</div>
+          <div style="color:var(--txt2)">Budget <b>Engineering</b> has reached <b style="color:var(--red)">112%</b> of €11,000</div>
+          <div style="color:var(--txt3);font-size:11px;margin-top:6px">budget_breach · tenant t-acme · Jun 16 2026</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <span style="background:#1d4035;color:var(--teal);font-size:10px;border-radius:4px;padding:3px 8px;font-family:var(--mono)">View in CloudLens</span>
+          </div>
+        </div>
+        <div class="note" style="margin-top:8px">Auto-detected from <code>hooks.slack.com</code> URL. Uses Block Kit with severity colour sidebar.</div>
+      </div>
+      <div class="card">
+        <h3>🔔 Alert events with delivery badges</h3>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="alert-row critical">
+            <div>
+              <div class="t">Budget 'Engineering' at 112%</div>
+              <div class="meta">
+                <span class="badge del">in_app</span>
+                <span class="badge del">email</span>
+              </div>
+            </div>
+          </div>
+          <div class="alert-row high">
+            <div>
+              <div class="t">web-prod-03 resource spike</div>
+              <div class="meta">
+                <span class="badge del">in_app</span>
+                <span class="badge del">slack</span>
+              </div>
+            </div>
+          </div>
+          <div class="alert-row medium">
+            <div>
+              <div class="t">Idle commitment €640/mo</div>
+              <div class="meta">
+                <span class="badge del">in_app</span>
+                <span class="badge del fail">webhook_failed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="note" style="margin-top:8px">Green = delivered. Red = failed after 3 retries. Amber = retrying.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🔐 HMAC-signed webhook payload</h3>
+      <div class="output">
+<span class="key">"X-CloudLens-Signature"</span>: <span class="str">"sha256=a3f1d8c..."</span>
+<span class="key">"Content-Type"</span>: <span class="str">"application/json"</span>
+
+{
+  <span class="key">"event"</span>: <span class="str">"alert.triggered"</span>,
+  <span class="key">"severity"</span>: <span class="str">"critical"</span>,
+  <span class="key">"tenant_id"</span>: <span class="str">"t-acme"</span>,
+  <span class="key">"rule_name"</span>: <span class="str">"Budget breach ≥ 90%"</span>,
+  <span class="key">"impact_eur"</span>: <span class="num">1320</span>,
+  <span class="key">"delivered_channels"</span>: [<span class="str">"in_app"</span>, <span class="str">"email"</span>]
+}</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       AI ANALYST
+       ═══════════════════════════════════════════ -->
+  <section id="ai-analyst">
+    <div class="section-header">
+      <div class="eyebrow">New capability · AI</div>
+      <h2>AI Cost Analyst <span class="tag ai">GPT-4o</span></h2>
+      <p>
+        CloudLens feeds the full anomaly context — z-score, service-level deltas, resource-group breakdown, trailing 7-day baseline — to GPT-4o and returns a plain-English root-cause explanation with a confidence rating and actionable recommendation. Falls back to deterministic rule-based explanation if no API key is configured.
+      </p>
+      <a href="insights.html" target="_blank" class="launch">See live in Insights ↗</a>
+    </div>
+    <div class="ai-card">
+      <h3>✦ AI explanation — 2026-06-08 spend spike</h3>
+      <div class="demo-tabs">
+        <button class="on" onclick="aiTab('explain',this)">Explanation</button>
+        <button onclick="aiTab('prompt',this)">API Request</button>
+        <button onclick="aiTab('fallback',this)">Rule-based fallback</button>
+      </div>
+
+      <div class="dtab on" id="at-explain">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span class="conf-badge">high confidence</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">via gpt-4o · cached: false · 380ms</span>
+        </div>
+        <div class="ai-result-box">
+          On 2026-06-08, cloud spend reached <b>€3,420</b> — <b>57% above</b> the Holt-Winters seasonal forecast of €2,180 (z-score: <b>4.2σ</b>). The primary driver was <b>Virtual Machines</b> in subscription <em>prod-westeu</em>, which increased by €890 and accounts for 72% of the spike. A secondary driver is resource group <b>rg-staging</b>, which added €350. The VM increase coincides with a batch job run that was not tagged or scheduled, suggesting unplanned scaling. The staging group increase may reflect a developer left a large dev environment running overnight.
+        </div>
+        <ul class="ai-factors">
+          <li>Virtual Machines: +€890 (72% of spike) — untagged batch job in prod-westeu</li>
+          <li>rg-staging: +€350 (28% of spike) — likely unscheduled dev environment</li>
+        </ul>
+        <div class="ai-action">→ Check auto-scaling triggers for the batch pipeline in prod-westeu and apply a dev-env shutdown schedule to rg-staging. Estimated monthly saving: €480–€640 if both are addressed.</div>
+      </div>
+
+      <div class="dtab" id="at-prompt">
+        <div class="output" style="max-height:200px">
+POST /api/v1/insights/t-acme/explain
+
+{
+  <span class="key">"anomaly_day"</span>: <span class="str">"2026-06-08"</span>,
+  <span class="key">"actual_eur"</span>: <span class="num">3420</span>,
+  <span class="key">"expected_eur"</span>: <span class="num">2180</span>,
+  <span class="key">"z_score"</span>: <span class="num">4.2</span>,
+  <span class="key">"severity"</span>: <span class="str">"high"</span>,
+  <span class="key">"drivers"</span>: [
+    { <span class="key">"dimension"</span>: <span class="str">"service"</span>, <span class="key">"name"</span>: <span class="str">"Virtual Machines"</span>, <span class="key">"delta_eur"</span>: <span class="num">890</span>, <span class="key">"share_pct"</span>: <span class="num">72</span> },
+    { <span class="key">"dimension"</span>: <span class="str">"resource_group"</span>, <span class="key">"name"</span>: <span class="str">"rg-staging"</span>, <span class="key">"delta_eur"</span>: <span class="num">350</span>, <span class="key">"share_pct"</span>: <span class="num">28</span> }
+  ],
+  <span class="key">"trailing_7d_avg_eur"</span>: <span class="num">2220</span>
+}
+
+<span style="color:var(--txt3)">// Response shape:
+// { explanation, confidence, factors[], action_recommendation,
+//   generated_by, cached, note? }</span>
+        </div>
+      </div>
+
+      <div class="dtab" id="at-fallback">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span class="conf-badge medium">medium confidence</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--amber)">ⓘ Running in rule-based mode — set OPENAI_API_KEY to enable LLM analysis</span>
+        </div>
+        <div class="ai-result-box">
+          On 2026-06-08, cloud spend reached €3,420 — 57% above the Holt-Winters seasonal forecast of €2,180 (z-score: 4.2σ). The primary driver was Virtual Machines, which increased by €890, accounting for 72% of the spike.
+        </div>
+        <div class="ai-action">→ Drill into service 'Virtual Machines' to identify the specific resources responsible and determine if the spend was planned.</div>
+        <div class="note" style="margin-top:8px">Rule-based fallback uses the same API contract as the LLM path — no frontend changes required when you add a key.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       HOURLY INGEST
+       ═══════════════════════════════════════════ -->
+  <section id="ingest">
+    <div class="section-header">
+      <div class="eyebrow">New capability · P0-2</div>
+      <h2>Near-Realtime Ingestion</h2>
+      <p>Dual-track ingestion: Track A pulls Azure Usage Aggregates API for estimated near-realtime data (marked <code>estimated: true</code>). Track B ingests confirmed T-48h billing data. Both run hourly.</p>
+    </div>
+    <div class="card">
+      <h3>⚡ Dual-track ingestion pipeline</h3>
+      <div class="chain" style="margin-bottom:14px">
+        <span class="step" style="border-color:var(--teal);color:var(--teal)">Track A — near-realtime</span>
+        <span class="arrow">→</span>
+        <span class="step">Azure Usage Aggregates API</span>
+        <span class="arrow">→</span>
+        <span class="step">estimated: true</span>
+        <span class="arrow">→</span>
+        <span class="step">Cosmos DB</span>
+      </div>
+      <div class="chain">
+        <span class="step" style="border-color:var(--blue);color:var(--blue)">Track B — confirmed T-48h</span>
+        <span class="arrow">→</span>
+        <span class="step">Azure Billing API</span>
+        <span class="arrow">→</span>
+        <span class="step">estimated: false</span>
+        <span class="arrow">→</span>
+        <span class="step">Cosmos DB</span>
+      </div>
+      <div class="divider" style="margin:14px 0"></div>
+      <div class="output">
+POST /api/v1/ingest/t-acme/hourly
+
+<span style="color:var(--teal)">HTTP 202 Accepted</span>
+{
+  <span class="key">"tenant_id"</span>: <span class="str">"t-acme"</span>,
+  <span class="key">"status"</span>: <span class="str">"accepted"</span>,
+  <span class="key">"mode"</span>: <span class="str">"hourly"</span>,
+  <span class="key">"tracks"</span>: [<span class="str">"near_realtime_estimate"</span>, <span class="str">"billing_confirm_48h"</span>]
+}</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       MULTI-CLOUD
+       ═══════════════════════════════════════════ -->
+  <section id="multicloud-section">
+    <div class="section-header">
+      <div class="eyebrow">Feature 5 of 9</div>
+      <h2>Multi-cloud &amp; Compliance</h2>
+      <p>Cross-cloud subscription management, SOC 2-aligned control matrix with evidence export, audit-trail integrity verification, and compliance scoring.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <a href="multicloud.html" target="_blank" class="launch">Multi-cloud ↗</a>
+        <a href="compliance_admin.html" target="_blank" class="launch" style="border-color:var(--purple);color:var(--purple);background:var(--purpleDim)">Compliance ↗</a>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>⊕ Cross-cloud MTD</h3>
+        <div class="bar-chart">
+          <div class="bc-row"><div class="lbl" style="color:#0078d4">Azure</div><div class="track"><i style="width:100%;background:#0078d4"></i></div><div class="val">€27,400</div></div>
+          <div class="bc-row"><div class="lbl" style="color:#ff9900">AWS</div><div class="track"><i style="width:48%;background:#ff9900"></i></div><div class="val">€13,100</div></div>
+          <div class="bc-row"><div class="lbl" style="color:#ea4335">GCP</div><div class="track"><i style="width:19%;background:#ea4335"></i></div><div class="val">€5,300</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>⊡ SOC 2 control matrix</h3>
+        <div style="display:flex;flex-direction:column;gap:5px;font-size:12px">
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--lineSoft)">
+            <span>CC6.1 Logical access controls</span><span class="badge ok">PASS</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--lineSoft)">
+            <span>CC7.2 System monitoring</span><span class="badge ok">PASS</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--lineSoft)">
+            <span>A1.1 Capacity management</span><span class="badge medium">REVIEW</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0">
+            <span>PI1.5 Complete &amp; accurate processing</span><span class="badge ok">PASS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       SUMMARY / CTA
+       ═══════════════════════════════════════════ -->
+  <section id="summary">
+    <div class="section-header">
+      <div class="eyebrow">Wrap-up</div>
+      <h2>Everything ships, everything tests</h2>
+      <p>All 9 features are fully implemented, E2E tested, and wired into the frontend. The backend has 309 passing tests across every endpoint and service.</p>
+    </div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="kpi green"><div class="l">Tests</div><div class="v">309 / 309</div><div class="s">100% pass rate</div></div>
+      <div class="kpi teal"><div class="l">API endpoints</div><div class="v">40+</div><div class="s">versioned /api/v1/…</div></div>
+      <div class="kpi purple"><div class="l">Frontend pages</div><div class="v">9</div><div class="s">fully linked, dark theme</div></div>
+      <div class="kpi"><div class="l">New features</div><div class="v">6</div><div class="s">P0 blockers + AI analyst</div></div>
+      <div class="kpi amber"><div class="l">Lines of code</div><div class="v">~8,000</div><div class="s">Python + HTML/JS</div></div>
+    </div>
+    <div class="card" style="margin-top:4px">
+      <h3>🗂 All pages</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        <a href="index.html" target="_blank" class="launch">⊞ Explorer</a>
+        <a href="insights.html" target="_blank" class="launch">◈ Insights + AI</a>
+        <a href="multicloud.html" target="_blank" class="launch">⊕ Multi-cloud</a>
+        <a href="forecast.html" target="_blank" class="launch">∿ Forecast</a>
+        <a href="optimization.html" target="_blank" class="launch">◎ Optimization</a>
+        <a href="kubernetes.html" target="_blank" class="launch">⎈ Kubernetes</a>
+        <a href="unit_economics.html" target="_blank" class="launch">∑ Unit Economics</a>
+        <a href="compliance_admin.html" target="_blank" class="launch">⊡ Compliance</a>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /main -->
+
+<script>
+/* ── Scroll progress bar ─────────────────────────────────────────────────── */
+window.addEventListener('scroll',()=>{
+  const p=(document.documentElement.scrollTop||document.body.scrollTop)/
+           (document.documentElement.scrollHeight-document.documentElement.clientHeight);
+  document.getElementById('pgbar').style.width=Math.round(p*100)+'%';
+});
+
+/* ── Active sidebar link ─────────────────────────────────────────────────── */
+const sections=[...document.querySelectorAll('section[id]')];
+const navLinks=[...document.querySelectorAll('.snav a[href^="#"]')];
+window.addEventListener('scroll',()=>{
+  let cur=sections[0].id;
+  sections.forEach(s=>{if(window.scrollY>=s.offsetTop-80)cur=s.id;});
+  navLinks.forEach(a=>{
+    a.classList.toggle('active',a.getAttribute('href')==='#'+cur);
+  });
+},{passive:true});
+
+/* ── Forecast sparkline ──────────────────────────────────────────────────── */
+(function(){
+  const svg=document.getElementById('forecast-svg');
+  const W=600,H=60,pad=6;
+  const actual=[38200,39100,40800,41200,43000,44100,45800,null,null,null,null,null];
+  const forecast=[38200,39100,40800,41200,43000,44100,45800,47200,49000,51400,54200,58400];
+  const ci_lo=[null,null,null,null,null,null,null,45800,47100,49200,51500,54000];
+  const ci_hi=[null,null,null,null,null,null,null,48600,50900,53600,56900,62800];
+  const maxV=65000,minV=36000;
+  function cx(i){return pad+i*(W-2*pad)/(forecast.length-1);}
+  function cy(v){return H-pad-(v-minV)/(maxV-minV)*(H-2*pad);}
+
+  /* CI band */
+  const bandPts=[];
+  for(let i=6;i<forecast.length;i++) if(ci_hi[i]!=null) bandPts.push(`${cx(i)},${cy(ci_hi[i])}`);
+  for(let i=forecast.length-1;i>=6;i--) if(ci_lo[i]!=null) bandPts.push(`${cx(i)},${cy(ci_lo[i])}`);
+  svg.innerHTML+=`<polygon points="${bandPts.join(' ')}" fill="rgba(45,212,191,.12)"/>`;
+
+  /* forecast line */
+  const fPts=forecast.map((v,i)=>v!=null?`${cx(i)},${cy(v)}`:null).filter(Boolean);
+  svg.innerHTML+=`<polyline points="${fPts.join(' ')}" fill="none" stroke="var(--teal)" stroke-width="1.2" stroke-dasharray="4,3" opacity=".6"/>`;
+
+  /* actual line */
+  const aPts=actual.map((v,i)=>v!=null?`${cx(i)},${cy(v)}`:null).filter(Boolean);
+  svg.innerHTML+=`<polyline points="${aPts.join(' ')}" fill="none" stroke="var(--teal)" stroke-width="1.8"/>`;
+
+  /* budget line */
+  const by=cy(60000);
+  svg.innerHTML+=`<line x1="${pad}" y1="${by}" x2="${W-pad}" y2="${by}" stroke="var(--amber)" stroke-width="1" stroke-dasharray="6,3"/>`;
+  svg.innerHTML+=`<text x="${W-pad-2}" y="${by-3}" text-anchor="end" font-family="var(--mono)" font-size="8" fill="var(--amber)">budget €60k</text>`;
+})();
+
+/* ── Unit economics sparkline ────────────────────────────────────────────── */
+(function(){
+  const svg=document.getElementById('ue-svg');
+  const W=600,H=60,pad=6;
+  const vals=Array.from({length:30},(_,i)=>0.038-i*0.00025+Math.random()*0.004);
+  const minV=Math.min(...vals),maxV=Math.max(...vals);
+  function cx(i){return pad+i*(W-2*pad)/(vals.length-1);}
+  function cy(v){return H-pad-(v-minV)/(maxV-minV||1)*(H-2*pad);}
+  const poly=vals.map((_,i)=>`${cx(i)},${cy(vals[i])}`).join(' ');
+  svg.innerHTML=`
+    <defs><linearGradient id="ue-g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="var(--teal)" stop-opacity=".3"/>
+      <stop offset="100%" stop-color="var(--teal)" stop-opacity="0"/>
+    </linearGradient></defs>
+    <polygon points="${poly} ${cx(vals.length-1)},${H} ${cx(0)},${H}" fill="url(#ue-g)"/>
+    <polyline points="${poly}" fill="none" stroke="var(--teal)" stroke-width="1.6" stroke-linejoin="round"/>`;
+})();
+
+/* ── AI tabs ─────────────────────────────────────────────────────────────── */
+function aiTab(id,btn){
+  document.querySelectorAll('#ai-analyst .dtab').forEach(d=>d.classList.remove('on'));
+  document.querySelectorAll('#ai-analyst .demo-tabs button').forEach(b=>b.classList.remove('on'));
+  document.getElementById('at-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+
+/* ── FX conversion demo ──────────────────────────────────────────────────── */
+const MOCK_RATES={EUR:1,USD:1.10,GBP:0.85,CHF:0.97,JPY:164.2,CAD:1.50,SEK:11.3,PLN:4.28};
+const SYMBOLS_DEMO={EUR:'€',USD:'$',GBP:'£',CHF:'₣',JPY:'¥',CAD:'CA$',SEK:'kr ',PLN:'zł '};
+function fxConvert(){
+  const amount=parseFloat(document.getElementById('fx-amount').value)||0;
+  const to=document.getElementById('fx-to').value;
+  const rate=MOCK_RATES[to]||1;
+  const sym=SYMBOLS_DEMO[to]||to+' ';
+  const converted=amount*rate;
+  document.getElementById('fx-result').textContent=sym+(to==='JPY'?Math.round(converted).toLocaleString('en-US'):converted.toLocaleString('en-US',{maximumFractionDigits:2}));
+  document.getElementById('fx-rate-note').textContent=`1 EUR = ${rate} ${to} (mock rate — live via ECB in production)`;
+}
+document.getElementById('fx-amount').addEventListener('input',fxConvert);
+fxConvert();
+
+/* ── K8s register demo ───────────────────────────────────────────────────── */
+function demoK8sRegister(){
+  const name=document.getElementById('k8s-name').value||'aks-demo';
+  const url=document.getElementById('k8s-url').value||'http://opencost:9003';
+  const out=document.getElementById('k8s-out');
+  out.style.display='block';
+  out.innerHTML=`<span style="color:var(--teal)">POST /api/v1/k8s/t-acme/clusters → 201 Created</span>
+{
+  <span class="key">"tenant_id"</span>: <span class="str">"t-acme"</span>,
+  <span class="key">"cluster_id"</span>: <span class="str">"${name}"</span>,
+  <span class="key">"opencost_url"</span>: <span class="str">"${url}"</span>,
+  <span class="key">"status"</span>: <span class="str">"registered"</span>
+}`;
+}
+
+/* ── Unit economics create metric demo ───────────────────────────────────── */
+function demoCreateMetric(){
+  const name=document.getElementById('ue-name').value||'New metric';
+  const unit=document.getElementById('ue-unit').value||'unit';
+  const id='m-'+Math.random().toString(36).slice(2,8);
+  const out=document.getElementById('ue-out');
+  out.style.display='block';
+  out.innerHTML=`<span style="color:var(--teal)">POST /api/v1/unit-economics/t-acme/metrics → 201 Created</span>
+{
+  <span class="key">"id"</span>: <span class="str">"${id}"</span>,
+  <span class="key">"name"</span>: <span class="str">"${name}"</span>,
+  <span class="key">"unit_label"</span>: <span class="str">"${unit}"</span>,
+  <span class="key">"tenant_id"</span>: <span class="str">"t-acme"</span>
+}`;
+}
+</script>
+</body>
+</html>

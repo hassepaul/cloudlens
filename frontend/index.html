@@ -78,18 +78,69 @@ padding:9px 16px;border-radius:8px;cursor:pointer}
 .rule .tog{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:6px}
 .rule .tog.on{background:var(--tealDim);color:var(--teal)}.rule .tog.off{background:var(--panel2);color:var(--txt3)}
 .note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.5}
+/* ── shared nav ── */
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--tealDim);color:var(--teal)}
+/* ── currency picker ── */
+.fx-bar{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.fx-bar select{background:var(--bg2);border:1px solid var(--line);color:var(--teal);border-radius:7px;font-family:var(--mono);font-size:11px;padding:3px 7px;cursor:pointer}
+.fx-rate{color:var(--txt3);font-size:10px}
+/* ── ops bar ── */
+.ops-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px;margin-bottom:14px;flex-wrap:wrap}
+.ops-bar .lbl{font-family:var(--mono);font-size:11px;color:var(--txt3);flex:1}
+.btn-sm{background:var(--bg2);border:1px solid var(--line);color:var(--txt2);font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:7px;cursor:pointer}
+.btn-sm:hover{border-color:var(--teal);color:var(--teal)}.btn-sm.pulse{border-color:var(--amber);color:var(--amber)}
+/* ── alert delivery badge ── */
+.del-badge{display:inline-block;font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:4px;margin-left:4px}
+.del-badge.ok{background:var(--tealDim);color:var(--teal)}.del-badge.fail{background:var(--redDim);color:var(--red)}.del-badge.pending{background:var(--amberDim);color:var(--amber)}
 </style>
 </head>
 <body>
 <div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+  <a href="forecast.html" class="snav-link">∿ Forecast</a>
+  <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
+  <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+</nav>
   <h2 class="sr-only">CloudLens multi-cloud explorer: drill from provider to account to service to resource, with anomaly detection, budget setup, and alerts</h2>
   <div class="head">
     <h1><span class="dot"></span> CloudLens · Explorer</h1>
-    <div class="tabs">
-      <button class="on" onclick="tab('explore',this)">Drill-down</button>
-      <button onclick="tab('alerts',this)">Alerts</button>
-      <button onclick="tab('budget',this)">Budgets</button>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <!-- FX currency selector — GET /api/v1/fx/rates -->
+      <div class="fx-bar">
+        <span>Display in</span>
+        <select id="fx-sel" onchange="changeCurrency(this.value)">
+          <option value="EUR">EUR €</option>
+          <option value="USD">USD $</option>
+          <option value="GBP">GBP £</option>
+          <option value="CHF">CHF ₣</option>
+          <option value="JPY">JPY ¥</option>
+          <option value="CAD">CAD $</option>
+          <option value="AUD">AUD $</option>
+          <option value="SEK">SEK kr</option>
+          <option value="PLN">PLN zł</option>
+        </select>
+        <span class="fx-rate" id="fx-rate"></span>
+      </div>
+      <div class="tabs">
+        <button class="on" onclick="tab('explore',this)">Drill-down</button>
+        <button onclick="tab('alerts',this)">Alerts</button>
+        <button onclick="tab('budget',this)">Budgets</button>
+      </div>
     </div>
+  </div>
+
+  <!-- OPS BAR: hourly ingest trigger -->
+  <div class="ops-bar">
+    <span class="lbl">⚡ Data freshness: last full ingest <b id="ingest-age" style="color:var(--teal)">~6 h ago</b></span>
+    <button class="btn-sm" id="ingest-btn" onclick="triggerHourlyIngest()">⟳ Hourly sync now</button>
+    <span id="ingest-status" style="font-family:var(--mono);font-size:10px;color:var(--txt3)">Calls POST /api/v1/ingest/{tenant}/hourly · returns 202</span>
   </div>
 
   <!-- DRILL-DOWN -->
@@ -105,13 +156,44 @@ padding:9px 16px;border-radius:8px;cursor:pointer}
   <!-- ALERTS -->
   <div class="view" id="v-alerts">
     <div class="card">
-      <h2>⚠ Recent alert events</h2>
+      <h2>⚠ Recent alert events <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">GET /api/v1/alerts/{tenant}/events</span></h2>
       <div id="events"></div>
     </div>
     <div class="card">
-      <h2>⚙ Alert rules</h2>
+      <h2>⚙ Alert rules <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">GET /api/v1/alerts/{tenant}/rules</span></h2>
       <div id="rules"></div>
-      <div class="note">Channels: in-app (always on) · webhook (Slack/Teams) · email (needs SMTP/SendGrid/ACS integration).</div>
+    </div>
+    <!-- Create rule form with full channel support -->
+    <div class="card">
+      <h2>+ New alert rule</h2>
+      <div class="form">
+        <div><label>Rule name</label><input id="r-name" value="Budget breach ≥ 90%" /></div>
+        <div><label>Type</label><select id="r-type">
+          <option value="budget_breach">Budget breach</option>
+          <option value="spend_spike">Spend spike</option>
+          <option value="resource_anomaly">Resource anomaly</option>
+          <option value="waste_threshold">Waste threshold</option>
+          <option value="commitment_idle">Commitment idle</option>
+        </select></div>
+        <div><label>Threshold</label><input id="r-thresh" type="number" value="90" /></div>
+        <div><label>Notification channel</label><select id="r-channel" onchange="updateChannelUI()">
+          <option value="in_app">In-app only</option>
+          <option value="slack">Slack (Block Kit)</option>
+          <option value="teams">Microsoft Teams (Adaptive Card)</option>
+          <option value="webhook">Generic webhook (HMAC-signed)</option>
+          <option value="email">Email</option>
+        </select></div>
+        <div id="r-url-wrap" class="full" style="display:none"><label>Webhook URL</label><input id="r-url" placeholder="https://hooks.slack.com/services/… or https://your-domain.com/hook" /></div>
+        <div id="r-secret-wrap" style="display:none"><label>Webhook secret <span style="font-size:10px;color:var(--txt3)">(HMAC-SHA256 signing)</span></label><input id="r-secret" type="password" placeholder="optional — leave blank to disable signing" /></div>
+        <div id="r-email-wrap" style="display:none"><label>Email address</label><input id="r-email" type="email" placeholder="ops@company.com" /></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn" onclick="createRule()">Create rule ↗</button></div>
+      </div>
+      <div class="note" id="r-note">
+        Slack URLs auto-detected from <code>hooks.slack.com</code> — uses Block Kit format with severity colour.
+        Teams URLs from <code>webhook.office.com</code> — uses MessageCard with themeColor.
+        Generic webhooks include <code>X-CloudLens-Signature: sha256=…</code> HMAC header if a secret is set.
+        All webhooks retry 3× with exponential backoff.
+      </div>
     </div>
   </div>
 
@@ -142,7 +224,6 @@ padding:9px 16px;border-radius:8px;cursor:pointer}
 </div>
 
 <script>
-const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
 const PROV={'Amazon Web Services':{ic:'AWS',c:'var(--aws)'},'Microsoft Azure':{ic:'AZ',c:'var(--azure)'},
 'Google Cloud':{ic:'GCP',c:'var(--gcp)'},'Alibaba Cloud':{ic:'ALI',c:'var(--alibaba)'},
 'Oracle Cloud Infrastructure':{ic:'OCI',c:'var(--oci)'}};
@@ -284,30 +365,104 @@ function render(){
 function toggleDrawer(i){const d=document.getElementById('dr-'+i);if(d)d.style.display=d.style.display==='none'?'block':'none';}
 
 /* alerts */
+/* ── FX / currency ─────────────────────────────────────────────────────── */
+const TENANT='t-acme';
+const API_BASE='';
+let FX_RATES={'EUR':1.0};
+let FX_CCY='EUR';
+const SYMBOLS={'EUR':'\u20ac','USD':'$','GBP':'\u00a3','CHF':'\u20a3','JPY':'\u00a5','CAD':'CA$','AUD':'A$','SEK':'kr ','PLN':'z\u0142 '};
+
+async function loadFxRates(){
+  const ccys=['USD','GBP','CHF','JPY','CAD','AUD','SEK','PLN'];
+  try{
+    const r=await fetch(`${API_BASE}/api/v1/fx/rates?currencies=${ccys.join(',')}`);
+    if(r.ok){const d=await r.json();FX_RATES={...FX_RATES,...d.rates};}
+  }catch(e){/* offline */}
+}
+function FMT(n){
+  const converted=n*(FX_RATES[FX_CCY]||1);
+  const sym=SYMBOLS[FX_CCY]||FX_CCY+' ';
+  return sym+Math.round(converted).toLocaleString('en-US');
+}
+function EUR(n){return FMT(n);}
+
+async function changeCurrency(ccy){
+  FX_CCY=ccy;
+  if(!FX_RATES[ccy])await loadFxRates();
+  const rate=FX_RATES[ccy]||1;
+  document.getElementById('fx-rate').textContent=ccy==='EUR'?'':`1 EUR = ${rate.toFixed(4)} ${ccy}`;
+  render();renderAlerts();renderBudgets();
+}
+loadFxRates();
+
+/* ── Hourly ingest ─────────────────────────────────────────────────────── */
+async function triggerHourlyIngest(){
+  const btn=document.getElementById('ingest-btn');
+  const st=document.getElementById('ingest-status');
+  btn.disabled=true;btn.textContent='\u27f3 Syncing\u2026';
+  try{
+    const r=await fetch(`${API_BASE}/api/v1/ingest/${TENANT}/hourly`,{method:'POST',headers:{'X-API-Key':'demo'}});
+    if(r.ok){
+      const d=await r.json();
+      st.textContent=`\u2713 Accepted \u2014 tracks: ${d.tracks?.join(', ')||'near_realtime_estimate, billing_confirm_48h'}`;
+      st.style.color='var(--teal)';
+      document.getElementById('ingest-age').textContent='just now';
+    }else{st.textContent=`HTTP ${r.status}`;st.style.color='var(--amber)';}
+  }catch(e){
+    st.textContent=`Offline demo \u2014 wires to POST /api/v1/ingest/${TENANT}/hourly`;
+    st.style.color='var(--txt3)';
+  }
+  btn.disabled=false;btn.textContent='\u27f3 Hourly sync now';
+}
+
 const EVENTS=[
-  {severity:'critical',title:"Budget 'Engineering' at 112% of €11,000",meta:'budget_breach · 2026-06-16',imp:1320,ack:false},
-  {severity:'high',title:"Resource 'web-prod-03' spiked to €240 (expected €96)",meta:'resource_anomaly · AWS/prod · 2026-06-15',imp:144,ack:false},
-  {severity:'high',title:'Spend spike €1,240 on 2026-06-08 (driver: Virtual Machines)',meta:'spend_spike · 4.2σ',imp:1240,ack:true},
-  {severity:'medium',title:'Idle commitment €640/mo exceeds threshold €500',meta:'commitment_idle',imp:640,ack:false},
+  {severity:'critical',title:"Budget 'Engineering' at 112% of \u20ac11,000",meta:'budget_breach \u00b7 2026-06-16',imp:1320,ack:false,delivered:['in_app','email']},
+  {severity:'high',title:"Resource 'web-prod-03' spiked to \u20ac240 (expected \u20ac96)",meta:'resource_anomaly \u00b7 AWS/prod \u00b7 2026-06-15',imp:144,ack:false,delivered:['in_app','slack']},
+  {severity:'high',title:'Spend spike \u20ac1,240 on 2026-06-08 (driver: Virtual Machines)',meta:'spend_spike \u00b7 4.2\u03c3',imp:1240,ack:true,delivered:['in_app','slack','email_pending']},
+  {severity:'medium',title:'Idle commitment \u20ac640/mo exceeds threshold \u20ac500',meta:'commitment_idle',imp:640,ack:false,delivered:['in_app']},
 ];
 const RULES=[
-  {name:'Budget breach ≥ 90%',type:'budget_breach',ch:'in_app, email',on:true},
-  {name:'Resource anomaly ≥ 3σ (AWS prod)',type:'resource_anomaly',ch:'in_app, webhook',on:true},
-  {name:'Recoverable waste ≥ €5,000',type:'waste_threshold',ch:'in_app',on:true},
-  {name:'Idle commitment ≥ €500',type:'commitment_idle',ch:'in_app',on:false},
+  {name:'Budget breach \u2265 90%',type:'budget_breach',ch:'in_app, email',on:true},
+  {name:'Resource anomaly \u2265 3\u03c3 (AWS prod)',type:'resource_anomaly',ch:'in_app, slack',on:true},
+  {name:'Recoverable waste \u2265 \u20ac5,000',type:'waste_threshold',ch:'in_app',on:true},
+  {name:'Idle commitment \u2265 \u20ac500',type:'commitment_idle',ch:'in_app',on:false},
 ];
+function delBadge(ch){
+  if(ch==='in_app')return `<span class="del-badge ok">in_app</span>`;
+  if(ch.endsWith('_failed'))return `<span class="del-badge fail">${ch}</span>`;
+  if(ch.endsWith('_pending'))return `<span class="del-badge pending">${ch}</span>`;
+  return `<span class="del-badge ok">${ch}</span>`;
+}
 function renderAlerts(){
   document.getElementById('events').innerHTML=EVENTS.map((e,i)=>`<div class="alert ${e.severity}">
     <div class="sev"></div>
-    <div class="c"><div class="t">${e.title}</div><div class="m">${e.meta}</div></div>
-    <div class="imp">${EUR(e.imp)}</div>
-    ${e.ack?'<span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">ack’d</span>':`<button class="ack" onclick="ackEvent(${i})">ack</button>`}
+    <div class="c"><div class="t">${e.title}</div><div class="m">${e.meta} ${(e.delivered||[]).map(delBadge).join('')}</div></div>
+    <div class="imp">${FMT(e.imp)}</div>
+    ${e.ack?'<span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">ack\'d</span>':`<button class="ack" onclick="ackEvent(${i})">ack</button>`}
   </div>`).join('');
   document.getElementById('rules').innerHTML=RULES.map(r=>`<div class="rule">
-    <div class="nm"><div>${r.name}</div><div class="s">${r.type} · ${r.ch}</div></div>
+    <div class="nm"><div>${r.name}</div><div class="s">${r.type} \u00b7 ${r.ch}</div></div>
     <span class="tog ${r.on?'on':'off'}">${r.on?'enabled':'disabled'}</span></div>`).join('');
 }
 function ackEvent(i){EVENTS[i].ack=true;renderAlerts();}
+function updateChannelUI(){
+  const ch=document.getElementById('r-channel').value;
+  document.getElementById('r-url-wrap').style.display=(ch==='slack'||ch==='teams'||ch==='webhook')?'block':'none';
+  document.getElementById('r-secret-wrap').style.display=(ch==='webhook')?'block':'none';
+  document.getElementById('r-email-wrap').style.display=(ch==='email')?'block':'none';
+}
+function createRule(){
+  const name=document.getElementById('r-name').value;
+  const type=document.getElementById('r-type').value;
+  const thresh=document.getElementById('r-thresh').value;
+  const ch=document.getElementById('r-channel').value;
+  const url=document.getElementById('r-url').value;
+  const secret=document.getElementById('r-secret').value;
+  const chLabel=url?`${ch}:${url.replace(/https?:\/\//,'').substring(0,28)}\u2026`:ch;
+  RULES.unshift({name,type,ch:chLabel,on:true});
+  renderAlerts();
+  document.getElementById('r-note').textContent=`Created "${name}" (${type} \u2265 ${thresh}, ${chLabel}${secret?' + HMAC-signed':''}).  Wires to POST /api/v1/alerts/${TENANT}/rules.`;
+}
 
 /* budgets */
 const BUDGETS=[
@@ -320,7 +475,7 @@ function renderBudgets(){
   document.getElementById('budgets').innerHTML=BUDGETS.map(b=>`<div class="rule">
     <div class="nm"><div>${b.name}</div><div class="s">${b.scope}</div></div>
     <div style="width:140px"><div style="height:7px;background:var(--line);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100,b.pct)}%;background:${budColor(b.pct)};border-radius:4px"></i></div>
-      <div style="font-size:10px;color:var(--txt3);font-family:var(--mono);margin-top:3px">${EUR(b.spend)} / ${EUR(b.amount)}</div></div>
+      <div style="font-size:10px;color:var(--txt3);font-family:var(--mono);margin-top:3px">${FMT(b.spend)} / ${FMT(b.amount)}</div></div>
     <div style="font-family:var(--mono);font-weight:600;color:${budColor(b.pct)};min-width:42px;text-align:right">${b.pct}%</div></div>`).join('');
 }
 function createBudget(){
@@ -331,8 +486,11 @@ function createBudget(){
   const scopeStr=scope==='tenant'?'tenant':`${scope}=${value}`;
   BUDGETS.unshift({name,scope:scopeStr,amount:+amount,spend:0,pct:0,status:'ok'});
   renderBudgets();
-  document.getElementById('b-note').textContent=`Created "${name}" (${EUR(+amount)}/mo, scope ${scopeStr}). Wires to POST /api/v1/budgets/{tenant}.`;
+  document.getElementById('b-note').textContent=`Created "${name}" (${FMT(+amount)}/mo, scope ${scopeStr}). Wires to POST /api/v1/budgets/${TENANT}.`;
 }
+
+/* ── Active nav ── */
+document.querySelectorAll('.snav-link').forEach(a=>{if(location.pathname.endsWith(a.getAttribute('href')))a.classList.add('active');});
 
 render();renderAlerts();renderBudgets();
 </script>

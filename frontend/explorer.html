@@ -78,10 +78,23 @@ padding:9px 16px;border-radius:8px;cursor:pointer}
 .rule .tog{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:6px}
 .rule .tog.on{background:var(--tealDim);color:var(--teal)}.rule .tog.off{background:var(--panel2);color:var(--txt3)}
 .note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.5}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--tealDim);color:var(--teal)}
 </style>
 </head>
 <body>
 <div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+  <a href="forecast.html" class="snav-link">∿ Forecast</a>
+  <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
+  <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+</nav>
   <h2 class="sr-only">CloudLens multi-cloud explorer: drill from provider to account to service to resource, with anomaly detection, budget setup, and alerts</h2>
   <div class="head">
     <h1><span class="dot"></span> CloudLens · Explorer</h1>
