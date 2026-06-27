@@ -1,0 +1,195 @@
+# CloudLens Cost Estimate — Azure DevOps Pipeline template
+#
+# Add this as a step template to your Azure Pipeline or reference it from
+# your azure-pipelines.yml using the `template` keyword.
+#
+# Required pipeline variables (Pipelines > Library or inline):
+#   CLOUDLENS_API_URL  — Base URL of your CloudLens deployment
+#   CLOUDLENS_API_KEY  — CloudLens internal API key (mark as secret)
+#
+# Optional variables:
+#   CLOUDLENS_TENANT_ID   — Persist run history (leave blank to skip)
+#   CLOUDLENS_BUDGET_GATE — Max net monthly EUR increase (e.g. "100")
+#   TF_WORKING_DIR        — Subdirectory with Terraform files (default: ".")
+#
+# Usage — in azure-pipelines.yml:
+#
+#   steps:
+#     - template: ci-templates/azure-devops.yml
+#       parameters:
+#         cloudlensApiUrl: $(CLOUDLENS_API_URL)
+#         cloudlensApiKey: $(CLOUDLENS_API_KEY)
+#         tenantId: $(CLOUDLENS_TENANT_ID)
+#         budgetGateEur: '200'
+#         workingDirectory: 'infra/'
+
+parameters:
+  - name: cloudlensApiUrl
+    type: string
+  - name: cloudlensApiKey
+    type: string
+  - name: tenantId
+    type: string
+    default: ''
+  - name: budgetGateEur
+    type: string
+    default: ''
+  - name: workingDirectory
+    type: string
+    default: '$(System.DefaultWorkingDirectory)'
+  - name: label
+    type: string
+    default: '$(Build.SourceVersionMessage)'
+  - name: failOnGateBreach
+    type: boolean
+    default: true
+
+steps:
+  - task: TerraformInstaller@1
+    displayName: 'Install Terraform'
+    inputs:
+      terraformVersion: 'latest'
+
+  - task: TerraformTaskV4@4
+    displayName: 'Terraform Init'
+    inputs:
+      provider: 'azurerm'
+      command: 'init'
+      workingDirectory: ${{ parameters.workingDirectory }}
+      backendServiceArm: '$(AZURE_SERVICE_CONNECTION)'
+
+  - task: TerraformTaskV4@4
+    displayName: 'Terraform Plan'
+    inputs:
+      provider: 'azurerm'
+      command: 'plan'
+      workingDirectory: ${{ parameters.workingDirectory }}
+      commandOptions: '-input=false -out=cloudlens_plan.tfplan'
+      environmentServiceNameAzureRM: '$(AZURE_SERVICE_CONNECTION)'
+
+  - bash: |
+      terraform show -json cloudlens_plan.tfplan > cloudlens_plan.json
+      echo "Plan JSON generated ($(wc -c < cloudlens_plan.json) bytes)"
+    displayName: 'Export Plan JSON'
+    workingDirectory: ${{ parameters.workingDirectory }}
+
+  - bash: |
+      PLAN_JSON_ESCAPED=$(python3 -c 'import json; print(json.dumps(open("cloudlens_plan.json").read()))')
+      LABEL="${{ parameters.label }}"
+      RESPONSE=$(curl -s -w "\n%{http_code}" \
+        -X POST "${{ parameters.cloudlensApiUrl }}/api/v1/estimate/terraform" \
+        -H "Content-Type: application/json" \
+        -H "X-API-Key: ${{ parameters.cloudlensApiKey }}" \
+        -d "{\"plan_json\": ${PLAN_JSON_ESCAPED}, \"label\": \"${LABEL}\"}")
+      HTTP_STATUS=$(echo "$RESPONSE" | tail -1)
+      ESTIMATE=$(echo "$RESPONSE" | head -n -1)
+      if [ "$HTTP_STATUS" != "200" ]; then
+        echo "##[warning]CloudLens API returned HTTP $HTTP_STATUS — skipping estimate"
+        echo "##vso[task.setvariable variable=CLOUDLENS_MONTHLY_DELTA;isOutput=true]0"
+        exit 0
+      fi
+      echo "$ESTIMATE" > /tmp/cloudlens_estimate.json
+      MONTHLY=$(echo "$ESTIMATE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('total_monthly_delta_eur',0))")
+      ANNUAL=$(echo "$ESTIMATE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('total_annual_delta_eur',0))")
+      echo "##vso[task.setvariable variable=CLOUDLENS_MONTHLY_DELTA;isOutput=true]${MONTHLY}"
+      echo "##vso[task.setvariable variable=CLOUDLENS_ANNUAL_DELTA;isOutput=true]${ANNUAL}"
+      echo "Cost estimate: +EUR ${MONTHLY}/month  (+EUR ${ANNUAL}/year)"
+    displayName: 'CloudLens — Estimate Cost'
+    workingDirectory: ${{ parameters.workingDirectory }}
+    name: cloudlensEstimate
+
+  - bash: |
+      if [ -z "${{ parameters.tenantId }}" ]; then
+        echo "No tenant_id — skipping run persistence"
+        exit 0
+      fi
+      PAYLOAD=$(python3 -c "
+      import json, os
+      plan = json.loads(open('cloudlens_plan.json').read())
+      body = {
+          'plan_json': json.dumps(plan),
+          'tenant_id': '${{ parameters.tenantId }}',
+          'label': '${{ parameters.label }}',
+          'ci_system': 'azure_devops',
+          'repo': os.environ.get('BUILD_REPOSITORY_NAME',''),
+          'branch': os.environ.get('BUILD_SOURCEBRANCH',''),
+          'commit_sha': os.environ.get('BUILD_SOURCEVERSION',''),
+      }
+      pr = os.environ.get('SYSTEM_PULLREQUEST_PULLREQUESTNUMBER','')
+      if pr:
+          body['pr_number'] = int(pr)
+      gate = '${{ parameters.budgetGateEur }}'
+      if gate:
+          body['budget_gate_eur'] = float(gate)
+      print(json.dumps(body))
+      ")
+      RECORD_RESP=$(curl -s -w "\n%{http_code}" \
+        -X POST "${{ parameters.cloudlensApiUrl }}/api/v1/estimate/terraform/record" \
+        -H "Content-Type: application/json" \
+        -H "X-API-Key: ${{ parameters.cloudlensApiKey }}" \
+        -d "$PAYLOAD")
+      RECORD_STATUS=$(echo "$RECORD_RESP" | tail -1)
+      if [ "$RECORD_STATUS" = "200" ]; then
+        RUN_ID=$(echo "$RECORD_RESP" | head -n -1 | python3 -c "import json,sys; print(json.load(sys.stdin).get('run_id',''))")
+        echo "CloudLens run recorded: $RUN_ID"
+        echo "##vso[task.setvariable variable=CLOUDLENS_RUN_ID;isOutput=true]${RUN_ID}"
+      else
+        echo "##[warning]Failed to record run (HTTP $RECORD_STATUS)"
+      fi
+    displayName: 'CloudLens — Record Pipeline Run'
+    workingDirectory: ${{ parameters.workingDirectory }}
+    condition: ne('${{ parameters.tenantId }}', '')
+    name: cloudlensRecord
+
+  - bash: |
+      if [ -z "${{ parameters.budgetGateEur }}" ]; then
+        echo "No budget gate configured — skipping"
+        exit 0
+      fi
+      MONTHLY=$(echo "$(cloudlensEstimate.CLOUDLENS_MONTHLY_DELTA)")
+      GATE_RESP=$(curl -s -w "\n%{http_code}" \
+        -X POST "${{ parameters.cloudlensApiUrl }}/api/v1/estimate/gate" \
+        -H "Content-Type: application/json" \
+        -d "{\"monthly_delta_eur\": ${MONTHLY}, \"gate_eur\": ${{ parameters.budgetGateEur }}}")
+      GATE_STATUS=$(echo "$GATE_RESP" | tail -1)
+      if [ "$GATE_STATUS" = "200" ]; then
+        PASSED=$(echo "$GATE_RESP" | head -n -1 | python3 -c "import json,sys; print(json.load(sys.stdin)['passed'])")
+        MESSAGE=$(echo "$GATE_RESP" | head -n -1 | python3 -c "import json,sys; print(json.load(sys.stdin)['message'])")
+        echo "Budget gate: $MESSAGE"
+        if [ "$PASSED" = "False" ]; then
+          echo "##[error]Budget gate FAILED: $MESSAGE"
+          ${{ if eq(parameters.failOnGateBreach, true) }}:
+            exit 1
+        fi
+      else
+        echo "##[warning]Budget gate API unavailable (HTTP $GATE_STATUS)"
+      fi
+    displayName: 'CloudLens — Evaluate Budget Gate'
+    condition: ne('${{ parameters.budgetGateEur }}', '')
+
+  - bash: |
+      echo "=== CloudLens Cost Estimate Summary ==="
+      python3 -c "
+      import json
+      try:
+          d = json.load(open('/tmp/cloudlens_estimate.json'))
+      except Exception:
+          print('No estimate data'); exit(0)
+      monthly = d.get('total_monthly_delta_eur', 0)
+      sign = '+' if monthly >= 0 else ''
+      print(f'Net monthly delta:  {sign}EUR {monthly:,.2f}')
+      print(f'Net annual delta:   {sign}EUR {monthly*12:,.2f}')
+      resources = d.get('resources', [])
+      if resources:
+          print(f'Resources changed:  {len(resources)}')
+          for r in sorted(resources, key=lambda x: abs(x.get('monthly_delta_eur',0)), reverse=True)[:10]:
+              print('{:<45} {:>+12.2f}'.format(r['address'][:44], r['monthly_delta_eur']))
+      "
+    displayName: 'CloudLens — Print Cost Summary'
+    condition: always()
+
+  - bash: |
+      rm -f "${{ parameters.workingDirectory }}/cloudlens_plan.tfplan" \
+            "${{ parameters.workingDirectory }}/cloudlens_plan.json"
+    displayName: 'Cleanup plan files'
+    condition: always()

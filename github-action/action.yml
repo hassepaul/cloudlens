@@ -1,0 +1,308 @@
+name: "CloudLens Cost Estimate"
+description: >
+  Runs `terraform plan`, posts the plan JSON to CloudLens, and comments
+  on the pull request with a per-resource monthly cost breakdown.
+  Optionally enforces a budget gate (fails the step if exceeded) and
+  persists the run to the CloudLens pipeline run history.
+
+inputs:
+  cloudlens_api_url:
+    description: "Base URL of your CloudLens deployment"
+    required: true
+  cloudlens_api_key:
+    description: "CloudLens internal API key (store as a repository secret)"
+    required: true
+  working_directory:
+    description: "Directory containing the Terraform configuration"
+    required: false
+    default: "."
+  label:
+    description: "Label for this estimate (defaults to PR title)"
+    required: false
+    default: ""
+  github_token:
+    description: "GitHub token for posting PR comments"
+    required: false
+    default: ${{ github.token }}
+  budget_gate_eur:
+    description: "Max allowed net monthly cost increase in EUR (empty = no gate)"
+    required: false
+    default: ""
+  tenant_id:
+    description: "CloudLens tenant ID for persisting run history (empty = skip)"
+    required: false
+    default: ""
+  fail_on_gate_breach:
+    description: "Set to 'true' to fail the step when the budget gate is exceeded"
+    required: false
+    default: "true"
+
+outputs:
+  total_monthly_delta_eur:
+    description: "Net monthly cost change in EUR"
+    value: ${{ steps.estimate.outputs.total_monthly_delta_eur }}
+  total_annual_delta_eur:
+    description: "Net annual cost change in EUR"
+    value: ${{ steps.estimate.outputs.total_annual_delta_eur }}
+  gate_passed:
+    description: "true/false — whether the budget gate was passed"
+    value: ${{ steps.gate.outputs.gate_passed }}
+  run_id:
+    description: "CloudLens pipeline run ID (if tenant_id was provided)"
+    value: ${{ steps.record.outputs.run_id }}
+  estimate_json:
+    description: "Full estimate response JSON"
+    value: ${{ steps.estimate.outputs.estimate_json }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_wrapper: false
+
+    - name: Terraform Init
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: terraform init -input=false
+
+    - name: Terraform Plan
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        terraform plan -input=false -out=cloudlens_plan.tfplan
+        terraform show -json cloudlens_plan.tfplan > cloudlens_plan.json
+        echo "Plan JSON generated ($(wc -c < cloudlens_plan.json) bytes)"
+
+    - name: Post to CloudLens and estimate cost
+      id: estimate
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        CLOUDLENS_API_URL: ${{ inputs.cloudlens_api_url }}
+        CLOUDLENS_API_KEY: ${{ inputs.cloudlens_api_key }}
+        LABEL: ${{ inputs.label || github.event.pull_request.title || github.ref_name }}
+      run: |
+        PLAN_JSON=$(cat cloudlens_plan.json)
+        RESPONSE=$(curl -s -w "\n%{http_code}" \
+          -X POST "${CLOUDLENS_API_URL}/api/v1/estimate/terraform" \
+          -H "Content-Type: application/json" \
+          -H "X-API-Key: ${CLOUDLENS_API_KEY}" \
+          -d "{\"plan_json\": $(echo "$PLAN_JSON" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'), \"label\": \"${LABEL}\"}")
+
+        HTTP_STATUS=$(echo "$RESPONSE" | tail -1)
+        BODY=$(echo "$RESPONSE" | head -n -1)
+
+        if [ "$HTTP_STATUS" != "200" ]; then
+          echo "::warning::CloudLens estimate API returned HTTP $HTTP_STATUS"
+          echo "total_monthly_delta_eur=0" >> "$GITHUB_OUTPUT"
+          echo "total_annual_delta_eur=0" >> "$GITHUB_OUTPUT"
+          echo "estimate_json={}" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        MONTHLY=$(echo "$BODY" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('total_monthly_delta_eur',0))")
+        ANNUAL=$(echo "$BODY" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('total_annual_delta_eur',0))")
+
+        echo "total_monthly_delta_eur=${MONTHLY}" >> "$GITHUB_OUTPUT"
+        echo "total_annual_delta_eur=${ANNUAL}" >> "$GITHUB_OUTPUT"
+        echo "estimate_json=${BODY}" >> "$GITHUB_OUTPUT"
+        echo "$BODY" > /tmp/cloudlens_estimate.json
+
+    - name: Record pipeline run
+      id: record
+      if: ${{ inputs.tenant_id != '' }}
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        CLOUDLENS_API_URL: ${{ inputs.cloudlens_api_url }}
+        CLOUDLENS_API_KEY: ${{ inputs.cloudlens_api_key }}
+        TENANT_ID: ${{ inputs.tenant_id }}
+        BUDGET_GATE: ${{ inputs.budget_gate_eur }}
+        LABEL: ${{ inputs.label || github.event.pull_request.title || github.ref_name }}
+      run: |
+        PLAN_JSON=$(cat cloudlens_plan.json)
+        PAYLOAD=$(python3 -c "
+        import json, os
+        plan = json.loads(open('cloudlens_plan.json').read())
+        body = {
+            'plan_json': json.dumps(plan),
+            'tenant_id': os.environ['TENANT_ID'],
+            'label': os.environ.get('LABEL',''),
+            'ci_system': 'github_actions',
+            'repo': '${GITHUB_REPOSITORY}',
+            'branch': '${GITHUB_REF_NAME}',
+            'commit_sha': '${GITHUB_SHA}',
+        }
+        pr = os.environ.get('PR_NUMBER','')
+        if pr:
+            body['pr_number'] = int(pr)
+        gate = os.environ.get('BUDGET_GATE','')
+        if gate:
+            body['budget_gate_eur'] = float(gate)
+        print(json.dumps(body))
+        " PR_NUMBER="${{ github.event.pull_request.number }}")
+
+        RESPONSE=$(curl -s -w "\n%{http_code}" \
+          -X POST "${CLOUDLENS_API_URL}/api/v1/estimate/terraform/record" \
+          -H "Content-Type: application/json" \
+          -H "X-API-Key: ${CLOUDLENS_API_KEY}" \
+          -d "$PAYLOAD")
+
+        HTTP_STATUS=$(echo "$RESPONSE" | tail -1)
+        BODY=$(echo "$RESPONSE" | head -n -1)
+
+        if [ "$HTTP_STATUS" = "200" ]; then
+          RUN_ID=$(echo "$BODY" | python3 -c "import json,sys; print(json.load(sys.stdin).get('run_id',''))")
+          echo "run_id=${RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "::notice::CloudLens run recorded: ${RUN_ID}"
+        else
+          echo "::warning::Failed to record pipeline run (HTTP $HTTP_STATUS)"
+          echo "run_id=" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Evaluate budget gate
+      id: gate
+      if: ${{ inputs.budget_gate_eur != '' }}
+      shell: bash
+      env:
+        CLOUDLENS_API_URL: ${{ inputs.cloudlens_api_url }}
+        BUDGET_GATE: ${{ inputs.budget_gate_eur }}
+        FAIL_ON_BREACH: ${{ inputs.fail_on_gate_breach }}
+        LABEL: ${{ inputs.label || github.event.pull_request.title || github.ref_name }}
+      run: |
+        MONTHLY=$(cat "$GITHUB_OUTPUT" | grep "^total_monthly_delta_eur=" | cut -d= -f2 || echo "0")
+
+        RESPONSE=$(curl -s -w "\n%{http_code}" \
+          -X POST "${CLOUDLENS_API_URL}/api/v1/estimate/gate" \
+          -H "Content-Type: application/json" \
+          -d "{\"monthly_delta_eur\": ${MONTHLY}, \"gate_eur\": ${BUDGET_GATE}, \"label\": \"${LABEL}\"}")
+
+        HTTP_STATUS=$(echo "$RESPONSE" | tail -1)
+        BODY=$(echo "$RESPONSE" | head -n -1)
+
+        if [ "$HTTP_STATUS" != "200" ]; then
+          echo "::warning::Budget gate API unavailable (HTTP $HTTP_STATUS) — skipping gate"
+          echo "gate_passed=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        PASSED=$(echo "$BODY" | python3 -c "import json,sys; print(json.load(sys.stdin)['passed'])")
+        MESSAGE=$(echo "$BODY" | python3 -c "import json,sys; print(json.load(sys.stdin)['message'])")
+
+        echo "gate_passed=${PASSED}" >> "$GITHUB_OUTPUT"
+
+        if [ "$PASSED" = "True" ]; then
+          echo "::notice::Budget gate PASSED: ${MESSAGE}"
+        else
+          echo "::error::Budget gate FAILED: ${MESSAGE}"
+          if [ "$FAIL_ON_BREACH" = "true" ]; then
+            exit 1
+          fi
+        fi
+
+    - name: Post PR comment
+      if: ${{ github.event_name == 'pull_request' }}
+      shell: python3 {0}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        GATE_EUR: ${{ inputs.budget_gate_eur }}
+      run: |
+        import json, os, urllib.request, urllib.error
+
+        try:
+            with open("/tmp/cloudlens_estimate.json") as f:
+                data = json.load(f)
+        except Exception:
+            print("No estimate data to comment")
+            exit(0)
+
+        monthly = data.get("total_monthly_delta_eur", 0)
+        annual  = data.get("total_annual_delta_eur", 0)
+        resources = data.get("resources", [])
+        unsupported = data.get("unsupported_resource_types", [])
+        label = data.get("label", "")
+        drift = data.get("drift_vs_previous_pct")
+        gate_passed = data.get("gate_passed")
+        run_id = data.get("run_id", "")
+
+        sign = "+" if monthly >= 0 else ""
+        colour = "🔴" if monthly > 50 else ("🟡" if monthly > 0 else "🟢")
+
+        gate_line = ""
+        gate_eur = os.environ.get("GATE_EUR", "")
+        if gate_eur:
+            gate_icon = "✅" if gate_passed else "❌"
+            gate_line = f"\n**Budget Gate ({gate_eur} EUR/month):** {gate_icon} {'PASS' if gate_passed else 'FAIL'}"
+
+        drift_line = ""
+        if drift is not None:
+            drift_sign = "+" if drift >= 0 else ""
+            drift_line = f" &nbsp;·&nbsp; drift {drift_sign}{drift:.1f}% vs. previous run"
+
+        lines = [
+            f"## {colour} CloudLens Cost Estimate",
+            "",
+            f"**{sign}€{monthly:,.2f}/month** &nbsp;·&nbsp; **{sign}€{annual:,.2f}/year**{drift_line}",
+        ]
+        if label:
+            lines.insert(1, f"_{label}_\n")
+        if gate_line:
+            lines.append(gate_line)
+        if run_id:
+            lines.append(f"\n_Run ID: `{run_id}`_")
+
+        if resources:
+            lines += [
+                "",
+                "| Resource | Type | Action | Size | Δ EUR/month |",
+                "|---|---|---|---|---:|",
+            ]
+            for r in sorted(resources, key=lambda x: abs(x.get("monthly_delta_eur", 0)), reverse=True)[:20]:
+                delta = r.get("monthly_delta_eur", 0)
+                s = "+" if delta >= 0 else ""
+                lines.append(
+                    f"| `{r.get('address','?')}` | `{r.get('resource_type','?')}` "
+                    f"| {r.get('action','?')} | `{r.get('size','—')}` | **{s}€{delta:,.2f}** |"
+                )
+            if len(resources) > 20:
+                lines.append(f"\n_... and {len(resources) - 20} more resources_")
+
+        if unsupported:
+            lines += ["", f"⚠️ **{len(unsupported)} unsupported type(s)** (not priced): " + ", ".join(f"`{t}`" for t in unsupported[:5])]
+
+        lines += [
+            "",
+            "---",
+            "_Prices are approximate on-demand EUR/month. Powered by [CloudLens](https://cloudlens.io)._",
+        ]
+
+        body_text = "\n".join(lines)
+        token = os.environ["GITHUB_TOKEN"]
+        repo  = os.environ["GITHUB_REPOSITORY"]
+        pr    = os.environ["PR_NUMBER"]
+        url   = f"https://api.github.com/repos/{repo}/issues/{pr}/comments"
+
+        req = urllib.request.Request(
+            url,
+            data=json.dumps({"body": body_text}).encode(),
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github+json",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req) as resp:
+                print(f"PR comment posted (HTTP {resp.status})")
+        except urllib.error.HTTPError as e:
+            print(f"Failed to post comment: {e}")
+
+    - name: Cleanup
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: rm -f cloudlens_plan.tfplan cloudlens_plan.json /tmp/cloudlens_estimate.json

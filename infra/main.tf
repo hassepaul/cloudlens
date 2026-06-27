@@ -80,9 +80,21 @@ resource "azurerm_cosmosdb_account" "main" {
     consistency_level = "Session"
   }
 
+  # Primary region
   geo_location {
     location          = azurerm_resource_group.main.location
     failover_priority = 0
+  }
+
+  # Optional secondary region for read replicas and automatic geo-failover.
+  # Enable by setting secondary_location in your .tfvars (or TF_VAR_secondary_location).
+  # CloudLens can be deployed to any region — just set var.location in your tfvars.
+  dynamic "geo_location" {
+    for_each = var.secondary_location != "" ? [var.secondary_location] : []
+    content {
+      location          = geo_location.value
+      failover_priority = 1
+    }
   }
 
   capabilities { name = "EnableServerless" }
@@ -115,6 +127,8 @@ locals {
     cost_records = { partition_key = "/tenant_id", ttl = 7776000 }
     waste_items  = { partition_key = "/tenant_id", ttl = null }
     reports      = { partition_key = "/tenant_id", ttl = null }
+    policies     = { partition_key = "/tenant_id", ttl = null }
+    hierarchy    = { partition_key = "/tenant_id", ttl = null }
   }
   tags = {
     environment = var.environment
@@ -290,6 +304,12 @@ resource "azurerm_container_app" "api" {
       env {
         name        = "INTERNAL_API_KEY"
         secret_name = "internal-api-key"
+      }
+      # Action execution is off by default. Set to "true" after granting the
+      # managed identity VM Contributor (+ Website Contributor) on customer subs.
+      env {
+        name  = "ACTION_EXECUTION_ENABLED"
+        value = "false"
       }
     }
 

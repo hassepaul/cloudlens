@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — CI/CD Cost Integration</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--purpleDim:#2e2548;
+--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.wrap{max-width:1120px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--purple);box-shadow:0 0 10px var(--purple)}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--purpleDim);color:var(--purple)}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px;margin-bottom:14px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:11px;padding:13px 15px}
+.kpi .l{font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-family:var(--mono)}
+.kpi .v{font-family:var(--mono);font-size:22px;font-weight:700}
+.kpi .s{font-size:10.5px;color:var(--txt3);margin-top:3px}
+.kpi.teal .v{color:var(--teal)}.kpi.amber .v{color:var(--amber)}.kpi.green .v{color:var(--green)}
+.kpi.blue .v{color:var(--blue)}.kpi.red .v{color:var(--red)}.kpi.purple .v{color:var(--purple)}
+.badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:5px;font-weight:600;display:inline-block;vertical-align:middle}
+.badge.pass{background:var(--greenDim);color:var(--green)}
+.badge.fail{background:var(--redDim);color:var(--red)}
+.badge.nogate{background:#1a2230;color:var(--txt3)}
+.badge.github{background:#161b22;color:#58a6ff}
+.badge.gitlab{background:#2a1a00;color:#fc6d26}
+.badge.azure{background:#0c1a2e;color:#0078d4}
+.badge.other{background:var(--panel2);color:var(--txt3)}
+.form-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px;margin-bottom:16px;flex-wrap:wrap}
+.form-bar label{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.form-bar input,.form-bar select{background:var(--bg2);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;padding:5px 10px;font-family:var(--mono);outline:none}
+.form-bar input:focus{border-color:var(--purple)}
+.btn{background:var(--purpleDim);border:1px solid var(--purple);color:var(--purple);font-family:var(--mono);font-size:11px;padding:7px 14px;border-radius:7px;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--purple);color:#0d1218}
+.btn.secondary{background:var(--panel2);border-color:var(--line);color:var(--txt2)}
+.btn.secondary:hover{background:var(--panel);color:var(--txt)}
+.btn.green{background:var(--greenDim);border-color:var(--green);color:var(--green)}
+.btn.green:hover{background:var(--green);color:#0d1218}
+.tab-bar{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--lineSoft);padding-bottom:4px}
+.tab{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:7px 7px 0 0;color:var(--txt3);cursor:pointer;border:1px solid transparent;border-bottom:none}
+.tab.active{background:var(--panel);border-color:var(--lineSoft);color:var(--purple)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid var(--lineSoft);color:var(--txt2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr:hover td{background:rgba(255,255,255,.02)}
+.note{font-size:11px;color:var(--txt3);line-height:1.6;padding:10px 14px;background:var(--bg2);border-left:3px solid var(--purple);border-radius:0 7px 7px 0;margin-bottom:12px}
+.code-block{background:var(--bg2);border:1px solid var(--lineSoft);border-radius:8px;padding:14px 16px;font-family:var(--mono);font-size:11px;color:var(--txt2);white-space:pre;overflow-x:auto;line-height:1.6;margin-bottom:12px}
+.trend-bar{display:flex;align-items:center;gap:6px;font-size:11px}
+.trend-up{color:var(--red)}
+.trend-down{color:var(--green)}
+.trend-flat{color:var(--txt3)}
+.resource-tag{display:inline-block;font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:4px;margin:1px}
+.resource-aws{background:#2a1f00;color:#ff9900}
+.resource-azure{background:#0c2a3c;color:#4d9fff}
+.resource-gcp{background:#2a0000;color:#ea4335}
+.delta-pos{color:var(--red);font-family:var(--mono)}
+.delta-neg{color:var(--green);font-family:var(--mono)}
+.delta-zero{color:var(--txt3);font-family:var(--mono)}
+.bar-chart{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:11px}
+.bar-label{width:120px;color:var(--txt3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.expandable{cursor:pointer}
+.expand-content{display:none;padding:10px 0 0}
+.expand-content.open{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1><span class="dot"></span>CI/CD Cost Integration</h1>
+    <span style="font-family:var(--mono);font-size:11px;color:var(--txt3)">Pipeline run history · Budget gates · Drift detection</span>
+  </div>
+
+  <nav class="sitenav" aria-label="Site navigation">
+    <a href="index.html" class="snav-link">⊞ Explorer</a>
+    <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+    <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+    <a href="forecast.html" class="snav-link">∿ Forecast</a>
+    <a href="optimization.html" class="snav-link">◎ Optimize</a>
+    <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
+    <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+    <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+    <a href="commitment_advisor.html" class="snav-link">◈ Commitments</a>
+    <a href="maturity.html" class="snav-link">◬ Maturity</a>
+    <a href="context_mapper.html" class="snav-link">⊛ Context</a>
+    <a href="nl_query.html" class="snav-link">✦ Ask AI</a>
+    <a href="onboarding.html" class="snav-link">⊕ Onboarding</a>
+    <a href="cicd_costs.html" class="snav-link active">⧖ CI/CD Costs</a>
+  </nav>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi purple"><div class="l">Total Runs</div><div class="v" id="kpi-runs">—</div><div class="s">pipeline executions</div></div>
+    <div class="kpi green"><div class="l">Gates Passed</div><div class="v" id="kpi-pass">—</div><div class="s">within budget</div></div>
+    <div class="kpi red"><div class="l">Gates Failed</div><div class="v" id="kpi-fail">—</div><div class="s">budget exceeded</div></div>
+    <div class="kpi amber"><div class="l">Avg Δ EUR/month</div><div class="v" id="kpi-avg">—</div><div class="s">net cost change</div></div>
+    <div class="kpi teal"><div class="l">Largest Single Run</div><div class="v" id="kpi-max">—</div><div class="s">EUR/month</div></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="form-bar">
+    <label>Tenant</label>
+    <input id="tenant-input" value="demo-tenant" style="width:160px"/>
+    <label>Limit</label>
+    <select id="limit-select" style="width:80px">
+      <option value="20">20</option>
+      <option value="50" selected>50</option>
+      <option value="100">100</option>
+    </select>
+    <button class="btn" onclick="loadRuns()">Load</button>
+    <button class="btn secondary" onclick="loadDemo()">Demo data</button>
+    <span style="flex:1"></span>
+    <span id="last-updated" style="font-family:var(--mono);font-size:10px;color:var(--txt3)"></span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <div class="tab active" onclick="switchTab('runs')">Pipeline Runs</div>
+    <div class="tab" onclick="switchTab('tryit')">Try Estimate</div>
+    <div class="tab" onclick="switchTab('setup')">Integration Guide</div>
+  </div>
+
+  <!-- Runs tab -->
+  <div class="tab-panel active" id="tab-runs">
+    <div class="card">
+      <h2>⧖ Pipeline Run History <span id="runs-count" style="font-size:11px;color:var(--txt3);font-weight:400"></span></h2>
+
+      <!-- Trend chart -->
+      <div id="trend-chart" style="margin-bottom:16px"></div>
+
+      <div id="runs-table-wrap">
+        <div style="color:var(--txt3);font-size:12px">Click Load or Demo to view run history.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Try it tab -->
+  <div class="tab-panel" id="tab-tryit">
+    <div class="card">
+      <h2>🧮 Live Estimate + Budget Gate</h2>
+      <div class="note">Paste a <code>terraform show -json</code> plan or use the example below. Set a budget gate to see pass/fail logic.</div>
+      <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn secondary" onclick="loadExamplePlan()">Load example plan</button>
+        <label style="font-family:var(--mono);font-size:11px;color:var(--txt3)">Budget gate (EUR/month):</label>
+        <input id="gate-input" type="number" value="100" style="width:90px;background:var(--bg2);border:1px solid var(--line);border-radius:7px;color:var(--txt);padding:5px 10px;font-family:var(--mono);font-size:12px;outline:none"/>
+        <button class="btn green" onclick="runEstimate()">Run Estimate</button>
+      </div>
+      <textarea id="plan-input" rows="12" style="width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt2);font-family:var(--mono);font-size:11px;padding:12px;outline:none;resize:vertical" placeholder="Paste terraform show -json output here…"></textarea>
+      <div id="estimate-result" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- Setup tab -->
+  <div class="tab-panel" id="tab-setup">
+    <div class="card">
+      <h2>🔧 Integration Guide</h2>
+      <div class="tab-bar" style="margin-bottom:12px">
+        <div class="tab active" onclick="switchCiTab('github')" id="ci-tab-github">GitHub Actions</div>
+        <div class="tab" onclick="switchCiTab('gitlab')" id="ci-tab-gitlab">GitLab CI</div>
+        <div class="tab" onclick="switchCiTab('azdo')" id="ci-tab-azdo">Azure DevOps</div>
+        <div class="tab" onclick="switchCiTab('api')" id="ci-tab-api">API Reference</div>
+      </div>
+
+      <div id="ci-github">
+        <p style="font-size:12px;color:var(--txt2);margin-bottom:10px">Add to <code>.github/workflows/cloudlens-cost-estimate.yml</code>:</p>
+        <div class="code-block">name: CloudLens Cost Estimate
+
+on:
+  pull_request:
+    paths: ["**.tf", "**.tfvars"]
+
+jobs:
+  cost-estimate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run CloudLens Cost Estimate
+        uses: cloudlens/cost-estimate-action@v1
+        with:
+          cloudlens_api_url: ${{ secrets.CLOUDLENS_API_URL }}
+          cloudlens_api_key: ${{ secrets.CLOUDLENS_API_KEY }}
+          tenant_id:        ${{ secrets.CLOUDLENS_TENANT_ID }}
+          budget_gate_eur:  "200"
+          fail_on_gate_breach: "true"
+          working_directory: infra/</div>
+        <div class="note">Secrets to configure: <code>CLOUDLENS_API_URL</code> · <code>CLOUDLENS_API_KEY</code> · <code>CLOUDLENS_TENANT_ID</code></div>
+      </div>
+
+      <div id="ci-gitlab" style="display:none">
+        <p style="font-size:12px;color:var(--txt2);margin-bottom:10px">In <code>.gitlab-ci.yml</code>:</p>
+        <div class="code-block">include:
+  - project: 'your-org/cloudlens'
+    file: 'ci-templates/gitlab-ci.yml'
+    ref: main
+
+variables:
+  CLOUDLENS_API_URL:    "https://api.cloudlens.io"
+  CLOUDLENS_TENANT_ID:  "your-tenant-id"
+  CLOUDLENS_BUDGET_GATE: "200"
+  TF_ROOT: "infra/"</div>
+        <div class="note">Set <code>CLOUDLENS_API_KEY</code> as a masked CI/CD variable in Settings → CI/CD → Variables.</div>
+      </div>
+
+      <div id="ci-azdo" style="display:none">
+        <p style="font-size:12px;color:var(--txt2);margin-bottom:10px">In <code>azure-pipelines.yml</code>:</p>
+        <div class="code-block">steps:
+  - template: ci-templates/azure-devops.yml
+    parameters:
+      cloudlensApiUrl: $(CLOUDLENS_API_URL)
+      cloudlensApiKey: $(CLOUDLENS_API_KEY)
+      tenantId:        $(CLOUDLENS_TENANT_ID)
+      budgetGateEur:   '200'
+      workingDirectory: 'infra/'
+      failOnGateBreach: true</div>
+        <div class="note">Add pipeline variables in Pipelines → Library. Mark <code>CLOUDLENS_API_KEY</code> as secret.</div>
+      </div>
+
+      <div id="ci-api" style="display:none">
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--mono);font-size:12px;color:var(--purple);margin-bottom:6px">POST /api/v1/estimate/terraform/record</div>
+          <div style="font-size:12px;color:var(--txt2);margin-bottom:6px">Parse plan + persist run. Requires API key.</div>
+          <div class="code-block">{
+  "plan_json":      "&lt;terraform show -json output&gt;",
+  "tenant_id":      "your-tenant",
+  "label":          "PR #42: Add RDS",
+  "ci_system":      "github_actions",
+  "repo":           "org/repo",
+  "branch":         "feature/add-rds",
+  "commit_sha":     "abc123",
+  "pr_number":      42,
+  "budget_gate_eur": 200.0
+}</div>
+        </div>
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--mono);font-size:12px;color:var(--purple);margin-bottom:6px">GET /api/v1/estimate/runs/{tenant_id}</div>
+          <div style="font-size:12px;color:var(--txt2)">Pipeline run history. Requires API key. Optional: <code>?limit=50</code></div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:12px;color:var(--purple);margin-bottom:6px">POST /api/v1/estimate/gate</div>
+          <div style="font-size:12px;color:var(--txt2);margin-bottom:6px">Budget gate check. No auth required.</div>
+          <div class="code-block">{
+  "monthly_delta_eur": 150.0,
+  "gate_eur":          200.0,
+  "label":             "my-pipeline"
+}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="display:none;position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-family:var(--mono);font-size:12px;z-index:200;max-width:340px"></div>
+
+<script>
+const API = '';
+const KEY = 'demo-key';
+let _demoMode = false;
+
+// ── Demo data ──────────────────────────────────────────────────────────────
+const DEMO_RUNS = [
+  {id:'prun-1',label:'PR #48: Add Aurora cluster',ci_system:'github_actions',repo:'org/infra',branch:'feature/aurora',commit_sha:'a1b2c3d',pr_number:48,total_monthly_delta_eur:312.50,total_annual_delta_eur:3750,budget_gate_eur:200,gate_passed:false,breakdown_by_action:{create:312.50},resources:[{address:'aws_rds_cluster.main',resource_type:'aws_rds_cluster',action:'create',provider:'aws',size:'db.r5.large',monthly_delta_eur:312.50,confidence:'catalog'}],unsupported_resource_types:[],recorded_at:'2026-06-27T14:32:00Z',drift_vs_previous_pct:210.4},
+  {id:'prun-2',label:'PR #45: Upgrade EC2 to m6i',ci_system:'github_actions',repo:'org/infra',branch:'feature/m6i',commit_sha:'e5f6a7b',pr_number:45,total_monthly_delta_eur:100.72,total_annual_delta_eur:1208.64,budget_gate_eur:200,gate_passed:true,breakdown_by_action:{create:144.32,delete:-43.60},resources:[{address:'aws_instance.api',resource_type:'aws_instance',action:'create',provider:'aws',size:'m6i.xlarge',monthly_delta_eur:144.32,confidence:'catalog'},{address:'aws_instance.api_old',resource_type:'aws_instance',action:'delete',provider:'aws',size:'m5.large',monthly_delta_eur:-43.60,confidence:'catalog'}],unsupported_resource_types:[],recorded_at:'2026-06-26T11:15:00Z',drift_vs_previous_pct:null},
+  {id:'prun-3',label:'PR #43: Add Redis cache',ci_system:'gitlab_ci',repo:'org/infra',branch:'feature/redis',commit_sha:'c8d9e0f',pr_number:43,total_monthly_delta_eur:-15.30,total_annual_delta_eur:-183.60,budget_gate_eur:100,gate_passed:true,breakdown_by_action:{create:48.18,delete:-63.48},resources:[{address:'azurerm_redis_cache.app',resource_type:'azurerm_redis_cache',action:'create',provider:'azure',size:'C1',monthly_delta_eur:48.18,confidence:'default'}],unsupported_resource_types:[],recorded_at:'2026-06-25T09:00:00Z',drift_vs_previous_pct:-115.2},
+  {id:'prun-4',label:'Nightly: main branch',ci_system:'azure_devops',repo:'org/platform',branch:'main',commit_sha:'1a2b3c4',pr_number:null,total_monthly_delta_eur:0.0,total_annual_delta_eur:0.0,budget_gate_eur:null,gate_passed:null,breakdown_by_action:{},resources:[],unsupported_resource_types:['aws_wafv2_web_acl','aws_cloudfront_distribution'],recorded_at:'2026-06-24T00:05:00Z',drift_vs_previous_pct:100.0},
+  {id:'prun-5',label:'PR #40: GKE node pool',ci_system:'github_actions',repo:'org/k8s-infra',branch:'feature/gke',commit_sha:'5f6e7d8',pr_number:40,total_monthly_delta_eur:567.12,total_annual_delta_eur:6805.44,budget_gate_eur:500,gate_passed:false,breakdown_by_action:{create:567.12},resources:[{address:'google_container_cluster.prod',resource_type:'google_container_cluster',action:'create',provider:'gcp',size:'n2-standard-16',monthly_delta_eur:567.12,confidence:'catalog'}],unsupported_resource_types:[],recorded_at:'2026-06-23T16:42:00Z',drift_vs_previous_pct:null},
+];
+
+const EXAMPLE_PLAN = JSON.stringify({
+  resource_changes: [
+    {address:'aws_instance.web',type:'aws_instance',change:{actions:['create'],after:{instance_type:'m5.xlarge'},before:null}},
+    {address:'aws_db_instance.main',type:'aws_db_instance',change:{actions:['create'],after:{instance_class:'db.r5.large',allocated_storage:100},before:null}},
+    {address:'aws_s3_bucket.assets',type:'aws_s3_bucket',change:{actions:['create'],after:{},before:null}},
+    {address:'aws_lambda_function.processor',type:'aws_lambda_function',change:{actions:['create'],after:{memory_size:512},before:null}},
+    {address:'aws_nat_gateway.egress',type:'aws_nat_gateway',change:{actions:['delete'],after:null,before:{}}},
+    {address:'aws_instance.legacy',type:'aws_instance',change:{actions:['delete'],after:null,before:{instance_type:'t3.medium'}}},
+  ]
+}, null, 2);
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.style.color = type === 'error' ? 'var(--red)' : type === 'success' ? 'var(--green)' : 'var(--txt)';
+  setTimeout(() => t.style.display = 'none', 3500);
+}
+
+function fmtEur(v) {
+  const sign = v > 0 ? '+' : '';
+  return `${sign}€${Math.abs(v).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2})}${v < 0 ? '' : ''}`;
+}
+
+function deltaClass(v) {
+  return v > 0 ? 'delta-pos' : v < 0 ? 'delta-neg' : 'delta-zero';
+}
+
+function ciBadge(sys) {
+  const labels = {github_actions:'GitHub Actions', gitlab_ci:'GitLab CI', azure_devops:'Azure DevOps'};
+  const cls = {github_actions:'github', gitlab_ci:'gitlab', azure_devops:'azure'}[sys] || 'other';
+  return `<span class="badge ${cls}">${labels[sys] || sys}</span>`;
+}
+
+function gateBadge(run) {
+  if (run.gate_passed === null || run.gate_passed === undefined) return '<span class="badge nogate">No gate</span>';
+  return run.gate_passed ? '<span class="badge pass">✓ Pass</span>' : '<span class="badge fail">✗ Fail</span>';
+}
+
+function driftIndicator(d) {
+  if (d === null || d === undefined) return '<span class="trend-flat">—</span>';
+  const sign = d >= 0 ? '+' : '';
+  const cls = d > 0 ? 'trend-up' : d < 0 ? 'trend-down' : 'trend-flat';
+  return `<span class="${cls}">${sign}${d.toFixed(1)}%</span>`;
+}
+
+function switchTab(name) {
+  ['runs','tryit','setup'].forEach((n, i) => {
+    document.querySelectorAll('.tab-bar:first-of-type .tab')[i]?.classList.toggle('active', n === name);
+    document.getElementById('tab-' + n)?.classList.toggle('active', n === name);
+  });
+}
+
+function switchCiTab(name) {
+  ['github','gitlab','azdo','api'].forEach(n => {
+    document.getElementById('ci-tab-' + n)?.classList.toggle('active', n === name);
+    const el = document.getElementById('ci-' + n);
+    if (el) el.style.display = n === name ? '' : 'none';
+  });
+}
+
+// ── Data loading ───────────────────────────────────────────────────────────
+async function loadRuns() {
+  const tenant = document.getElementById('tenant-input').value.trim() || 'demo-tenant';
+  const limit = document.getElementById('limit-select').value;
+  try {
+    const r = await fetch(`${API}/api/v1/estimate/runs/${tenant}?limit=${limit}`, {
+      headers: {'X-API-Key': KEY}
+    });
+    if (!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    _demoMode = false;
+    renderRuns(data.runs);
+  } catch {
+    _demoMode = true;
+    renderRuns(DEMO_RUNS);
+    toast('API unavailable — showing demo data', 'info');
+  }
+  document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+function loadDemo() {
+  _demoMode = true;
+  renderRuns(DEMO_RUNS);
+  document.getElementById('last-updated').textContent = 'Demo mode';
+}
+
+function renderRuns(runs) {
+  document.getElementById('runs-count').textContent = `(${runs.length} runs)`;
+
+  // KPIs
+  const total = runs.length;
+  const passed = runs.filter(r => r.gate_passed === true).length;
+  const failed = runs.filter(r => r.gate_passed === false).length;
+  const deltas = runs.map(r => r.total_monthly_delta_eur);
+  const avg = deltas.length ? (deltas.reduce((a,b) => a+b, 0) / deltas.length) : 0;
+  const max = deltas.length ? Math.max(...deltas.map(Math.abs)) : 0;
+
+  document.getElementById('kpi-runs').textContent = total;
+  document.getElementById('kpi-pass').textContent = passed;
+  document.getElementById('kpi-fail').textContent = failed;
+  document.getElementById('kpi-avg').textContent = (avg >= 0 ? '+' : '') + avg.toFixed(0);
+  document.getElementById('kpi-max').textContent = '€' + max.toFixed(0);
+
+  // Trend chart
+  const chartEl = document.getElementById('trend-chart');
+  if (runs.length > 1) {
+    const maxAbs = Math.max(...runs.map(r => Math.abs(r.total_monthly_delta_eur)), 1);
+    const recent = [...runs].reverse().slice(-10);
+    chartEl.innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--txt3);margin-bottom:6px">COST DELTA TREND — LAST ${recent.length} RUNS</div>` +
+      `<div class="bar-chart">` +
+      recent.map(r => {
+        const pct = Math.round(Math.abs(r.total_monthly_delta_eur) / maxAbs * 100);
+        const color = r.total_monthly_delta_eur > 0 ? 'var(--red)' : r.total_monthly_delta_eur < 0 ? 'var(--green)' : 'var(--txt3)';
+        const label = (r.label || r.branch || r.id).substring(0, 22);
+        const sign = r.total_monthly_delta_eur >= 0 ? '+' : '';
+        return `<div class="bar-row">
+          <div class="bar-label" title="${r.label || ''}">${label}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+          <span style="font-family:var(--mono);font-size:11px;color:${color};min-width:80px;text-align:right">${sign}€${r.total_monthly_delta_eur.toFixed(2)}</span>
+          ${gateBadge(r)}
+        </div>`;
+      }).join('') + '</div>';
+  } else {
+    chartEl.innerHTML = '';
+  }
+
+  // Table
+  const tableEl = document.getElementById('runs-table-wrap');
+  if (!runs.length) {
+    tableEl.innerHTML = '<div style="color:var(--txt3);font-size:12px">No pipeline runs recorded yet.</div>';
+    return;
+  }
+  tableEl.innerHTML = `<table>
+    <thead><tr>
+      <th>Label / Branch</th><th>CI System</th><th>Repo</th>
+      <th>Δ EUR/month</th><th>Gate</th><th>Drift</th><th>Date</th>
+    </tr></thead><tbody>` +
+    runs.map(r => {
+      const date = new Date(r.recorded_at).toLocaleString('en', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      return `<tr class="expandable" onclick="toggleRow('${r.id}')">
+        <td>
+          <div style="font-family:var(--mono);font-size:12px;font-weight:600">${r.label || r.branch || '—'}</div>
+          <div style="font-size:10px;color:var(--txt3);margin-top:2px">
+            ${r.branch ? `<span style="color:var(--txt3)">↳ ${r.branch}</span>` : ''}
+            ${r.commit_sha ? ` <code style="font-size:9px">${r.commit_sha.substring(0,7)}</code>` : ''}
+            ${r.pr_number ? ` · PR #${r.pr_number}` : ''}
+          </div>
+        </td>
+        <td>${ciBadge(r.ci_system)}</td>
+        <td style="font-size:11px;color:var(--txt3)">${r.repo || '—'}</td>
+        <td><span class="${deltaClass(r.total_monthly_delta_eur)}">${fmtEur(r.total_monthly_delta_eur)}</span>
+            <div style="font-size:10px;color:var(--txt3)">${fmtEur(r.total_annual_delta_eur)}/yr</div></td>
+        <td>
+          ${gateBadge(r)}
+          ${r.budget_gate_eur !== null && r.budget_gate_eur !== undefined ? `<div style="font-size:10px;color:var(--txt3)">gate €${r.budget_gate_eur}</div>` : ''}
+        </td>
+        <td>${driftIndicator(r.drift_vs_previous_pct)}</td>
+        <td style="font-size:11px;color:var(--txt3)">${date}</td>
+      </tr>
+      <tr id="row-detail-${r.id}" style="display:none">
+        <td colspan="7" style="padding:0 10px 10px">
+          ${renderRunDetail(r)}
+        </td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+}
+
+function toggleRow(id) {
+  const el = document.getElementById('row-detail-' + id);
+  if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+function renderRunDetail(r) {
+  if (!r.resources || !r.resources.length) {
+    const unsup = r.unsupported_resource_types || [];
+    return `<div style="color:var(--txt3);font-size:11px;padding:6px 0">No priced resources.${unsup.length ? ' Unsupported: ' + unsup.map(t => `<code>${t}</code>`).join(', ') : ''}</div>`;
+  }
+  const providerColor = {aws:'var(--amber)',azure:'var(--blue)',gcp:'var(--red)',unknown:'var(--txt3)'};
+  return `<div style="background:var(--bg2);border:1px solid var(--lineSoft);border-radius:8px;padding:10px 12px;margin-top:6px">
+    <table style="font-size:11px">
+      <thead><tr><th>Resource</th><th>Type</th><th>Action</th><th>Size</th><th style="text-align:right">Δ EUR/month</th></tr></thead>
+      <tbody>` +
+    r.resources.map(res => `<tr>
+      <td style="font-family:var(--mono)">${res.address}</td>
+      <td><span style="font-family:var(--mono);font-size:9px;color:${providerColor[res.provider]||'var(--txt3)'}">${res.resource_type}</span></td>
+      <td>${res.action}</td>
+      <td style="font-family:var(--mono)">${res.size || '—'}</td>
+      <td style="text-align:right"><span class="${deltaClass(res.monthly_delta_eur)}">${fmtEur(res.monthly_delta_eur)}</span></td>
+    </tr>`).join('') +
+    '</tbody></table>' +
+    (r.unsupported_resource_types?.length ? `<div style="margin-top:6px;font-size:10px;color:var(--amber)">⚠ Unsupported (not priced): ${r.unsupported_resource_types.join(', ')}</div>` : '') +
+    '</div>';
+}
+
+// ── Live estimate ──────────────────────────────────────────────────────────
+function loadExamplePlan() {
+  document.getElementById('plan-input').value = EXAMPLE_PLAN;
+  toast('Example plan loaded', 'success');
+}
+
+async function runEstimate() {
+  const planJson = document.getElementById('plan-input').value.trim();
+  if (!planJson) { toast('Paste a plan JSON first', 'error'); return; }
+  const gateEur = parseFloat(document.getElementById('gate-input').value) || null;
+  const el = document.getElementById('estimate-result');
+  el.innerHTML = '<div style="color:var(--txt3);font-size:12px">Estimating…</div>';
+
+  let data;
+  try {
+    const r = await fetch(`${API}/api/v1/estimate/terraform`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'X-API-Key': KEY},
+      body: JSON.stringify({plan_json: planJson, label: 'live-estimate'}),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    data = await r.json();
+  } catch {
+    // Demo fallback
+    try {
+      const plan = JSON.parse(planJson);
+      const changes = plan.resource_changes || [];
+      const PRICES = {'aws_instance':{'t3.medium':30.37,'m5.xlarge':140.16},'aws_db_instance':{'db.r5.large':171.54},'aws_nat_gateway':32.40,'aws_lambda_function':5.0,'aws_s3_bucket':0};
+      let total = 0; const resources = [];
+      changes.forEach(c => {
+        const actions = c.change?.actions || ['no-op'];
+        const action = actions.includes('create') ? 'create' : actions.includes('delete') ? 'delete' : 'no-op';
+        const config = action === 'delete' ? (c.change?.before || {}) : (c.change?.after || {});
+        const entry = PRICES[c.type];
+        let price = 0;
+        if (entry) {
+          if (typeof entry === 'object') price = entry[config.instance_type || config.instance_class || ''] || 50;
+          else price = entry;
+        }
+        const delta = action === 'create' ? price : action === 'delete' ? -price : 0;
+        total += delta;
+        if (action !== 'no-op') resources.push({address:c.address,resource_type:c.type,action,provider:c.type.startsWith('aws_')?'aws':c.type.startsWith('azurerm_')?'azure':'gcp',size:config.instance_type||config.instance_class||'—',monthly_delta_eur:delta,confidence:price>0?'catalog':'free'});
+      });
+      data = {total_monthly_delta_eur:total,total_annual_delta_eur:total*12,resources,unsupported_resource_types:[],breakdown_by_action:{}};
+    } catch (e2) {
+      el.innerHTML = `<div style="color:var(--red);font-size:12px">Invalid plan JSON: ${e2.message}</div>`;
+      return;
+    }
+  }
+
+  // Gate check
+  let gateResult = null;
+  if (gateEur !== null) {
+    try {
+      const gr = await fetch(`${API}/api/v1/estimate/gate`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({monthly_delta_eur: data.total_monthly_delta_eur, gate_eur: gateEur}),
+      });
+      if (gr.ok) gateResult = await gr.json();
+    } catch {
+      gateResult = {passed: data.total_monthly_delta_eur <= gateEur, message: data.total_monthly_delta_eur <= gateEur ? 'PASS' : 'FAIL'};
+    }
+  }
+
+  const monthly = data.total_monthly_delta_eur;
+  const sign = monthly >= 0 ? '+' : '';
+  const colour = monthly > 100 ? 'var(--red)' : monthly > 0 ? 'var(--amber)' : 'var(--green)';
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px">
+      <div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--txt3)">MONTHLY DELTA</div>
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:${colour}">${sign}€${Math.abs(monthly).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--txt3)">${sign}€${Math.abs(data.total_annual_delta_eur).toFixed(2)}/year</div>
+      </div>
+      ${gateResult ? `<div style="padding:10px 16px;border-radius:9px;${gateResult.passed ? 'background:var(--greenDim);border:1px solid var(--green)' : 'background:var(--redDim);border:1px solid var(--red)'}">
+        <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:${gateResult.passed ? 'var(--green)' : 'var(--red)'}">${gateResult.passed ? '✓ Gate PASS' : '✗ Gate FAIL'}</div>
+        <div style="font-size:11px;color:var(--txt3)">gate: €${gateEur}/month</div>
+      </div>` : ''}
+    </div>
+    ${data.resources?.length ? `<table><thead><tr><th>Resource</th><th>Type</th><th>Action</th><th>Size</th><th style="text-align:right">Δ EUR/month</th></tr></thead><tbody>` +
+    data.resources.map(r => `<tr>
+      <td style="font-family:var(--mono);font-size:11px">${r.address}</td>
+      <td style="font-size:11px">${r.resource_type}</td>
+      <td>${r.action}</td>
+      <td style="font-family:var(--mono);font-size:11px">${r.size}</td>
+      <td style="text-align:right"><span class="${deltaClass(r.monthly_delta_eur)}">${fmtEur(r.monthly_delta_eur)}</span></td>
+    </tr>`).join('') + '</tbody></table>' : '<div style="color:var(--txt3);font-size:12px">No priced resources in this plan.</div>'}
+    ${data.unsupported_resource_types?.length ? `<div style="margin-top:8px;font-size:11px;color:var(--amber)">⚠ Not priced: ${data.unsupported_resource_types.join(', ')}</div>` : ''}
+  `;
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', loadDemo);
+</script>
+</body>
+</html>

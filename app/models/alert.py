@@ -23,9 +23,13 @@ class AlertSeverity(str, Enum):
 
 
 class AlertChannel(str, Enum):
-    IN_APP = "in_app"        # stored, shown in the console (always on)
-    EMAIL = "email"          # requires SMTP/SendGrid/ACS integration
-    WEBHOOK = "webhook"      # POST to a URL (Slack/Teams/PagerDuty)
+    IN_APP = "in_app"              # stored, shown in the console (always on)
+    EMAIL = "email"                # requires SMTP/SendGrid/ACS integration
+    WEBHOOK = "webhook"            # POST to a URL (Slack/Teams/PagerDuty)
+    PAGERDUTY = "pagerduty"        # PagerDuty Events API v2 (incident lifecycle)
+    JIRA = "jira"                  # Jira REST API v3 (create Bug/Task)
+    ADO = "ado"                    # Azure DevOps Work Items API (create work item)
+    TEAMS = "teams"                # Teams Adaptive Card v1.5 (richer than MessageCard)
 
 
 class AlertRuleBase(BaseModel):

@@ -38,5 +38,12 @@ python-jose[cryptography]==3.3.0
 
 # Observability
 opentelemetry-sdk==1.29.0
+
+# AWS SDK (Cost Explorer, STS role assumption)
+boto3==1.38.0
+
+# GCP SDK (BigQuery billing export)
+google-cloud-bigquery==3.31.0
+google-auth==2.40.0
 opentelemetry-instrumentation-fastapi==0.50b0
 azure-monitor-opentelemetry==1.6.4

@@ -16,6 +16,7 @@ in rg-staging" — not just "anomaly detected".
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
+from datetime import date as _date
 from typing import Optional
 
 import numpy as np
@@ -276,4 +277,298 @@ def detect_resource_anomalies(
         anomalies=anomalies,
         notes=([f"{len(anomalies)} resource(s) flagged above their expected daily cost."]
                if anomalies else ["No resource-level anomalies in the scan window."]),
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Isolation Forest anomaly detection (numpy-only implementation)
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# Isolation Forest (Liu, Ting, Zhou 2008) works by building random binary trees
+# that recursively partition feature space with random feature/split-point
+# selections.  Anomalous points are isolated quickly (short path lengths)
+# because they occupy sparse regions of the space.  The anomaly score for a
+# point is 2^(−avg_path / c(n)), where c(n) is the expected path length for a
+# random BST on n samples.  Scores close to 1 → anomaly; ~0.5 → normal.
+#
+# Using IF *alongside* Holt-Winters provides complementary signal:
+#   • HW catches temporal deviations (unexpectedly high vs. the seasonal trend).
+#   • IF catches multivariate outliers in feature space — it can flag unusual
+#     *combinations* of features (e.g. high absolute cost AND high relative
+#     ratio AND large diff from the prior day) that HW might miss.
+#
+# The ensemble function runs both and escalates severity when both agree.
+# ──────────────────────────────────────────────────────────────────────────────
+
+_IF_N_ESTIMATORS = 100
+_IF_MAX_SAMPLES = 16    # small subsample → wider score spread → better discrimination
+_IF_CONTAMINATION = 0.10  # expected fraction of anomalies; sets adaptive threshold
+
+
+def _expected_c(n: int) -> float:
+    """Expected isolation path length for n samples (normalisation constant).
+
+    Equation 1 from Liu, Ting, Zhou (2008) — harmonic-number approximation of
+    the expected path length in a random Binary Search Tree on n points.
+    """
+    if n <= 1:
+        return 0.0
+    if n == 2:
+        return 1.0
+    H = float(np.log(n - 1)) + 0.5772156649015329  # Euler-Mascheroni constant
+    return 2.0 * H - 2.0 * (n - 1) / n
+
+
+def _build_if_features(y: np.ndarray, dates: list[str]) -> np.ndarray:
+    """Build a (n, 6) feature matrix for Isolation Forest from a cost time-series.
+
+    Features:
+        0 – raw daily cost (EUR)
+        1 – day-of-week  (0 = Monday … 6 = Sunday)
+        2 – 7-day rolling mean of *preceding* days (history only, no look-ahead)
+        3 – 7-day rolling standard deviation
+        4 – cost / rolling-mean ratio  (relative level vs. recent baseline)
+        5 – lag-1 first difference  (day-over-day change)
+    """
+    n = len(y)
+    feats = np.zeros((n, 6), dtype=float)
+    feats[:, 0] = y
+    feats[:, 1] = np.array(
+        [_date.fromisoformat(d).weekday() for d in dates], dtype=float
+    )
+    for i in range(n):
+        window = y[max(0, i - 7):i]
+        if len(window) >= 2:
+            feats[i, 2] = float(np.mean(window))
+            feats[i, 3] = float(np.std(window))
+        elif len(window) == 1:
+            feats[i, 2] = float(window[0])
+            feats[i, 3] = 0.0
+        else:
+            feats[i, 2] = float(y[i])
+            feats[i, 3] = 0.0
+        feats[i, 4] = float(y[i] / feats[i, 2]) if feats[i, 2] > 0 else 1.0
+        feats[i, 5] = float(y[i] - y[i - 1]) if i > 0 else 0.0
+    return feats
+
+
+def _score_isolation_forest(
+    train: np.ndarray,           # (n_train, n_features) — already normalised
+    test: np.ndarray,            # (n_test,  n_features)
+    n_estimators: int = _IF_N_ESTIMATORS,
+    max_samples: int = _IF_MAX_SAMPLES,
+    seed: int = 42,
+) -> np.ndarray:
+    """Pure-numpy Isolation Forest scorer.
+
+    Returns anomaly scores for each test row in [0, 1].
+    Scores near 1 → highly anomalous; ~0.5 → normal.
+    """
+    rng = np.random.default_rng(seed)
+    n_sub = min(max_samples, len(train))
+    c_n = _expected_c(n_sub)
+    n_test = len(test)
+
+    if c_n <= 0 or n_test == 0:
+        return np.full(n_test, 0.5)
+
+    n_feats = train.shape[1]
+    max_depth = int(np.ceil(np.log2(max(n_sub, 2)))) + 1
+    replace = len(train) < n_sub
+    path_sums = np.zeros(n_test)
+
+    for _ in range(n_estimators):
+        sub_idx = rng.choice(len(train), size=n_sub, replace=replace)
+        sub = train[sub_idx]            # (n_sub, n_feats)
+        path_lengths = np.zeros(n_test)
+
+        # Iterative isolation tree — stack entries: (subsample_idx, test_idx, depth)
+        stack: list[tuple] = [(np.arange(n_sub), np.arange(n_test), 0)]
+        while stack:
+            tr, te, depth = stack.pop()
+            if len(te) == 0:
+                continue
+            if len(tr) <= 1 or depth >= max_depth:
+                path_lengths[te] += depth + _expected_c(len(tr))
+                continue
+            f = int(rng.integers(0, n_feats))
+            f_vals = sub[tr, f]
+            f_min, f_max = float(f_vals.min()), float(f_vals.max())
+            if f_min >= f_max:
+                path_lengths[te] += depth + _expected_c(len(tr))
+                continue
+            split = float(rng.uniform(f_min, f_max))
+            left_tr = tr[sub[tr, f] < split]
+            right_tr = tr[sub[tr, f] >= split]
+            left_te = te[test[te, f] < split]
+            right_te = te[test[te, f] >= split]
+            stack.append((left_tr, left_te, depth + 1))
+            stack.append((right_tr, right_te, depth + 1))
+
+        path_sums += path_lengths
+
+    avg_paths = path_sums / n_estimators
+    return np.power(2.0, -avg_paths / c_n)
+
+
+def detect_anomalies_with_isolation_forest(
+    daily: list[dict],                           # [{"date","cost_eur"}, ...] ascending
+    scan_last_days: int = 14,
+    per_day_breakdowns: Optional[dict] = None,   # {date: {dim: {name: cost}}}
+    contamination: float = _IF_CONTAMINATION,
+) -> AnomalyResult:
+    """Detect spend anomalies using Isolation Forest on derived time-series features.
+
+    Feature vector per day: raw cost, day-of-week, 7-day rolling mean/std,
+    cost-to-rolling-mean ratio, and lag-1 difference.  The model is trained on
+    the days *before* the scan window (no look-ahead leakage), then scores each
+    day in the scan window.  Attribution follows the same logic as the HW
+    detector: diff the service/resource-group mix vs. the prior-week baseline.
+    """
+    daily = sorted(daily, key=lambda d: d["date"])
+    y = np.array([float(d["cost_eur"]) for d in daily])
+    dates = [d["date"] for d in daily]
+    n = len(y)
+
+    if n < _MIN_POINTS + 2:
+        return AnomalyResult(
+            method="insufficient_history", scanned_days=0,
+            notes=[f"Need >= {_MIN_POINTS + 2} days for Isolation Forest; have {n}."],
+        )
+
+    feats = _build_if_features(y, dates)
+    start = max(_MIN_POINTS, n - scan_last_days)
+    train_feats = feats[:start]
+    test_feats = feats[start:]
+
+    if len(train_feats) < 2:
+        return AnomalyResult(
+            method="insufficient_history", scanned_days=0,
+            notes=["Insufficient training window for Isolation Forest."],
+        )
+
+    # Normalise using training statistics only (prevents look-ahead leakage)
+    mean = train_feats.mean(axis=0)
+    std = train_feats.std(axis=0)
+    std[std == 0] = 1.0
+    train_norm = (train_feats - mean) / std
+    test_norm = (test_feats - mean) / std
+
+    # Adaptive threshold: (1-contamination) quantile of training scores.
+    # Scoring train vs. train gives an empirical "normal" score distribution;
+    # any test day above the top-contamination% of that distribution is flagged.
+    train_scores = _score_isolation_forest(train_norm, train_norm)
+    threshold = float(np.quantile(train_scores, 1.0 - contamination))
+
+    scores = _score_isolation_forest(train_norm, test_norm)
+    sigma = float(np.std(y[:start])) or 1.0
+
+    anomalies: list[Anomaly] = []
+    for i, t in enumerate(range(start, n)):
+        if float(scores[i]) <= threshold:
+            continue
+        actual = float(y[t])
+        hist = y[max(0, t - 7):t]
+        expected = float(np.mean(hist)) if len(hist) > 0 else float(np.mean(y[:t]))
+        diff = actual - expected
+        z = diff / sigma
+        direction = "spike" if diff > 0 else "dip"
+        severity = "high" if abs(z) >= Z_HIGH or float(scores[i]) >= 0.75 else "medium"
+        drivers: list[AnomalyDriver] = []
+        if direction == "spike" and per_day_breakdowns:
+            base_day = dates[t - 7] if t - 7 >= 0 else None
+            drivers = _attribute(
+                dates[t], diff,
+                per_day_breakdowns.get(dates[t]),
+                per_day_breakdowns.get(base_day) if base_day else None,
+            )
+        anomalies.append(Anomaly(
+            day=dates[t], actual_eur=round(actual, 2),
+            expected_eur=round(expected, 2), excess_eur=round(diff, 2),
+            direction=direction, severity=severity, z_score=round(z, 2),
+            drivers=drivers,
+        ))
+
+    total_excess = round(sum(a.excess_eur for a in anomalies if a.excess_eur > 0), 2)
+    return AnomalyResult(
+        method="isolation_forest",
+        scanned_days=n - start,
+        anomalies=anomalies,
+        total_anomalous_excess_eur=total_excess,
+        notes=[
+            f"Isolation Forest flagged {len(anomalies)} day(s) "
+            f"(adaptive threshold={threshold:.4f}, contamination={contamination:.0%}, "
+            f"{_IF_N_ESTIMATORS} trees)."
+        ],
+    )
+
+
+def detect_anomalies_ensemble(
+    daily: list[dict],
+    scan_last_days: int = 14,
+    per_day_breakdowns: Optional[dict] = None,
+) -> AnomalyResult:
+    """Run Holt-Winters and Isolation Forest then merge their findings.
+
+    Merge rules:
+      • Day flagged by **both** models → severity escalated to 'high' (higher
+        confidence; two independent detectors agree).
+      • Day flagged by one model only → kept as-is with original severity.
+
+    When only one model has enough data the ensemble degrades gracefully to
+    that model alone and labels the method accordingly.
+    """
+    hw = detect_anomalies(daily, scan_last_days, per_day_breakdowns)
+    ifo = detect_anomalies_with_isolation_forest(daily, scan_last_days, per_day_breakdowns)
+
+    hw_ok = hw.method != "insufficient_history"
+    if_ok = ifo.method != "insufficient_history"
+
+    if not hw_ok and not if_ok:
+        return AnomalyResult(
+            method="insufficient_history", scanned_days=0,
+            notes=hw.notes or ifo.notes,
+        )
+    if not hw_ok:
+        ifo.method = "ensemble_if_only"
+        return ifo
+    if not if_ok:
+        hw.method = "ensemble_hw_only"
+        return hw
+
+    hw_days = {a.day: a for a in hw.anomalies}
+    if_days = {a.day: a for a in ifo.anomalies}
+    confirmed_days = set(hw_days) & set(if_days)
+    all_days = sorted(set(hw_days) | set(if_days))
+
+    merged: list[Anomaly] = []
+    for day in all_days:
+        hw_a = hw_days.get(day)
+        if_a = if_days.get(day)
+        if hw_a and if_a:
+            merged.append(Anomaly(
+                day=hw_a.day, actual_eur=hw_a.actual_eur,
+                expected_eur=hw_a.expected_eur, excess_eur=hw_a.excess_eur,
+                direction=hw_a.direction, severity="high",
+                z_score=hw_a.z_score, drivers=hw_a.drivers,
+            ))
+        elif hw_a:
+            merged.append(hw_a)
+        else:
+            assert if_a is not None
+            merged.append(if_a)
+
+    total_excess = round(sum(a.excess_eur for a in merged if a.excess_eur > 0), 2)
+    return AnomalyResult(
+        method="ensemble_hw_if",
+        scanned_days=hw.scanned_days,
+        anomalies=merged,
+        total_anomalous_excess_eur=total_excess,
+        notes=[
+            f"Ensemble: HW flagged {len(hw.anomalies)}, "
+            f"IF flagged {len(ifo.anomalies)}, "
+            f"{len(confirmed_days)} confirmed by both.",
+            *hw.notes[:1],
+            *ifo.notes[:1],
+        ],
     )

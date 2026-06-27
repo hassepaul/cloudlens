@@ -48,7 +48,7 @@ em{color:var(--txt);font-style:normal;border-bottom:1px dotted var(--txt3)}
 <body>
 <nav>
   <div class="brand">CloudLens</div>
-  <div class="sub">Technical Documentation v1.0</div>
+  <div class="sub">Technical Documentation v2.1</div>
   <a href="#func">1. Functional spec</a>
 <a href="#arch">2. Architecture</a>
 <a href="#hld">&nbsp;&nbsp;2.1 HLD</a>
@@ -62,15 +62,20 @@ em{color:var(--txt);font-style:normal;border-bottom:1px dotted var(--txt3)}
 <a href="#optimization">5. Optimization</a>
 <a href="#security">6. Security &amp; compliance</a>
 <a href="#api">7. API reference</a>
-<a href="#deploy">8. Deployment</a>
-<a href="#wiring">9. Wiring guide</a>
-<a href="#user">10. User guide</a>
-<a href="#glossary">11. Glossary</a>
+<a href="#commit-adv-api">&nbsp;&nbsp;7.8 Commitment Advisor</a>
+<a href="#context-api">&nbsp;&nbsp;7.9 Context Mapping</a>
+<a href="#maturity-api">&nbsp;&nbsp;7.10 Maturity Score</a>
+<a href="#nlquery-api">&nbsp;&nbsp;7.11 NL Cost Query</a>
+<a href="#intelligence">8. Intelligence layer</a>
+<a href="#deploy">9. Deployment</a>
+<a href="#wiring">10. Wiring guide</a>
+<a href="#user">11. User guide</a>
+<a href="#glossary">12. Glossary</a>
 </nav>
 <main>
   <h1><span class="dot">◈</span> CloudLens Technical Documentation</h1>
-  <div class="docsub">Multi-Cloud FinOps Managed Service · complete reference: functional spec, architecture,
-  multi-cloud, optimization, security &amp; compliance, API, deployment, wiring, and user guide · June 2026 · CONFIDENTIAL</div>
+  <div class="docsub">Multi-Cloud FinOps Managed Service &middot; complete reference: functional spec, architecture,
+  multi-cloud, optimization, security &amp; compliance, API, intelligence layer, deployment, wiring, and user guide &middot; June 2026 &middot; CONFIDENTIAL</div>
   
 <h2 id="func">1. Functional Specification</h2>
 <p class="lead">CloudLens is a multi-tenant, read-only multi-cloud FinOps managed service. It ingests
@@ -135,6 +140,10 @@ and a drill-down console available in eight EU languages.</p>
 <tr><td>F28</td><td>SOC 2 control matrix</td><td>Trust Services Criteria mapped to CloudLens controls with implementation status</td><td><code>/admin/compliance/matrix</code></td></tr>
 <tr><td>F29</td><td>CLI evidence export</td><td>Per-control CLI commands that prove a control is live on the deployed resources; export logs itself</td><td><code>/admin/compliance/evidence-export</code></td></tr>
 <tr><td>F30</td><td>Tenant isolation enforcement</td><td>Bearer token scoped to tenant A is rejected (403) for tenant B (require_tenant_scope)</td><td>auth layer</td></tr>
+<tr><td>F31</td><td>Smart Commitment Advisor</td><td>Calendar-aware RI/SP timing: Holt-Winters stability + planned events to recommend commit-now vs. wait; projected savings across AWS/Azure/GCP tiers</td><td><code>/commitment-advisor/{tid}</code></td></tr>
+<tr><td>F32</td><td>Business Context Auto-Mapping</td><td>Zero-config attribution of cloud resources to products, features, and teams from tags, K8s namespaces, and resource-name patterns</td><td><code>/context/{tid}/map</code></td></tr>
+<tr><td>F33</td><td>FinOps Maturity Score</td><td>6-dimension scorecard (tagging, waste, commitments, unit economics, anomaly response, budget adherence) with cohort benchmarks (SaaS/Enterprise/eCommerce/Startup) and maturity label Crawl→Walk→Run→Fly</td><td><code>/maturity/{tid}/score</code></td></tr>
+<tr><td>F34</td><td>Natural Language Cost Querying</td><td>LLM function-calling maps plain English questions to Cosmos queries; rule-based fallback for zero-latency offline answers; narrative summary generated per response</td><td><code>/nl-query/{tid}</code></td></tr>
 </tbody></table>
 
 <h3>1.4 Non-functional requirements</h3>
@@ -849,6 +858,25 @@ lookup failure degrades to the Growth limit.</p>
 <tr><td><span class="method get">GET</span></td><td><code>/api/v1/optimization/{tenant_id}/scheduling</code></td><td>Scheduling</td><td>Bearer + rate-limit</td></tr>
 <tr><td><span class="method get">GET</span></td><td><code>/api/v1/optimization/{tenant_id}/utilization</code></td><td>Utilization</td><td>Bearer + rate-limit</td></tr>
 </tbody></table>
+<h3 id="commit-adv-api" class="api-group">commitment-advisor</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/commitment-advisor/{tenant_id}</code></td><td>Get RI/SP advisories (query: lookback_days)</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/commitment-advisor/{tenant_id}</code></td><td>Get advisories with planned events body</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 id="context-api" class="api-group">context-mapping</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/context/{tenant_id}/map</code></td><td>Full product/feature/team attribution map</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/context/{tenant_id}/products</code></td><td>Product list with cost totals</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/context/{tenant_id}/features</code></td><td>Feature list with cost totals</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 id="maturity-api" class="api-group">maturity</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/maturity/{tenant_id}/score</code></td><td>FinOps maturity scorecard (query: vertical)</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 id="nlquery-api" class="api-group">nl-query</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/nl-query/{tenant_id}</code></td><td>Natural language cost question → structured answer</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
 <h3 class="api-group">Core schemas</h3>
 <h4 class="schema-name"><code>TenantCreate</code></h4>
 <table class="schema-table"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
@@ -993,8 +1021,108 @@ lookup failure degrades to the Growth limit.</p>
 <tr><td><code>headroom_eur</code></td><td class="typ">number?</td><td class="req"></td><td></td></tr>
 </tbody></table>
 
-  
-<h2 id="deploy">8. Deployment Guide</h2>
+
+<h2 id="intelligence">8. Intelligence Layer</h2>
+<p class="lead">Four zero-config intelligence features built on the CloudLens data model. Each exposes a dedicated REST endpoint, stores no additional state, and degrades gracefully when data is sparse.</p>
+
+<h3>8.1 Smart Commitment Advisor</h3>
+<p>Uses Holt-Winters time-series analysis to assess workload <em>stability</em> before recommending Reserved Instance or Savings Plan commitments. A confidence score (0&ndash;1) combines MAPE, trend direction, and coefficient of variation. Timing is adjusted for calendar events (migration freezes, planned peaks) within a 90-day horizon.</p>
+<table class="data">
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>tenant_id</code></td><td>string</td><td>Tenant identifier</td></tr>
+<tr><td><code>generated_at</code></td><td>string (ISO-8601)</td><td>Report generation timestamp</td></tr>
+<tr><td><code>lookback_days</code></td><td>integer</td><td>Cost history window used (default 90)</td></tr>
+<tr><td><code>advisories</code></td><td>array&lt;CommitmentAdvisory&gt;</td><td>One advisory per service/cloud combination</td></tr>
+<tr><td><code>total_projected_annual_saving_eur</code></td><td>number</td><td>Sum of projected savings across all commit-now advisories</td></tr>
+</tbody></table>
+<p><strong>CommitmentAdvisory sub-object:</strong></p>
+<table class="data">
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>service</code></td><td>string</td><td>Cloud service name (e.g. <code>Virtual Machines</code>)</td></tr>
+<tr><td><code>cloud</code></td><td>string</td><td>Provider (<code>azure</code> | <code>aws</code> | <code>gcp</code>)</td></tr>
+<tr><td><code>action</code></td><td>string</td><td><code>commit_now</code> | <code>wait_2_months</code> | <code>wait_3_months</code></td></tr>
+<tr><td><code>commitment_type</code></td><td>string</td><td>e.g. <code>savings_plan_1yr</code>, <code>ri_3yr</code>, <code>cud_3yr</code></td></tr>
+<tr><td><code>stability_score</code></td><td>number 0&ndash;1</td><td>Composite stability confidence</td></tr>
+<tr><td><code>mape_pct</code></td><td>number</td><td>Forecast MAPE percent (lower = more stable)</td></tr>
+<tr><td><code>trend_direction</code></td><td>string</td><td><code>stable</code> | <code>growing</code> | <code>declining</code></td></tr>
+<tr><td><code>trend_pct_30d</code></td><td>number</td><td>30-day run-rate change %</td></tr>
+<tr><td><code>avg_daily_cost_eur</code></td><td>number</td><td>Average daily cost over the lookback window</td></tr>
+<tr><td><code>discount_rate</code></td><td>number</td><td>Applicable commitment discount fraction</td></tr>
+<tr><td><code>projected_annual_saving_eur</code></td><td>number</td><td>Estimated annual saving at the chosen commitment tier</td></tr>
+<tr><td><code>blocking_events</code></td><td>array&lt;string&gt;</td><td>Planned events within 90 days that delay the recommendation</td></tr>
+<tr><td><code>calendar_notes</code></td><td>array&lt;string&gt;</td><td>Human-readable timing caveats</td></tr>
+<tr><td><code>rationale</code></td><td>string</td><td>One-sentence explanation of the recommendation</td></tr>
+</tbody></table>
+
+<h3>8.2 Business Context Auto-Mapping</h3>
+<p>Scans the last 30 days of cost records and attributes each resource to a <strong>product</strong>, <strong>feature</strong>, and <strong>team</strong> using a priority-ordered heuristic: explicit tags &rarr; K8s namespace URL pattern &rarr; resource-name slug. No configuration required; coverage improves naturally as teams adopt tags.</p>
+<table class="data">
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>tenant_id</code></td><td>string</td><td>Tenant identifier</td></tr>
+<tr><td><code>generated_at</code></td><td>string (ISO-8601)</td><td>Mapping generation timestamp</td></tr>
+<tr><td><code>products</code></td><td>array&lt;ProductMapping&gt;</td><td>Cost by product</td></tr>
+<tr><td><code>features</code></td><td>array&lt;FeatureMapping&gt;</td><td>Cost by feature/experiment</td></tr>
+<tr><td><code>teams</code></td><td>array&lt;TeamMapping&gt;</td><td>Cost by owning team</td></tr>
+<tr><td><code>unattributed_cost_eur</code></td><td>number</td><td>Cost with no product/team attribution</td></tr>
+<tr><td><code>attribution_coverage_pct</code></td><td>number</td><td>Fraction of total spend that has at least a product attribution</td></tr>
+</tbody></table>
+
+<h3>8.3 FinOps Maturity Score</h3>
+<p>Computes a 0&ndash;100 score across six dimensions and compares each score against an industry-vertical cohort (SaaS / Enterprise / eCommerce / Startup). Dimensions are independently scored so teams can track progress quarter-on-quarter.</p>
+<table class="data">
+<thead><tr><th>Dimension</th><th>Weight</th><th>What is measured</th></tr></thead>
+<tbody>
+<tr><td>Tag Coverage</td><td>20%</td><td>Fraction of resources with a non-generic product/team tag</td></tr>
+<tr><td>Waste Reduction</td><td>20%</td><td>Ratio of waste items by cost to total spend</td></tr>
+<tr><td>RI/SP Coverage</td><td>15%</td><td>Commitment coverage + utilization efficiency</td></tr>
+<tr><td>Unit Economics</td><td>15%</td><td>Presence of unit-metric records and business-metric linkage</td></tr>
+<tr><td>Anomaly Response</td><td>15%</td><td>Average hours to resolve flagged cost anomalies</td></tr>
+<tr><td>Budget Adherence</td><td>15%</td><td>Fraction of budget periods that ended within budget</td></tr>
+</tbody></table>
+<p><strong>Maturity labels:</strong> Crawl (0&ndash;39) &rarr; Walk (40&ndash;64) &rarr; Run (65&ndash;84) &rarr; Fly (85&ndash;100).</p>
+<table class="data">
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>tenant_id</code></td><td>string</td><td>Tenant identifier</td></tr>
+<tr><td><code>vertical</code></td><td>string</td><td>Cohort vertical used for benchmarking</td></tr>
+<tr><td><code>overall_score</code></td><td>number 0&ndash;100</td><td>Weighted composite score</td></tr>
+<tr><td><code>overall_percentile</code></td><td>number 0&ndash;100</td><td>Estimated percentile vs. cohort</td></tr>
+<tr><td><code>overall_label</code></td><td>string</td><td>Maturity label</td></tr>
+<tr><td><code>dimensions</code></td><td>array&lt;DimensionScore&gt;</td><td>Per-dimension breakdown with cohort benchmarks and recommended actions</td></tr>
+<tr><td><code>top_recommendation</code></td><td>string</td><td>Highest-impact improvement action</td></tr>
+<tr><td><code>generated_at</code></td><td>string (ISO-8601)</td><td>Score generation timestamp</td></tr>
+</tbody></table>
+
+<h3>8.4 Natural Language Cost Querying</h3>
+<p>Accepts a plain-English question and returns a structured answer plus a narrative summary. Uses OpenAI function-calling to map the question to one of five query intents, executes the query against Cosmos DB, then calls the LLM a second time to generate the narrative. Falls back to a rule-based intent classifier if the LLM is unavailable.</p>
+<table class="data">
+<thead><tr><th>Intent</th><th>Example question</th><th>Cosmos pattern</th></tr></thead>
+<tbody>
+<tr><td><code>top_services</code></td><td>&ldquo;What were my top 5 services last month?&rdquo;</td><td>GROUP BY service_name &mdash; sort in Python</td></tr>
+<tr><td><code>by_cloud</code></td><td>&ldquo;How much did I spend on AWS vs Azure?&rdquo;</td><td>GROUP BY provider_name &mdash; sort in Python</td></tr>
+<tr><td><code>trend</code></td><td>&ldquo;Show me spending trend over the last 30 days&rdquo;</td><td>GROUP BY charge_period_start &mdash; sort by day in Python</td></tr>
+<tr><td><code>compare</code></td><td>&ldquo;Compare this month to last month&rdquo;</td><td>Two SUM() scalar queries</td></tr>
+<tr><td><code>top_resources</code></td><td>&ldquo;Which resources cost the most?&rdquo;</td><td>GROUP BY resource_name + provider &mdash; sort in Python</td></tr>
+</tbody></table>
+<p><strong>NLQueryResult schema:</strong></p>
+<table class="data">
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>question</code></td><td>string</td><td>Original question as submitted</td></tr>
+<tr><td><code>intent</code></td><td>string</td><td>Detected intent (see table above)</td></tr>
+<tr><td><code>answer</code></td><td>array&lt;object&gt;</td><td>Structured query result rows</td></tr>
+<tr><td><code>narrative</code></td><td>string</td><td>Human-readable LLM-generated (or rule-based) summary</td></tr>
+<tr><td><code>query_used</code></td><td>string</td><td>Cosmos SQL query executed (for transparency / debugging)</td></tr>
+<tr><td><code>confidence</code></td><td>string</td><td><code>high</code> | <code>medium</code> | <code>low</code></td></tr>
+<tr><td><code>suggestions</code></td><td>array&lt;string&gt;</td><td>Follow-up questions the user might ask</td></tr>
+<tr><td><code>fallback</code></td><td>boolean</td><td>True if rule-based fallback was used instead of LLM</td></tr>
+</tbody></table>
+
+
+<h2 id="deploy">9. Deployment Guide</h2>
 <p class="lead">One script provisions everything and deploys the app. It is idempotent and fail-fast.</p>
 
 <h3>5.1 Prerequisites</h3>
@@ -1239,7 +1367,7 @@ download via the 1-hour SAS URL from <code>GET /api/v1/reports/{report_id}/downl
 <tr><td>Excess (anomaly)</td><td>Actual cost on the day minus the expected cost — the euro size of the spike. A noise floor (≥€10 and ≥25% above expected) suppresses trivial blips.</td></tr>
 <tr><td>Over-capacity score</td><td>0–100 measure of how over-provisioned a resource is, computed on the binding dimension (the higher of CPU or memory utilization), so a memory-bound box isn't falsely flagged as wasteful.</td></tr>
 </tbody></table>
-<p class="footer-note">CloudLens — Multi-Cloud FinOps Managed Service · Technical Documentation v1.1 · June 2026 · CONFIDENTIAL</p>
+<p class="footer-note">CloudLens — Multi-Cloud FinOps Managed Service · Technical Documentation v2.1 · June 2026 · CONFIDENTIAL</p>
 
 </main>
 <script>

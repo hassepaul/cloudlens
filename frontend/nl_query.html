@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Ask AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--purpleDim:#2e2548;
+--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1080px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--purple);box-shadow:0 0 12px var(--purple)}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--purpleDim);color:var(--purple)}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px;margin-bottom:14px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+/* Ask box */
+.ask-box{background:linear-gradient(135deg,#1a1428 0,#121a26 100%);border:1px solid rgba(167,139,250,.2);border-radius:16px;padding:24px;margin-bottom:16px}
+.ask-box .ask-label{font-family:var(--mono);font-size:11px;color:var(--purple);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.ask-row{display:flex;gap:10px;align-items:flex-end}
+.ask-input{flex:1;background:var(--bg);border:1px solid var(--lineSoft);border-radius:10px;color:var(--txt);font-size:14px;padding:12px 14px;font-family:var(--body);outline:none;resize:none;height:48px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.ask-input:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(167,139,250,.12)}
+.ask-btn{background:var(--purpleDim);border:1px solid var(--purple);color:var(--purple);font-family:var(--mono);font-size:13px;padding:11px 20px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:background .15s}
+.ask-btn:hover{background:var(--purple);color:#0d1218}
+.ask-btn:disabled{opacity:.4;cursor:not-allowed}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.chip{background:var(--panel2);border:1px solid var(--lineSoft);color:var(--txt2);font-family:var(--mono);font-size:10.5px;padding:4px 11px;border-radius:20px;cursor:pointer;transition:all .15s}
+.chip:hover{border-color:var(--purple);color:var(--purple);background:var(--purpleDim)}
+/* History */
+.history{display:flex;flex-direction:column;gap:12px}
+.q-block{border-radius:12px;overflow:hidden;border:1px solid var(--lineSoft)}
+.q-block .q-head{display:flex;align-items:flex-start;justify-content:space-between;padding:11px 14px;background:var(--panel2);gap:10px;cursor:pointer}
+.q-block .q-head .q-txt{font-size:13px;color:var(--txt);flex:1}
+.q-block .q-head .meta{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.q-block .q-body{padding:14px;background:var(--bg2)}
+/* Intent badge */
+.intent-badge{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:5px}
+.intent-top_services{background:var(--tealDim);color:var(--teal)}
+.intent-by_cloud{background:var(--blueDim);color:var(--blue)}
+.intent-trend{background:var(--purpleDim);color:var(--purple)}
+.intent-compare{background:var(--amberDim);color:var(--amber)}
+.intent-top_resources{background:var(--greenDim);color:var(--green)}
+.intent-unknown{background:var(--panel2);color:var(--txt3)}
+/* Confidence badge */
+.conf-high{color:var(--teal)}.conf-medium{color:var(--amber)}.conf-low{color:var(--red)}
+/* Narrative */
+.narrative{font-size:13.5px;color:var(--txt);line-height:1.7;padding:12px 14px;background:var(--panel);border-radius:9px;margin-bottom:10px;border-left:3px solid var(--purple)}
+/* Data table */
+.data-tbl{width:100%;border-collapse:collapse;margin-bottom:10px}
+.data-tbl th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--txt3);padding:6px 10px;text-align:left;border-bottom:1px solid var(--line)}
+.data-tbl td{font-family:var(--mono);font-size:12px;padding:6px 10px;border-bottom:1px solid var(--lineSoft);color:var(--txt2)}
+.data-tbl td.cost{color:var(--teal);font-weight:600}
+.data-tbl tr:last-child td{border-bottom:0}
+/* SQL reveal */
+.sql-toggle{font-family:var(--mono);font-size:10px;color:var(--txt3);cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:3px 0;border:none;background:none;margin-bottom:6px}
+.sql-toggle:hover{color:var(--txt2)}
+.sql-block{background:var(--bg);border:1px solid var(--lineSoft);border-radius:7px;padding:10px 12px;font-family:var(--mono);font-size:11px;color:var(--txt2);white-space:pre-wrap;word-break:break-all;display:none;margin-bottom:10px}
+/* Suggestions */
+.suggestions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.sugg-btn{background:var(--panel2);border:1px solid var(--lineSoft);color:var(--txt2);font-family:var(--mono);font-size:10.5px;padding:4px 11px;border-radius:20px;cursor:pointer;transition:all .15s}
+.sugg-btn:hover{border-color:var(--purple);color:var(--purple)}
+/* Thinking indicator */
+.thinking{display:none;padding:16px 14px;color:var(--txt3);font-family:var(--mono);font-size:12px}
+.thinking span{animation:blink 1.2s step-start infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+/* Fallback badge */
+.fallback-tag{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px;background:var(--amberDim);color:var(--amber)}
+/* mini bar for trend */
+.mini-trend{display:flex;align-items:flex-end;gap:2px;height:32px;margin-top:8px}
+.mini-trend .bar{background:var(--purple);border-radius:2px 2px 0 0;min-width:8px;transition:height .5s}
+.note{font-size:11px;color:var(--txt3);line-height:1.6;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+  <a href="forecast.html" class="snav-link">∿ Forecast</a>
+  <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
+  <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="commitment_advisor.html" class="snav-link">◈ Commitments</a>
+  <a href="maturity.html" class="snav-link">◬ Maturity</a>
+  <a href="context_mapper.html" class="snav-link">⊛ Context</a>
+  <a href="nl_query.html" class="snav-link active">✦ Ask AI</a>
+  <a href="onboarding.html" class="snav-link">⊕ Onboarding</a>
+  <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+</nav>
+
+<div class="head">
+  <h1><span class="dot"></span> Ask CloudLens</h1>
+  <select id="tenant-sel" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:5px 10px;outline:none">
+    <option value="t-acme">t-acme (Acme Corp)</option>
+    <option value="t-1">t-1 (Demo)</option>
+  </select>
+</div>
+
+<!-- Ask box -->
+<div class="ask-box">
+  <div class="ask-label">✦ Ask a question about your cloud spend</div>
+  <div class="ask-row">
+    <textarea id="nl-input" class="ask-input" placeholder="Which service cost the most last month?" rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitQuestion()}"
+      oninput="autoResize(this)"></textarea>
+    <button class="ask-btn" id="ask-btn" onclick="submitQuestion()">Ask ✦</button>
+  </div>
+  <div class="chips">
+    <span style="font-family:var(--mono);font-size:10px;color:var(--txt3);align-self:center">Try:</span>
+    <button class="chip" onclick="setQ(this.textContent)">Top 5 services last month</button>
+    <button class="chip" onclick="setQ(this.textContent)">Compare this month vs last month</button>
+    <button class="chip" onclick="setQ(this.textContent)">Break down spend by cloud</button>
+    <button class="chip" onclick="setQ(this.textContent)">Show daily spend trend</button>
+    <button class="chip" onclick="setQ(this.textContent)">Which resources cost the most?</button>
+    <button class="chip" onclick="setQ(this.textContent)">How much did AWS cost this week?</button>
+  </div>
+</div>
+
+<!-- Thinking indicator -->
+<div class="thinking" id="thinking"><span>✦ ✦ ✦</span> Analysing your question...</div>
+
+<!-- History -->
+<div class="history" id="history"></div>
+
+<!-- How it works -->
+<div class="card">
+  <h2>ℹ How it works</h2>
+  <p style="font-size:13px;color:var(--txt2);line-height:1.65;margin-bottom:10px">
+    CloudLens uses <strong>LLM function-calling</strong> to map your plain-English question to one of five structured query intents. The LLM only selects and parameterises the query — CloudLens always executes it against Cosmos DB. A second LLM call generates the narrative from the raw results.
+  </p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="flex:1;min-width:160px;background:var(--panel2);border-radius:9px;padding:10px 12px;font-size:11.5px;color:var(--txt2)"><span style="color:var(--purple);font-family:var(--mono);display:block;margin-bottom:3px">top_services</span>Ranks spend by cloud service</div>
+    <div style="flex:1;min-width:160px;background:var(--panel2);border-radius:9px;padding:10px 12px;font-size:11.5px;color:var(--txt2)"><span style="color:var(--blue);font-family:var(--mono);display:block;margin-bottom:3px">by_cloud</span>Compares across providers</div>
+    <div style="flex:1;min-width:160px;background:var(--panel2);border-radius:9px;padding:10px 12px;font-size:11.5px;color:var(--txt2)"><span style="color:var(--teal);font-family:var(--mono);display:block;margin-bottom:3px">trend</span>Daily spend over a period</div>
+    <div style="flex:1;min-width:160px;background:var(--panel2);border-radius:9px;padding:10px 12px;font-size:11.5px;color:var(--txt2)"><span style="color:var(--amber);font-family:var(--mono);display:block;margin-bottom:3px">compare</span>Period-over-period delta</div>
+    <div style="flex:1;min-width:160px;background:var(--panel2);border-radius:9px;padding:10px 12px;font-size:11.5px;color:var(--txt2)"><span style="color:var(--green);font-family:var(--mono);display:block;margin-bottom:3px">top_resources</span>Ranks individual resources</div>
+  </div>
+  <p class="note" style="margin-top:10px">Falls back to rule-based intent matching when no OpenAI API key is configured — same API contract, no code changes needed.</p>
+</div>
+</div><!-- /wrap -->
+
+<script>
+const API = '';
+let queryHistory = [];
+
+function autoResize(el){
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function setQ(text){
+  const inp = document.getElementById('nl-input');
+  inp.value = text;
+  autoResize(inp);
+  inp.focus();
+}
+
+async function submitQuestion(){
+  const inp = document.getElementById('nl-input');
+  const q = inp.value.trim();
+  if(!q) return;
+  const tid = document.getElementById('tenant-sel').value;
+  inp.value = '';
+  autoResize(inp);
+  document.getElementById('ask-btn').disabled = true;
+  document.getElementById('thinking').style.display = 'block';
+  try{
+    const r = await fetch(`${API}/api/v1/nl-query/${tid}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-API-Key':'demo-key'},
+      body: JSON.stringify({question: q})
+    });
+    if(!r.ok) throw new Error(r.statusText);
+    const data = await r.json();
+    prependResult(q, data, false);
+  } catch(e){
+    prependResult(q, buildDemo(q), true);
+  } finally {
+    document.getElementById('ask-btn').disabled = false;
+    document.getElementById('thinking').style.display = 'none';
+  }
+}
+
+function prependResult(question, data, wasFallback){
+  queryHistory.unshift({question, data, wasFallback, id: Date.now()});
+  renderHistory();
+}
+
+function renderHistory(){
+  const el = document.getElementById('history');
+  el.innerHTML = queryHistory.map(entry => buildBlock(entry)).join('');
+}
+
+function buildBlock({question, data, wasFallback, id}){
+  const intent = data.intent || 'unknown';
+  const conf   = data.confidence || 'medium';
+  const rows   = (data.answer || []).slice(0, 10);
+  const sqlId  = 'sql-'+id;
+  const tblId  = 'tbl-'+id;
+  const cols   = rows.length ? Object.keys(rows[0]) : [];
+  const tableHtml = rows.length ? `
+    <table class="data-tbl">
+      <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td class="${c.includes('cost')?'cost':''}">${
+        typeof r[c]==='number' && c.includes('cost') ? '€'+r[c].toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}) : (r[c]??'—')
+      }</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>` : '';
+  const suggHtml = (data.suggestions||[]).map(s =>
+    `<button class="sugg-btn" onclick="setQ('${s.replace(/'/g,"\\'")}');submitQuestion()">${s}</button>`
+  ).join('');
+  return `<div class="q-block">
+    <div class="q-head" onclick="toggleBody('body-${id}',this)">
+      <span class="q-txt">✦ ${question}</span>
+      <div class="meta">
+        ${wasFallback?'<span class="fallback-tag">DEMO</span>':''}
+        <span class="intent-badge intent-${intent}">${intent.replace('_',' ')}</span>
+        <span class="conf-${conf}" style="font-family:var(--mono);font-size:10px">${conf}</span>
+        <span style="color:var(--txt3);font-size:12px;user-select:none" id="arrow-${id}">▾</span>
+      </div>
+    </div>
+    <div class="q-body" id="body-${id}">
+      <div class="narrative">${data.narrative || '—'}</div>
+      ${tableHtml}
+      ${data.query_used ? `
+        <button class="sql-toggle" onclick="toggleSql('${sqlId}',this)">▶ Show Cosmos SQL</button>
+        <div class="sql-block" id="${sqlId}">${data.query_used}</div>` : ''}
+      ${suggHtml ? `<div class="suggestions"><span style="font-family:var(--mono);font-size:10px;color:var(--txt3);align-self:center">Follow-up:</span>${suggHtml}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function toggleBody(id, head){
+  const el = document.getElementById(id);
+  const arrow = document.getElementById('arrow-'+id.replace('body-',''));
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : '';
+  arrow.textContent = open ? '▸' : '▾';
+}
+
+function toggleSql(id, btn){
+  const el = document.getElementById(id);
+  const open = el.style.display === 'block';
+  el.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? '▶ Show Cosmos SQL' : '▼ Hide Cosmos SQL';
+}
+
+// Demo data keyed by detected pattern
+function buildDemo(question){
+  const q = question.toLowerCase();
+  if(q.includes('compare') || q.includes('vs') || q.includes('last month')){
+    return {
+      intent:'compare', confidence:'high', fallback:true,
+      narrative:'Spend increased by 12.4% month-over-month. This month you have spent €19,840 compared to €17,652 in the same period last month. The growth is primarily driven by a 28% spike in Virtual Machines usage.',
+      answer:[
+        {period:'May 2026', cost_eur:17652.00},
+        {period:'Jun 2026 (partial)', cost_eur:19840.00},
+        {comparison:'change_pct', value:'+12.4%'}
+      ],
+      query_used:'SELECT VALUE SUM(c.effective_cost) FROM c WHERE c.tenant_id=@t AND c.type=\'focus_record\' AND c.charge_period_start>=@s AND c.charge_period_start<=@e',
+      suggestions:['Which service drove the increase?','Show daily trend this month','Break down by cloud']
+    };
+  }
+  if(q.includes('cloud') || q.includes('aws') || q.includes('azure') || q.includes('gcp')){
+    return {
+      intent:'by_cloud', confidence:'high', fallback:true,
+      narrative:'Azure is your largest cloud provider at €12,480 (63% of total). AWS accounts for €5,760 (29%) and GCP €1,600 (8%). Consider consolidating workloads to maximise Reserved Instance coverage.',
+      answer:[
+        {cloud:'Azure', cost_eur:12480.00},
+        {cloud:'AWS',   cost_eur:5760.00},
+        {cloud:'GCP',   cost_eur:1600.00},
+      ],
+      query_used:'SELECT c.provider_name, SUM(c.effective_cost) AS cost_eur FROM c WHERE c.tenant_id=@t AND c.type=\'focus_record\' AND c.charge_period_start>=@s AND c.charge_period_start<=@e GROUP BY c.provider_name',
+      suggestions:['Which Azure services cost the most?','Show AWS spend trend','Compare clouds this month vs last']
+    };
+  }
+  if(q.includes('trend') || q.includes('daily') || q.includes('over time')){
+    const days = Array.from({length:14},(_,i)=>{
+      const d = new Date(2026,5,12+i);
+      return {day:d.toISOString().slice(0,10), cost_eur:+(1100+Math.random()*400-200).toFixed(2)};
+    });
+    return {
+      intent:'trend', confidence:'high', fallback:true,
+      narrative:'Daily spend over the last 14 days averages €1,284. There is a visible weekly pattern with peaks on Tuesdays and Wednesdays. The highest single day was June 18 at €1,620 driven by a batch job on Azure Kubernetes Service.',
+      answer: days,
+      query_used:'SELECT c.charge_period_start AS day, SUM(c.effective_cost) AS cost_eur FROM c WHERE c.tenant_id=@t AND c.type=\'focus_record\' AND c.charge_period_start>=@s AND c.charge_period_start<=@e GROUP BY c.charge_period_start',
+      suggestions:['Which service drove the June 18 spike?','Show forecast for next 7 days','Compare to previous 14 days']
+    };
+  }
+  if(q.includes('resource')){
+    return {
+      intent:'top_resources', confidence:'high', fallback:true,
+      narrative:'Your top 5 resources account for €9,420 — 47% of total spend. The highest is vm-prod-west-01 at €3,200/month, a D8s_v5 instance that is running at just 31% CPU utilisation. Consider rightsizing to D4s_v5 for an estimated €1,600/month saving.',
+      answer:[
+        {resource:'vm-prod-west-01',  cloud:'Azure', cost_eur:3200.00},
+        {resource:'eks-node-group-1', cloud:'AWS',   cost_eur:2160.00},
+        {resource:'sql-prod-acme',    cloud:'Azure', cost_eur:1840.00},
+        {resource:'gke-pool-main',    cloud:'GCP',   cost_eur:1200.00},
+        {resource:'s3-data-lake',     cloud:'AWS',   cost_eur:1020.00},
+      ],
+      query_used:'SELECT c.resource_name, c.provider_name, SUM(c.effective_cost) AS cost_eur FROM c WHERE c.tenant_id=@t AND c.type=\'focus_record\' AND c.charge_period_start>=@s AND c.charge_period_start<=@e AND IS_DEFINED(c.resource_name) GROUP BY c.resource_name, c.provider_name',
+      suggestions:['Rightsizing recommendations for vm-prod-west-01','Show vm-prod-west-01 daily trend','Which team owns vm-prod-west-01?']
+    };
+  }
+  // Default: top_services
+  return {
+    intent:'top_services', confidence:'high', fallback:true,
+    narrative:'Virtual Machines is your highest-cost service at €8,200 last month, representing 41% of total cloud spend. Kubernetes (€4,100) and Azure SQL (€2,800) are the next largest. Together the top 3 services account for 76% of total spend.',
+    answer:[
+      {service:'Virtual Machines',      cost_eur:8200.00},
+      {service:'Kubernetes',            cost_eur:4100.00},
+      {service:'Azure SQL',             cost_eur:2800.00},
+      {service:'Blob Storage',          cost_eur:1600.00},
+      {service:'Azure Cognitive Search',cost_eur:980.00},
+    ],
+    query_used:'SELECT c.service_name, SUM(c.effective_cost) AS cost_eur FROM c WHERE c.tenant_id=@t AND c.type=\'focus_record\' AND c.charge_period_start>=@s AND c.charge_period_start<=@e GROUP BY c.service_name',
+    suggestions:['Show Virtual Machines daily trend','Compare VMs this month vs last','Which VM resources cost the most?']
+  };
+}
+</script>
+</body>
+</html>

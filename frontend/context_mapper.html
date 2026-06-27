@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Context Mapping</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--purpleDim:#2e2548;
+--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1120px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--purple);box-shadow:0 0 10px var(--purple)}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--purpleDim);color:var(--purple)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:11px;padding:13px 15px}
+.kpi .l{font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-family:var(--mono)}
+.kpi .v{font-family:var(--mono);font-size:22px;font-weight:700}
+.kpi .s{font-size:10.5px;color:var(--txt3);margin-top:3px}
+.kpi.teal .v{color:var(--teal)}.kpi.amber .v{color:var(--amber)}.kpi.green .v{color:var(--green)}.kpi.purple .v{color:var(--purple)}.kpi.blue .v{color:var(--blue)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:780px){.grid2{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px;margin-bottom:14px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+/* bar chart */
+.bc-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.bc-row:last-child{margin-bottom:0}
+.bc-row .lbl{font-family:var(--mono);font-size:11px;width:120px;flex-shrink:0;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bc-row .track{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bc-row .track i{display:block;height:100%;border-radius:4px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.bc-row .val{font-family:var(--mono);font-size:11px;width:68px;text-align:right;flex-shrink:0}
+.bc-row .pct{font-family:var(--mono);font-size:10px;color:var(--txt3);width:36px;text-align:right;flex-shrink:0}
+/* source badges */
+.src-badge{display:inline-block;font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:5px;margin-left:4px;vertical-align:middle}
+.src-tag{background:var(--tealDim);color:var(--teal)}
+.src-k8s{background:var(--blueDim);color:var(--blue)}
+.src-infer{background:var(--purpleDim);color:var(--purple)}
+.src-none{background:var(--panel2);color:var(--txt3)}
+/* item rows */
+.item-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--lineSoft)}
+.item-row:last-child{border-bottom:0}
+.item-row .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-size:10px;font-weight:700;flex-shrink:0}
+.item-row .nm{flex:1;min-width:0}
+.item-row .nm .t{font-family:var(--mono);font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item-row .nm .s{font-size:11px;color:var(--txt3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item-row .cost{font-family:var(--mono);font-size:13px;font-weight:700;flex-shrink:0}
+/* tabs */
+.tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+.tab{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid var(--lineSoft);color:var(--txt2);cursor:pointer;background:none}
+.tab:hover{border-color:var(--purple);color:var(--purple)}
+.tab.active{background:var(--purpleDim);border-color:var(--purple);color:var(--purple)}
+/* coverage ring */
+.cov-ring{display:flex;align-items:center;gap:14px;padding:14px;background:var(--panel2);border-radius:11px;margin-bottom:14px}
+.cov-ring svg{flex-shrink:0}
+.cov-ring .info .pct{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--teal)}
+.cov-ring .info .sub{font-size:11px;color:var(--txt3);margin-top:2px}
+/* source breakdown */
+.src-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--lineSoft);font-size:12px}
+.src-row:last-child{border-bottom:0}
+/* form bar */
+.form-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px;margin-bottom:16px;flex-wrap:wrap}
+.form-bar label{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.form-bar select,.form-bar input{background:var(--bg2);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;padding:5px 10px;font-family:var(--mono);outline:none}
+.form-bar select:focus,.form-bar input:focus{border-color:var(--purple)}
+.btn{background:var(--purpleDim);border:1px solid var(--purple);color:var(--purple);font-family:var(--mono);font-size:11px;padding:7px 14px;border-radius:7px;cursor:pointer}
+.btn:hover{background:var(--purple);color:#0d1218}
+.note{font-size:11px;color:var(--txt3);line-height:1.6;margin-top:8px}
+.empty-state{text-align:center;padding:40px;color:var(--txt3);font-family:var(--mono);font-size:13px}
+#loading{display:none;text-align:center;padding:30px;color:var(--txt3);font-family:var(--mono)}
+/* heatmap grid for teams */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.team-card{border:1px solid var(--lineSoft);border-radius:10px;padding:12px 14px;background:var(--bg2)}
+.team-card .tname{font-family:var(--mono);font-size:12px;font-weight:600;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.team-card .tcost{font-family:var(--mono);font-size:20px;font-weight:700}
+.team-card .tprod{font-size:10.5px;color:var(--txt3);margin-top:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+  <a href="forecast.html" class="snav-link">∿ Forecast</a>
+  <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
+  <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="commitment_advisor.html" class="snav-link">◈ Commitments</a>
+  <a href="maturity.html" class="snav-link">◬ Maturity</a>
+  <a href="context_mapper.html" class="snav-link active">⊛ Context</a>
+  <a href="nl_query.html" class="snav-link">✦ Ask AI</a>
+  <a href="onboarding.html" class="snav-link">⊕ Onboarding</a>
+  <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+</nav>
+
+<div class="head">
+  <h1><span class="dot"></span> Business Context Mapping</h1>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <select id="tenant-sel" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:5px 10px;outline:none">
+      <option value="t-acme">t-acme (Acme Corp)</option>
+      <option value="t-1">t-1 (Demo)</option>
+    </select>
+    <button class="btn" onclick="loadMap()">↻ Refresh</button>
+  </div>
+</div>
+
+<div id="loading">⏳ Scanning cost records and inferring attribution...</div>
+
+<!-- KPI strip -->
+<div class="kpi-grid" id="kpi-strip">
+  <div class="kpi teal"><div class="l">Attribution Coverage</div><div class="v" id="kpi-cov">—</div><div class="s">of spend attributed to a product</div></div>
+  <div class="kpi purple"><div class="l">Products</div><div class="v" id="kpi-products">—</div><div class="s">auto-detected</div></div>
+  <div class="kpi blue"><div class="l">Features</div><div class="v" id="kpi-features">—</div><div class="s">from tags + inference</div></div>
+  <div class="kpi amber"><div class="l">Unattributed</div><div class="v" id="kpi-unattr">—</div><div class="s">needs tag coverage improvement</div></div>
+</div>
+
+<!-- Attribution tabs -->
+<div class="tabs" id="attr-tabs">
+  <button class="tab active" onclick="switchTab('products',this)">Products</button>
+  <button class="tab" onclick="switchTab('features',this)">Features</button>
+  <button class="tab" onclick="switchTab('teams',this)">Teams</button>
+  <button class="tab" onclick="switchTab('sources',this)">Attribution Sources</button>
+</div>
+
+<!-- Products tab -->
+<div id="tab-products">
+  <div class="grid2">
+    <div class="card">
+      <h2>⊛ Product Spend (30 days)</h2>
+      <div id="product-bars"><div class="empty-state">Click Refresh to load</div></div>
+    </div>
+    <div class="card">
+      <h2>⊛ Product Details</h2>
+      <div id="product-list"><div class="empty-state">Click Refresh to load</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Features tab -->
+<div id="tab-features" style="display:none">
+  <div class="grid2">
+    <div class="card">
+      <h2>⊛ Feature Spend (30 days)</h2>
+      <div id="feature-bars"><div class="empty-state">Click Refresh to load</div></div>
+    </div>
+    <div class="card">
+      <h2>⊛ Feature Details</h2>
+      <div id="feature-list"><div class="empty-state">Click Refresh to load</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Teams tab -->
+<div id="tab-teams" style="display:none">
+  <div class="card">
+    <h2>⊛ Team Spend (30 days)</h2>
+    <div class="team-grid" id="team-grid"><div class="empty-state">Click Refresh to load</div></div>
+  </div>
+</div>
+
+<!-- Sources tab -->
+<div id="tab-sources" style="display:none">
+  <div class="card">
+    <h2>⊛ Attribution Source Breakdown</h2>
+    <div id="sources-content">
+      <div class="cov-ring" id="cov-ring-box" style="display:none">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="32" fill="none" stroke="var(--line)" stroke-width="8"/>
+          <circle id="cov-arc" cx="40" cy="40" r="32" fill="none" stroke="var(--teal)" stroke-width="8"
+                  stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="201"
+                  transform="rotate(-90 40 40)"/>
+        </svg>
+        <div class="info">
+          <div class="pct" id="cov-pct">—</div>
+          <div class="sub">Attributed spend</div>
+        </div>
+      </div>
+      <div id="sources-list"><div class="empty-state">Click Refresh to load</div></div>
+    </div>
+    <p class="note">Sources checked in priority order: explicit tags → Kubernetes namespace URL pattern → resource-name prefix.</p>
+  </div>
+</div>
+
+<!-- How it works -->
+<div class="card">
+  <h2>ℹ How context mapping works</h2>
+  <p style="font-size:13px;color:var(--txt2);line-height:1.65">
+    CloudLens scans all cost records from the past 30 days and applies a three-tier attribution heuristic to each resource:
+  </p>
+  <ol style="font-size:12.5px;color:var(--txt2);line-height:1.9;margin:10px 0 0 18px">
+    <li><strong style="color:var(--teal)">Explicit tags</strong> — Checks for <code style="color:var(--txt)">product</code>, <code style="color:var(--txt)">app</code>, <code style="color:var(--txt)">application</code>, <code style="color:var(--txt)">service</code>, <code style="color:var(--txt)">component</code> tags.</li>
+    <li><strong style="color:var(--blue)">K8s namespace</strong> — Extracts namespace from resource name or annotation (<code style="color:var(--txt)">namespaces/checkout</code>, <code style="color:var(--txt)">ns:payments</code> etc.).</li>
+    <li><strong style="color:var(--purple)">Resource name inference</strong> — Takes the first meaningful token of the resource name, filtered against common generic prefixes.</li>
+  </ol>
+  <p class="note" style="margin-top:10px">
+    Feature attribution uses <code>feature</code>, <code>feature_flag</code>, <code>experiment</code>, <code>variant</code>, <code>epic</code> tags.
+    Team attribution uses <code>team</code>, <code>owner</code>, <code>squad</code>, <code>tribe</code>, <code>cost_center</code> tags.
+    Coverage improves naturally as teams adopt tagging conventions.
+  </p>
+</div>
+</div><!-- /wrap -->
+
+<script>
+const API = '';
+const PALETTE = ['var(--teal)','var(--blue)','var(--purple)','var(--amber)','var(--green)','var(--red)'];
+
+function fmt(n){ return n >= 1000 ? '€'+(n/1000).toFixed(1)+'k' : '€'+n.toFixed(0); }
+
+function switchTab(name, btn){
+  ['products','features','teams','sources'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function loadMap(){
+  const tid = document.getElementById('tenant-sel').value;
+  document.getElementById('loading').style.display = 'block';
+  try{
+    const r = await fetch(`${API}/api/v1/context/${tid}/map`, {headers:{'X-API-Key':'demo-key'}});
+    if(!r.ok) throw new Error(r.statusText);
+    const data = await r.json();
+    renderAll(data);
+  } catch(e){
+    renderDemo();
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function renderAll(d){
+  // KPIs
+  document.getElementById('kpi-cov').textContent = (d.attribution_coverage_pct||0).toFixed(0)+'%';
+  document.getElementById('kpi-products').textContent = (d.products||[]).length;
+  document.getElementById('kpi-features').textContent = (d.features||[]).length;
+  document.getElementById('kpi-unattr').textContent = fmt(d.unattributed_cost_eur||0);
+  renderBars('product-bars', d.products||[], 'product', 'cost_eur');
+  renderItems('product-list', d.products||[], 'product', 'cost_eur', 'resource_count');
+  renderBars('feature-bars', d.features||[], 'feature', 'cost_eur');
+  renderItems('feature-list', d.features||[], 'feature', 'cost_eur', 'resource_count');
+  renderTeams(d.teams||[]);
+  renderSources(d);
+}
+
+function renderBars(elId, items, nameKey, costKey){
+  const el = document.getElementById(elId);
+  if(!items.length){ el.innerHTML='<div class="empty-state">No data</div>'; return; }
+  const max = Math.max(...items.map(i=>i[costKey]||0)) || 1;
+  el.innerHTML = items.slice(0,8).map((item,i) => `
+    <div class="bc-row">
+      <span class="lbl">${item[nameKey]||'unknown'}</span>
+      <div class="track"><i style="width:${((item[costKey]||0)/max*100).toFixed(0)}%;background:${PALETTE[i%PALETTE.length]}"></i></div>
+      <span class="val" style="color:${PALETTE[i%PALETTE.length]}">${fmt(item[costKey]||0)}</span>
+      <span class="pct">${((item[costKey]||0)/max*100).toFixed(0)}%</span>
+    </div>`).join('');
+}
+
+function renderItems(elId, items, nameKey, costKey, countKey){
+  const el = document.getElementById(elId);
+  if(!items.length){ el.innerHTML='<div class="empty-state">No data</div>'; return; }
+  el.innerHTML = items.slice(0,8).map((item,i) => {
+    const letter = (item[nameKey]||'?')[0].toUpperCase();
+    const clr = PALETTE[i%PALETTE.length];
+    return `<div class="item-row">
+      <div class="ic" style="background:color-mix(in srgb,${clr} 15%,var(--bg2));color:${clr}">${letter}</div>
+      <div class="nm">
+        <div class="t">${item[nameKey]||'unknown'}</div>
+        <div class="s">${item[countKey]||0} resources · ${item.source||''}</div>
+      </div>
+      <div class="cost" style="color:${clr}">${fmt(item[costKey]||0)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTeams(teams){
+  const el = document.getElementById('team-grid');
+  if(!teams.length){ el.innerHTML='<div class="empty-state">No team tags found — add team/owner/squad tags to see this view.</div>'; return; }
+  el.innerHTML = teams.slice(0,12).map((t,i)=>{
+    const clr = PALETTE[i%PALETTE.length];
+    return `<div class="team-card" style="border-left:3px solid ${clr}">
+      <div class="tname">${t.team||'unknown'}</div>
+      <div class="tcost" style="color:${clr}">${fmt(t.cost_eur||0)}</div>
+      <div class="tprod">${t.resource_count||0} resources</div>
+    </div>`;
+  }).join('');
+}
+
+function renderSources(d){
+  const pct = d.attribution_coverage_pct||0;
+  document.getElementById('cov-ring-box').style.display = 'flex';
+  document.getElementById('cov-pct').textContent = pct.toFixed(0)+'%';
+  const arc = document.getElementById('cov-arc');
+  arc.style.strokeDashoffset = 201 - (pct/100)*201;
+  const rows = [
+    {label:'Explicit tags', count:d.sources_tag_count||0, src:'src-tag'},
+    {label:'K8s namespace', count:d.sources_k8s_count||0, src:'src-k8s'},
+    {label:'Name inference', count:d.sources_infer_count||0, src:'src-infer'},
+    {label:'Unattributed',  count:d.sources_none_count||0, src:'src-none'},
+  ];
+  document.getElementById('sources-list').innerHTML = rows.map(r=>`
+    <div class="src-row">
+      <span>${r.label} <span class="src-badge ${r.src}">${r.src.replace('src-','')}</span></span>
+      <span style="font-family:var(--mono);font-size:12px;color:var(--txt2)">${r.count} resources</span>
+    </div>`).join('');
+}
+
+function renderDemo(){
+  const demo = {
+    attribution_coverage_pct: 91.2,
+    unattributed_cost_eur: 960,
+    sources_tag_count: 48,
+    sources_k8s_count: 31,
+    sources_infer_count: 22,
+    sources_none_count: 9,
+    products:[
+      {product:'checkout',      cost_eur:8640, resource_count:24, source:'k8s namespace'},
+      {product:'recommendations',cost_eur:5400, resource_count:18, source:'tag: app=recommendations'},
+      {product:'search',        cost_eur:3960, resource_count:14, source:'k8s namespace'},
+      {product:'payments',      cost_eur:2400, resource_count:9,  source:'tag: product=payments'},
+      {product:'auth',          cost_eur:1200, resource_count:6,  source:'name inference'},
+      {product:'unattributed',  cost_eur:960,  resource_count:9,  source:'—'},
+    ],
+    features:[
+      {feature:'cart',          cost_eur:3200, resource_count:9,  source:'tag: feature=cart'},
+      {feature:'shipping',      cost_eur:2800, resource_count:8,  source:'tag: feature=shipping'},
+      {feature:'promo-engine',  cost_eur:1640, resource_count:5,  source:'name inference'},
+      {feature:'ab-test-v3',    cost_eur:1100, resource_count:4,  source:'tag: experiment=ab-test-v3'},
+      {feature:'dark-mode',     cost_eur:480,  resource_count:2,  source:'tag: feature_flag=dark-mode'},
+    ],
+    teams:[
+      {team:'platform',  cost_eur:9200, resource_count:31},
+      {team:'growth',    cost_eur:6400, resource_count:22},
+      {team:'checkout',  cost_eur:4800, resource_count:16},
+      {team:'ml-infra',  cost_eur:3600, resource_count:12},
+    ],
+  };
+  renderAll(demo);
+}
+
+// Auto-load on page open
+loadMap();
+</script>
+</body>
+</html>

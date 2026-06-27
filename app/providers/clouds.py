@@ -4,14 +4,33 @@ GCP, Alibaba Cloud, and OCI provider adapters.
 Each normalizes its native billing export shape into FOCUS. Live fetch paths are
 documented inline; normalize() is pure and unit-tested against the documented
 shapes (must be validated against real billing data on first ingest).
+
+GCP Key Vault secret format (JSON) -- the full service account key JSON with one
+extra field added:
+    {
+        "type": "service_account",
+        "project_id": "my-gcp-project",
+        "billing_export_table": "my-project.billing_export.gcp_billing_export_v1_XXXXXX",
+        "private_key_id": "...",
+        "private_key": "-----BEGIN RSA PRIVATE KEY-----\\n...",
+        "client_email": "cloudlens@my-project.iam.gserviceaccount.com",
+        ...
+    }
+
+The service account needs the BigQuery Data Viewer + BigQuery Job User roles on
+the billing export dataset.
 """
 from __future__ import annotations
+import asyncio
 from datetime import date
 
+from app.logging_config import get_logger
 from app.providers.base import CloudProvider, register, classify_service
 from app.models.focus import (
     FocusRecord, ProviderName, CommitmentDiscountType,
 )
+
+log = get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -23,22 +42,75 @@ class GCPProvider(CloudProvider):
 
     def __init__(self, project_id: str = "", billing_export_table: str = "", sa_key: dict | None = None):
         self.project_id = project_id
+        # billing_export_table may also be embedded in sa_key dict; extract it.
+        if not billing_export_table and sa_key:
+            billing_export_table = sa_key.pop("billing_export_table", "")
         self.billing_export_table = billing_export_table
         self.sa_key = sa_key or {}
 
+    # cost data
+
+    def _fetch_cost_sync(self, start: date, end: date) -> list[dict]:
+        """
+        BigQuery query against the standard GCP billing export table.
+        Uses parameterised queries to prevent SQL injection.
+        Requires BigQuery Data Viewer + BigQuery Job User on the export dataset.
+        """
+        from google.cloud import bigquery
+        from google.oauth2 import service_account
+
+        if not self.billing_export_table:
+            raise ValueError(
+                "billing_export_table must be set for GCP provider "
+                "(embed it in the Key Vault secret as 'billing_export_table')"
+            )
+
+        credentials = service_account.Credentials.from_service_account_info(
+            self.sa_key,
+            scopes=["https://www.googleapis.com/auth/bigquery.readonly"],
+        )
+        client = bigquery.Client(project=self.project_id, credentials=credentials)
+
+        # Use backtick-quoted table ref; parameters carry the date values safely.
+        query = f"""
+            SELECT
+                service.description           AS service_description,
+                sku.description               AS sku_description,
+                project.id                    AS project_id,
+                location.region               AS region,
+                DATE(usage_start_time)        AS day,
+                SUM(cost)                     AS cost,
+                SUM(IFNULL(
+                    (SELECT SUM(c.amount) FROM UNNEST(credits) c), 0
+                ))                            AS credits,
+                SUM(usage.amount)             AS usage_amount,
+                MAX(usage.unit)               AS usage_unit
+            FROM `{self.billing_export_table}`
+            WHERE DATE(usage_start_time) >= @start
+              AND DATE(usage_start_time) <= @end
+            GROUP BY 1, 2, 3, 4, 5
+        """
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("start", "DATE", start.isoformat()),
+                bigquery.ScalarQueryParameter("end",   "DATE", end.isoformat()),
+            ]
+        )
+        rows = list(client.query(query, job_config=job_config).result())
+        result = [dict(r) for r in rows]
+        log.info(
+            "gcp.cost_fetched",
+            project_id=self.project_id,
+            rows=len(result),
+            start=start.isoformat(),
+            end=end.isoformat(),
+        )
+        return result
+
     async def fetch_cost_data(self, start: date, end: date) -> list[dict]:
-        """
-        Live: BigQuery query against the standard billing export table:
-          SELECT service.description, project.id, sku.description,
-                 SUM(cost) cost, SUM(IFNULL((SELECT SUM(c.amount)
-                   FROM UNNEST(credits) c),0)) credits, usage.amount, usage.unit,
-                 DATE(usage_start_time) day
-          FROM `<billing_export_table>`
-          WHERE _PARTITIONTIME BETWEEN @start AND @end
-          GROUP BY 1,2,3,6,7,8
-        GCP publishes a native FOCUS view too (recommended when available).
-        """
-        return []
+        """Async wrapper -- runs the sync BigQuery call in the default thread executor."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._fetch_cost_sync, start, end)
 
     def normalize(self, tenant_id: str, raw_rows: list[dict]) -> list[FocusRecord]:
         out = []

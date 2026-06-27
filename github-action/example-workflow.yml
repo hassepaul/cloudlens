@@ -1,0 +1,55 @@
+# Example: .github/workflows/cloudlens-cost-estimate.yml
+# Triggers on PRs that touch Terraform files.
+#
+# Required secrets:
+#   CLOUDLENS_API_URL  — Base URL of your CloudLens deployment
+#   CLOUDLENS_API_KEY  — CloudLens internal API key
+#   CLOUDLENS_TENANT_ID — Your CloudLens tenant ID (for run history)
+#   TF_PLAN_ROLE_ARN  — IAM role for Terraform plan (AWS example)
+
+name: CloudLens Cost Estimate
+
+on:
+  pull_request:
+    paths:
+      - "**.tf"
+      - "**.tfvars"
+
+jobs:
+  cost-estimate:
+    name: Estimate cost impact
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.TF_PLAN_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Run CloudLens Cost Estimate
+        id: cloudlens
+        uses: ./github-action
+        with:
+          cloudlens_api_url: ${{ secrets.CLOUDLENS_API_URL }}
+          cloudlens_api_key: ${{ secrets.CLOUDLENS_API_KEY }}
+          working_directory: infra/
+          label: ${{ github.event.pull_request.title }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Persist run to pipeline history dashboard
+          tenant_id: ${{ secrets.CLOUDLENS_TENANT_ID }}
+          # Fail the pipeline if net monthly cost increase exceeds €200
+          budget_gate_eur: "200"
+          fail_on_gate_breach: "true"
+
+      - name: Show cost summary
+        run: |
+          echo "Monthly delta : €${{ steps.cloudlens.outputs.total_monthly_delta_eur }}"
+          echo "Annual delta  : €${{ steps.cloudlens.outputs.total_annual_delta_eur }}"
+          echo "Budget gate   : ${{ steps.cloudlens.outputs.gate_passed }}"
+          echo "Run ID        : ${{ steps.cloudlens.outputs.run_id }}"

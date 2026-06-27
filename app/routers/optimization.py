@@ -1,8 +1,8 @@
-"""Optimization router — /api/v1/optimization (rightsizing, scheduling, utilization, savings)."""
+"""Optimization router — /api/v1/optimization (rightsizing, scheduling, utilization, savings, actions)."""
 from __future__ import annotations
 from datetime import date, timedelta, datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Query, Depends, status
+from fastapi import APIRouter, HTTPException, Query, Depends, BackgroundTasks, status
 
 from app.config import get_settings
 from app.exceptions import CosmosError, NotFoundError
@@ -12,6 +12,8 @@ from app.services import cosmos
 from app.services import rightsizing as rs_svc
 from app.services import scheduling as sched_svc
 from app.services import utilization as util_svc
+from app.services.action_executor import execute_action, execute_bulk, ActionExecutionDisabledError
+from app.models.action import ActionRecord, ActionType, ActionRequest, BulkAutostopRequest
 from app.models.savings import (
     SavingsRecord, SavingsRecordCreate, SavingsLedger, SavingsStatus,
 )

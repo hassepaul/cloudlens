@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — FinOps Maturity Score</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--purpleDim:#2e2548;
+--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1120px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--tealDim);color:var(--teal)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:780px){.grid2{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px;margin-bottom:14px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+/* Score hero */
+.score-hero{background:linear-gradient(135deg,#10253c 0,#121c28 50%,#0d1218 100%);border:1px solid #1e3a52;border-radius:16px;padding:28px 32px;margin-bottom:16px;display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+.score-ring{flex-shrink:0;text-align:center}
+.score-ring .ring{width:120px;height:120px;position:relative}
+.score-ring .ring svg{transform:rotate(-90deg)}
+.score-ring .num{position:absolute;inset:0;display:grid;place-items:center}
+.score-ring .num .v{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--teal)}
+.score-ring .num .l{font-size:10px;color:var(--txt3);text-align:center;line-height:1.3}
+.score-hero .body{flex:1;min-width:240px}
+.score-hero .label{font-family:var(--mono);font-size:28px;font-weight:700;margin-bottom:4px}
+.score-hero .pct{font-size:13px;color:var(--txt2);margin-bottom:12px}
+.score-hero .rec{background:var(--tealDim);border:1px solid rgba(45,212,191,.25);border-radius:9px;padding:10px 14px;font-size:13px;line-height:1.6;color:var(--txt)}
+.score-hero .rec .rk{font-family:var(--mono);font-size:10px;color:var(--teal);text-transform:uppercase;margin-bottom:4px}
+/* Dimension bars */
+.dim-row{padding:11px 0;border-bottom:1px solid var(--lineSoft)}
+.dim-row:last-child{border-bottom:0}
+.dim-row .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.dim-row .name{font-family:var(--mono);font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px}
+.dim-row .right{display:flex;align-items:center;gap:10px}
+.dim-row .score-val{font-family:var(--mono);font-size:14px;font-weight:700}
+.dim-row .pct-badge{font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:5px}
+.pct-badge.p90{background:var(--tealDim);color:var(--teal)}
+.pct-badge.p75{background:var(--blueDim);color:var(--blue)}
+.pct-badge.p50{background:var(--panel2);color:var(--txt2)}
+.pct-badge.below{background:var(--amberDim);color:var(--amber)}
+.dim-row .bar-wrap{height:8px;background:var(--line);border-radius:4px;overflow:hidden;position:relative}
+.dim-row .bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.dim-row .bar-median{position:absolute;top:0;height:100%;width:2px;background:rgba(255,255,255,.15)}
+.dim-row .context{font-size:11px;color:var(--txt3);margin-top:4px}
+.dim-row .action{font-size:12px;color:var(--txt2);margin-top:5px;padding:6px 10px;background:var(--panel2);border-radius:7px;display:flex;gap:6px;align-items:flex-start}
+.dim-row .action::before{content:'→';color:var(--teal);flex-shrink:0}
+.form-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px;margin-bottom:16px;flex-wrap:wrap}
+.form-bar label{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.form-bar select{background:var(--bg2);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;padding:5px 10px;font-family:var(--mono);outline:none}
+.form-bar select:focus{border-color:var(--teal)}
+.btn{background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);font-family:var(--mono);font-size:11px;padding:7px 14px;border-radius:7px;cursor:pointer}
+.btn:hover{background:var(--teal);color:#0d1218}
+.maturity-levels{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ml{border-radius:10px;padding:12px 14px;border:1px solid var(--lineSoft)}
+.ml.active{border-color:var(--teal);background:var(--tealDim)}
+.ml .grade{font-family:var(--mono);font-size:18px;font-weight:700;margin-bottom:4px}
+.ml .range{font-family:var(--mono);font-size:10px;color:var(--txt3)}
+.ml .desc{font-size:11px;color:var(--txt2);margin-top:6px;line-height:1.5}
+#loading{display:none;text-align:center;padding:30px;color:var(--txt3);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+  <a href="forecast.html" class="snav-link">∿ Forecast</a>
+  <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
+  <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="commitment_advisor.html" class="snav-link">◈ Commitments</a>
+  <a href="maturity.html" class="snav-link active">◬ Maturity</a>
+  <a href="context_mapper.html" class="snav-link">⊛ Context</a>
+  <a href="nl_query.html" class="snav-link">✦ Ask AI</a>
+  <a href="onboarding.html" class="snav-link">⊕ Onboarding</a>
+  <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+
+<div class="head">
+  <h1><span class="dot"></span> FinOps Maturity Score</h1>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <select id="tenant-sel" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:5px 10px;outline:none">
+      <option value="t-acme">t-acme (Acme Corp)</option>
+      <option value="t-1">t-1 (Demo)</option>
+    </select>
+    <select id="vertical-sel" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:5px 10px;outline:none">
+      <option value="saas">SaaS</option>
+      <option value="enterprise" selected>Enterprise</option>
+      <option value="ecommerce">E-commerce</option>
+      <option value="startup">Startup</option>
+    </select>
+    <button class="btn" onclick="loadScore()">↻ Refresh</button>
+  </div>
+</div>
+
+<div id="loading">⏳ Computing maturity score...</div>
+
+<!-- Score hero -->
+<div class="score-hero" id="score-hero" style="display:none">
+  <div class="score-ring">
+    <div class="ring">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--line)" stroke-width="10"/>
+        <circle id="ring-arc" cx="60" cy="60" r="50" fill="none" stroke="var(--teal)" stroke-width="10"
+                stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"/>
+      </svg>
+      <div class="num"><div class="v" id="hero-score">—</div><div class="l">/ 100</div></div>
+    </div>
+  </div>
+  <div class="body">
+    <div class="label" id="hero-label">—</div>
+    <div class="pct" id="hero-pct">—</div>
+    <div class="rec"><div class="rk">Top Recommendation</div><div id="hero-rec">—</div></div>
+  </div>
+</div>
+
+<!-- Dimension scores -->
+<div class="card" id="dims-card" style="display:none">
+  <h2>◬ Dimension Scores</h2>
+  <div id="dims-list"></div>
+</div>
+
+<!-- Maturity levels reference -->
+<div class="card">
+  <h2>◬ Maturity Framework</h2>
+  <div class="maturity-levels" id="maturity-levels">
+    <div class="ml" id="ml-crawl"><div class="grade" style="color:var(--red)">Crawl</div><div class="range">0–39</div><div class="desc">Reactive, manual, no shared accountability</div></div>
+    <div class="ml" id="ml-walk"><div class="grade" style="color:var(--amber)">Walk</div><div class="range">40–64</div><div class="desc">Some tooling, partial automation</div></div>
+    <div class="ml" id="ml-run"><div class="grade" style="color:var(--blue)">Run</div><div class="range">65–84</div><div class="desc">Proactive, automated, FinOps-as-code</div></div>
+    <div class="ml" id="ml-fly"><div class="grade" style="color:var(--teal)">Fly</div><div class="range">85–100</div><div class="desc">Real-time, unit economics, AI-assisted</div></div>
+  </div>
+  <p style="font-size:11px;color:var(--txt3);margin-top:12px;line-height:1.6">Benchmarks derived from the FinOps Foundation 2024 State of FinOps report. Cohort percentiles represent performance relative to organisations in your selected vertical.</p>
+</div>
+</div><!-- /wrap -->
+
+<script>
+const API = '';
+
+function dimColor(score){
+  if(score>=80) return 'var(--teal)';
+  if(score>=60) return 'var(--blue)';
+  if(score>=40) return 'var(--amber)';
+  return 'var(--red)';
+}
+function pctBadgeClass(pct){
+  if(pct>=90) return 'p90';
+  if(pct>=75) return 'p75';
+  if(pct>=50) return 'p50';
+  return 'below';
+}
+function pctLabel(pct){
+  if(pct>=90) return 'Top decile';
+  if(pct>=75) return 'Top quartile';
+  if(pct>=50) return `P${Math.round(pct)}`;
+  return `P${Math.round(pct)}`;
+}
+
+async function loadScore(){
+  const tid = document.getElementById('tenant-sel').value;
+  const vert = document.getElementById('vertical-sel').value;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('score-hero').style.display = 'none';
+  document.getElementById('dims-card').style.display = 'none';
+  try{
+    const r = await fetch(`${API}/api/v1/maturity/${tid}/score?vertical=${vert}`, {
+      headers:{'X-API-Key':'demo-key'}
+    });
+    if(!r.ok) throw new Error(r.statusText);
+    const data = await r.json();
+    renderScore(data);
+  } catch(e){
+    renderDemo();
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function renderScore(d){
+  // Hero
+  const score = d.overall_score||0;
+  document.getElementById('hero-score').textContent = score.toFixed(0);
+  document.getElementById('hero-label').textContent = d.overall_label||'—';
+  document.getElementById('hero-pct').textContent =
+    `P${Math.round(d.overall_percentile||0)} in ${d.vertical||''} cohort`;
+  document.getElementById('hero-rec').textContent = d.top_recommendation||'';
+  // Animate ring
+  const arc = document.getElementById('ring-arc');
+  const dash = 314;
+  arc.style.strokeDashoffset = dash - (score/100)*dash;
+  arc.style.stroke = dimColor(score);
+  document.getElementById('score-hero').style.display = 'flex';
+
+  // Highlight active level
+  ['crawl','walk','run','fly'].forEach(l => {
+    document.getElementById('ml-'+l).classList.remove('active');
+  });
+  const lv = (d.overall_label||'walk').toLowerCase();
+  document.getElementById('ml-'+lv)?.classList.add('active');
+
+  // Dimensions
+  const dims = d.dimensions||[];
+  document.getElementById('dims-list').innerHTML = dims.map(dim => {
+    const sc = dim.score||0;
+    const medianPct = (dim.cohort_median/100)*100;
+    return `
+      <div class="dim-row">
+        <div class="top">
+          <div class="name">${dim.label}
+            <span style="font-weight:400;color:var(--txt3);font-size:11px">(w=${(dim.weight*100).toFixed(0)}%)</span>
+          </div>
+          <div class="right">
+            <span class="score-val" style="color:${dimColor(sc)}">${sc.toFixed(0)}</span>
+            <span class="pct-badge ${pctBadgeClass(dim.percentile)}">${pctLabel(dim.percentile)}</span>
+          </div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-fill" style="width:${sc}%;background:${dimColor(sc)}"></div>
+          <div class="bar-median" style="left:${dim.cohort_median}%"></div>
+        </div>
+        <div class="context">${dim.cohort_context||''}</div>
+        ${sc<80?`<div class="action">${dim.recommended_action||''}</div>`:''}
+      </div>`;
+  }).join('');
+  document.getElementById('dims-card').style.display = 'block';
+}
+
+function renderDemo(){
+  const demo = {
+    overall_score: 71.4, overall_label: 'Run', overall_percentile: 68, vertical: 'enterprise',
+    top_recommendation: 'Focus on RI/SP Coverage (score 42/100): Use the Commitment Advisor to identify services ready for 1-year Savings Plans.',
+    dimensions: [
+      {dimension:'tagging_completeness',label:'Tag Coverage',weight:.20,score:84,percentile:76,cohort_median:60,cohort_p75:78,cohort_p90:90,cohort_context:'Top quartile (cohort median 60)',recommended_action:'Maintain current practice.'},
+      {dimension:'waste_ratio',label:'Waste Reduction',weight:.20,score:76,percentile:71,cohort_median:52,cohort_p75:68,cohort_p90:80,cohort_context:'Above cohort median (52)',recommended_action:'Review open waste recommendations and action rightsizing this sprint.'},
+      {dimension:'commitment_coverage',label:'RI/SP Coverage',weight:.15,score:42,percentile:38,cohort_median:50,cohort_p75:68,cohort_p90:82,cohort_context:'Below cohort median (50) — improvement opportunity',recommended_action:'Use the Commitment Advisor to identify services ready for 1-year Savings Plans.'},
+      {dimension:'unit_economics',label:'Unit Economics',weight:.15,score:68,percentile:61,cohort_median:28,cohort_p75:45,cohort_p90:65,cohort_context:'Top quartile (cohort median 28)',recommended_action:'Maintain current practice.'},
+      {dimension:'anomaly_response',label:'Anomaly Response',weight:.15,score:72,percentile:65,cohort_median:42,cohort_p75:60,cohort_p90:78,cohort_context:'Above cohort median (42)',recommended_action:'Assign violations to on-call and target <24h resolution.'},
+      {dimension:'budget_adherence',label:'Budget Adherence',weight:.15,score:80,percentile:74,cohort_median:65,cohort_p75:78,cohort_p90:90,cohort_context:'Above cohort median (65)',recommended_action:'Maintain current practice.'},
+    ]
+  };
+  renderScore(demo);
+}
+
+loadScore();
+</script>
+</body>
+</html>

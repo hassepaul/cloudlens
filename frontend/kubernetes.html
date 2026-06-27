@@ -10,53 +10,96 @@
   --bg:#0d1218;--panel:#18222e;--panel2:#1e2c3a;--line:#2a3a4a;--lineSoft:#243040;
   --teal:#2dd4bf;--tealDim:#0f3530;--purple:#a78bfa;--purpleDim:#2e1f5e;
   --amber:#fbbf24;--amberDim:#3a2800;--red:#f87171;--redDim:#3a0e0e;
+  --green:#4ade80;--greenDim:#0f2e1a;
+  --blue:#60a5fa;--blueDim:#0e1f3a;
+  --orange:#fb923c;--orangeDim:#3a1800;
   --txt:#e2eaf4;--txt2:#7f9ab0;--txt3:#4a6278;
   --mono:'Space Grotesk',monospace;--body:'Inter',sans-serif;
   --r:10px
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--txt);font-family:var(--body);font-size:14px;min-height:100vh;padding:24px}
-.wrap{max-width:1100px;margin:0 auto}
+/* Nav */
 .sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
 .snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
 .snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--tealDim);color:var(--teal)}
-.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
-h1{font-family:var(--mono);font-size:22px;font-weight:600;display:flex;align-items:center;gap:8px}
+/* Header */
+.head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+h1{font-family:var(--mono);font-size:20px;font-weight:600;display:flex;align-items:center;gap:8px}
 .dot{display:inline-block;width:8px;height:8px;background:var(--teal);border-radius:50%}
-.card{background:var(--panel);border:1px solid var(--lineSoft);border-radius:var(--r);padding:20px;margin-bottom:16px}
-.card h2{font-family:var(--mono);font-size:14px;font-weight:500;margin-bottom:14px;color:var(--txt)}
-.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
-.kpi{background:var(--panel);border:1px solid var(--lineSoft);border-radius:var(--r);padding:16px}
+.head-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ctrl-label{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.ctrl-sel{background:var(--panel2);border:1px solid var(--lineSoft);border-radius:6px;color:var(--txt);font-size:12px;padding:5px 9px;outline:none;font-family:var(--mono)}
+.ctrl-sel:focus{border-color:var(--teal)}
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--panel);border:1px solid var(--lineSoft);border-radius:var(--r);padding:14px}
 .kpi .label{font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
-.kpi .value{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--teal)}
-.kpi .sub{font-size:11px;color:var(--txt2);margin-top:4px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);text-align:left;padding:6px 10px;border-bottom:1px solid var(--lineSoft)}
-td{padding:8px 10px;border-bottom:1px solid var(--lineSoft);color:var(--txt)}
+.kpi .value{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--teal)}
+.kpi .value.amber{color:var(--amber)}.kpi .value.red{color:var(--red)}.kpi .value.green{color:var(--green)}.kpi .value.purple{color:var(--purple)}
+.kpi .sub{font-size:11px;color:var(--txt2);margin-top:3px}
+/* Tabs */
+.tab-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;padding:4px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:var(--r)}
+.tab-bar button{font-family:var(--mono);font-size:11px;padding:5px 13px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--txt2);cursor:pointer;transition:all .15s}
+.tab-bar button:hover{color:var(--txt);background:var(--panel2)}
+.tab-bar button.on{background:var(--tealDim);border-color:var(--teal);color:var(--teal)}
+.view{display:none}.view.on{display:block}
+/* Card */
+.card{background:var(--panel);border:1px solid var(--lineSoft);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px;flex-wrap:wrap}
+.card-title{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--txt)}
+.card-sub{font-size:11px;color:var(--txt3);font-family:var(--body)}
+.card-head .ctrl-sel{height:28px;font-size:11px;padding:3px 8px}
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);text-align:left;padding:7px 10px;border-bottom:1px solid var(--lineSoft)}
+td{padding:8px 10px;border-bottom:1px solid var(--lineSoft);color:var(--txt);vertical-align:middle}
 td.mono{font-family:var(--mono);font-size:11px;color:var(--txt2)}
-tr:hover td{background:var(--panel2)}
-.bar-wrap{width:100px;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:inline-block}
-.bar-fill{height:100%;border-radius:3px;background:var(--teal)}
-.badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px}
-.badge.healthy{background:var(--tealDim);color:var(--teal)}
-.badge.warn{background:var(--amberDim);color:var(--amber)}
-.badge.error{background:var(--redDim);color:var(--red)}
-.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px}
-.form label{display:block;font-size:11px;color:var(--txt3);margin-bottom:4px;font-family:var(--mono)}
-.form input,.form select{width:100%;background:var(--panel2);border:1px solid var(--lineSoft);border-radius:6px;color:var(--txt);font-size:12px;padding:7px 9px;outline:none}
-.form input:focus,.form select:focus{border-color:var(--teal)}
+tr:hover td{background:var(--panel2);cursor:default}
+tr.clickable:hover td{background:var(--panel2);cursor:pointer}
+/* Bars */
+.bar-bg{width:90px;height:5px;background:var(--line);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle}
+.bar-fill{height:100%;border-radius:3px}
+.bar-teal{background:var(--teal)}.bar-purple{background:var(--purple)}.bar-amber{background:var(--amber)}.bar-blue{background:var(--blue)}.bar-orange{background:var(--orange)}.bar-red{background:var(--red)}.bar-green{background:var(--green)}
+/* Component bar stack */
+.comp-stack{display:flex;height:8px;border-radius:4px;overflow:hidden;width:120px;gap:1px}
+.cs-cpu{background:var(--teal)}.cs-ram{background:var(--purple)}.cs-pv{background:var(--amber)}.cs-net{background:var(--blue)}.cs-gpu{background:var(--orange)}
+/* Badge */
+.badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.badge.ok{background:var(--tealDim);color:var(--teal)}.badge.warn{background:var(--amberDim);color:var(--amber)}.badge.bad{background:var(--redDim);color:var(--red)}.badge.info{background:var(--blueDim);color:var(--blue)}
+/* Efficiency ring */
+.eff-ring{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;font-family:var(--mono);font-size:11px;font-weight:600;border:3px solid}
+.eff-ring.good{border-color:var(--green);color:var(--green)}.eff-ring.ok{border-color:var(--teal);color:var(--teal)}.eff-ring.warn{border-color:var(--amber);color:var(--amber)}.eff-ring.bad{border-color:var(--red);color:var(--red)}
+/* Two-col */
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.cols2{grid-template-columns:1fr}}
+/* Legend */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2)}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+/* Breadcrumb */
+.breadcrumb{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;margin-bottom:12px;color:var(--txt3)}
+.breadcrumb a{color:var(--teal);cursor:pointer;text-decoration:none}
+.breadcrumb a:hover{text-decoration:underline}
+/* Form */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.form-grid label{display:block;font-size:11px;color:var(--txt3);margin-bottom:4px;font-family:var(--mono)}
+.form-grid input,.form-grid select{width:100%;background:var(--panel2);border:1px solid var(--lineSoft);border-radius:6px;color:var(--txt);font-size:12px;padding:7px 9px;outline:none}
+.form-grid input:focus,.form-grid select:focus{border-color:var(--teal)}
 .btn{background:var(--tealDim);border:1px solid var(--teal);border-radius:6px;color:var(--teal);font-family:var(--mono);font-size:12px;padding:7px 16px;cursor:pointer;transition:background .15s}
 .btn:hover{background:var(--teal);color:#0d1218}
-.tabs{display:flex;gap:4px}
-.tabs button{font-family:var(--mono);font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--lineSoft);background:transparent;color:var(--txt2);cursor:pointer}
-.tabs button.on{background:var(--tealDim);border-color:var(--teal);color:var(--teal)}
-.view{display:none}.view.on{display:block}
-.cluster-sel{display:flex;align-items:center;gap:10px}
-.cluster-sel label{font-family:var(--mono);font-size:11px;color:var(--txt3)}
-.cluster-sel select{background:var(--panel2);border:1px solid var(--lineSoft);border-radius:6px;color:var(--txt);font-size:12px;padding:5px 9px;outline:none;font-family:var(--mono)}
-.cluster-sel select:focus{border-color:var(--teal)}
 .note{font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.6}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+/* Trend */
+.trend-line{fill:none;stroke:var(--teal);stroke-width:1.5;stroke-linejoin:round}
+.trend-area{fill:url(#trendGrad);opacity:.3}
+.trend-axis{stroke:var(--lineSoft)}
+.trend-label{fill:var(--txt3);font-size:9px;font-family:var(--mono)}
+/* Summary cards */
+.summary-cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.sum-card{background:var(--panel2);border:1px solid var(--lineSoft);border-radius:8px;padding:10px 16px;flex:1;min-width:120px}
+.sum-card .sc-label{font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em}
+.sum-card .sc-val{font-family:var(--mono);font-size:16px;font-weight:600;margin-top:4px}
 </style>
 </head>
 <body>
@@ -71,257 +114,647 @@ tr:hover td{background:var(--panel2)}
   <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
   <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
 </nav>
-<h2 class="sr-only">CloudLens Kubernetes: OpenCost/Kubecost pod-level cost allocation by namespace and workload</h2>
+<h2 class="sr-only">CloudLens Kubernetes: Pod-level cost allocation — namespace, workload, node, efficiency, trends</h2>
+
 <div class="head">
-  <h1><span class="dot"></span> CloudLens · Kubernetes</h1>
-  <div class="cluster-sel">
-    <label>Cluster</label>
-    <select id="cluster-sel" onchange="loadAllocation()">
-      <option value="aks-prod">aks-prod (AKS, West Europe)</option>
-      <option value="aks-staging">aks-staging (AKS, UK South)</option>
+  <h1><span class="dot"></span> Kubernetes Cost Allocation</h1>
+  <div class="head-controls">
+    <span class="ctrl-label">Cluster</span>
+    <select id="cluster-sel" class="ctrl-sel" onchange="onClusterChange()">
+      <option value="aks-prod">aks-prod · AKS · West Europe</option>
+      <option value="aks-staging">aks-staging · AKS · UK South</option>
+      <option value="eks-us">eks-us · EKS · us-east-1</option>
     </select>
-    <div class="tabs">
-      <button class="on" onclick="vtab('namespaces',this)">Namespaces</button>
-      <button onclick="vtab('workloads',this)">Workloads</button>
-      <button onclick="vtab('register',this)">+ Register</button>
-    </div>
+    <span class="ctrl-label">Window</span>
+    <select id="days-sel" class="ctrl-sel" onchange="onClusterChange()">
+      <option value="7">7 days</option>
+      <option value="14">14 days</option>
+      <option value="30">30 days</option>
+    </select>
   </div>
 </div>
 
 <!-- KPI row -->
 <div class="kpi-row">
-  <div class="kpi"><div class="label">Total K8s spend (7d)</div><div class="value" id="kpi-total">€0</div><div class="sub" id="kpi-sub">loading…</div></div>
-  <div class="kpi"><div class="label">Registered clusters</div><div class="value" id="kpi-clusters">2</div><div class="sub">OpenCost / Kubecost endpoints</div></div>
-  <div class="kpi"><div class="label">Namespaces tracked</div><div class="value" id="kpi-ns">0</div><div class="sub">with cost allocation data</div></div>
-  <div class="kpi"><div class="label">Top namespace</div><div class="value" id="kpi-top-ns" style="font-size:14px;padding-top:4px">—</div><div class="sub" id="kpi-top-pct">% of cluster spend</div></div>
+  <div class="kpi"><div class="label">Cluster total</div><div class="value" id="k-total">€0</div><div class="sub" id="k-period">—</div></div>
+  <div class="kpi"><div class="label">CPU cost</div><div class="value purple" id="k-cpu">€0</div><div class="sub" id="k-cpu-pct">—</div></div>
+  <div class="kpi"><div class="label">RAM cost</div><div class="value" style="color:var(--blue)" id="k-ram">€0</div><div class="sub" id="k-ram-pct">—</div></div>
+  <div class="kpi"><div class="label">Storage / PV</div><div class="value amber" id="k-pv">€0</div><div class="sub" id="k-pv-pct">—</div></div>
+  <div class="kpi"><div class="label">Network egress</div><div class="value" style="color:var(--orange)" id="k-net">€0</div><div class="sub" id="k-net-pct">—</div></div>
+  <div class="kpi"><div class="label">Avg efficiency</div><div class="value green" id="k-eff">—%</div><div class="sub">CPU + RAM utilisation</div></div>
+  <div class="kpi"><div class="label">Waste estimate</div><div class="value red" id="k-waste">€0</div><div class="sub">idle request overhead</div></div>
 </div>
 
-<!-- NAMESPACES view -->
+<!-- Tabs -->
+<div class="tab-bar" role="tablist">
+  <button class="on" onclick="vtab('namespaces',this)">⊟ Namespaces</button>
+  <button onclick="vtab('pods',this)">⬡ Pods</button>
+  <button onclick="vtab('workloads',this)">⊗ Workloads</button>
+  <button onclick="vtab('nodes',this)">▣ Nodes</button>
+  <button onclick="vtab('efficiency',this)">◎ Efficiency</button>
+  <button onclick="vtab('trends',this)">∿ Trends</button>
+  <button onclick="vtab('register',this)">+ Register</button>
+</div>
+
+<!-- ── NAMESPACES ─────────────────────────────────────────────────────────── -->
 <div class="view on" id="v-namespaces">
   <div class="card">
-    <h2>Namespace cost breakdown <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">GET /api/v1/k8s/{tenant}/allocation/namespaces?cluster_id=…&days=7</span></h2>
+    <div class="card-head">
+      <div><div class="card-title">Namespace cost breakdown</div>
+        <div class="card-sub">GET /api/v1/k8s/{tenant}/allocation/namespaces · click to drill into pods</div></div>
+    </div>
     <table>
-      <thead><tr><th>Namespace</th><th>7d spend</th><th>Share</th><th>Distribution</th><th>Status</th></tr></thead>
+      <thead><tr><th>Namespace</th><th>Total spend</th><th>Share</th><th>CPU · RAM · PV · Net</th><th>Component mix</th><th></th></tr></thead>
       <tbody id="ns-tbody"></tbody>
+    </table>
+    <div class="note">Click a namespace row to drill into pod-level detail.</div>
+  </div>
+</div>
+
+<!-- ── PODS ──────────────────────────────────────────────────────────────── -->
+<div class="view" id="v-pods">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Pod cost detail</div>
+        <div class="card-sub">GET /api/v1/k8s/{tenant}/allocation/pods/{namespace}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="ctrl-label">Namespace</span>
+        <select id="pod-ns-sel" class="ctrl-sel" onchange="loadPods()" style="min-width:160px">
+          <option value="">All namespaces</option>
+        </select>
+      </div>
+    </div>
+    <div class="breadcrumb" id="pod-breadcrumb" style="display:none">
+      <a onclick="vtabDirect('namespaces')">Namespaces</a>
+      <span>›</span><span id="pod-ns-label">—</span>
+    </div>
+    <div class="summary-cards" id="pod-summary-cards"></div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--teal)"></span>CPU</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--purple)"></span>RAM</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Storage/PV</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Network</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--orange)"></span>GPU</div>
+    </div>
+    <table>
+      <thead><tr><th>Pod</th><th>Controller</th><th>Node</th><th>Total</th><th>CPU</th><th>RAM</th><th>PV</th><th>Network</th><th>Component mix</th><th>%</th></tr></thead>
+      <tbody id="pod-tbody"></tbody>
     </table>
   </div>
 </div>
 
-<!-- WORKLOADS view -->
+<!-- ── WORKLOADS ──────────────────────────────────────────────────────────── -->
 <div class="view" id="v-workloads">
   <div class="card">
-    <h2>Workload cost breakdown <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">GET /api/v1/k8s/{tenant}/allocation?aggregate=deployment&cluster_id=…</span></h2>
+    <div class="card-head">
+      <div><div class="card-title">Workload cost breakdown</div>
+        <div class="card-sub">GET /api/v1/k8s/{tenant}/allocation/workloads/{namespace}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="ctrl-label">Namespace</span>
+        <select id="wl-ns-sel" class="ctrl-sel" onchange="loadWorkloads()" style="min-width:160px">
+          <option value="">All</option>
+        </select>
+      </div>
+    </div>
     <table>
-      <thead><tr><th>Workload</th><th>Namespace</th><th>7d spend</th><th>Share</th><th>Distribution</th></tr></thead>
+      <thead><tr><th>Workload</th><th>Namespace</th><th>Pods</th><th>Total cost</th><th>CPU share</th><th>RAM share</th><th>Component mix</th><th>% cluster</th></tr></thead>
       <tbody id="wl-tbody"></tbody>
     </table>
   </div>
 </div>
 
-<!-- REGISTER view -->
-<div class="view" id="v-register">
+<!-- ── NODES ──────────────────────────────────────────────────────────────── -->
+<div class="view" id="v-nodes">
   <div class="card">
-    <h2>Register OpenCost / Kubecost endpoint <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">POST /api/v1/k8s/{tenant}/clusters</span></h2>
-    <div class="form">
-      <div><label>Cluster name</label><input id="c-name" placeholder="my-aks-cluster" /></div>
-      <div><label>OpenCost / Kubecost URL</label><input id="c-url" placeholder="http://opencost.monitoring.svc:9003" /></div>
-      <div><label>Cloud provider</label>
-        <select id="c-provider">
-          <option value="azure">Azure (AKS)</option>
-          <option value="aws">AWS (EKS)</option>
-          <option value="gcp">GCP (GKE)</option>
-        </select>
-      </div>
-      <div><label>Region</label><input id="c-region" placeholder="westeurope" /></div>
-      <div style="align-self:flex-end"><button class="btn" onclick="registerCluster()">Register ↗</button></div>
+    <div class="card-head">
+      <div><div class="card-title">Node cost &amp; pod density</div>
+        <div class="card-sub">GET /api/v1/k8s/{tenant}/allocation/nodes</div></div>
     </div>
-    <div class="note" id="reg-note">
-      CloudLens calls the OpenCost Allocation API on demand.
-      The endpoint must be reachable from the CloudLens backend (or VPN/private endpoint for private clusters).
-      Allocation data is paginated in 1-day windows and stored as FocusRecords in Cosmos DB.
-    </div>
-  </div>
-  <div class="card">
-    <h2>Registered clusters <span style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)">GET /api/v1/k8s/{tenant}/clusters</span></h2>
     <table>
-      <thead><tr><th>Cluster ID</th><th>URL</th><th>Provider</th><th>Region</th><th>Status</th></tr></thead>
-      <tbody id="clusters-tbody"></tbody>
+      <thead><tr><th>Node</th><th>Cost</th><th>Share</th><th>Pods</th><th>Namespaces</th><th>Cost/pod</th><th>Distribution</th></tr></thead>
+      <tbody id="node-tbody"></tbody>
     </table>
   </div>
 </div>
 
+<!-- ── EFFICIENCY ─────────────────────────────────────────────────────────── -->
+<div class="view" id="v-efficiency">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">CPU &amp; RAM efficiency by namespace</div>
+        <div class="card-sub">GET /api/v1/k8s/{tenant}/allocation/efficiency · request vs actual · sorted by waste</div></div>
+    </div>
+    <div class="summary-cards" id="eff-summary"></div>
+    <table>
+      <thead><tr><th>Namespace</th><th>Efficiency</th><th>CPU util %</th><th>RAM util %</th><th>Avg eff</th><th>Spend</th><th>Waste estimate</th><th>Recommendation</th></tr></thead>
+      <tbody id="eff-tbody"></tbody>
+    </table>
+    <div class="note">Efficiency = actual usage ÷ resource request. Waste estimate = spend × (1 − avg_eff). Requires Prometheus in-cluster metrics.</div>
+  </div>
+  <div class="cols2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">Spend by component</div></div>
+      <div id="comp-bars-eff"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Top 5 waste namespaces</div></div>
+      <table><thead><tr><th>Namespace</th><th>Waste €</th><th>Avg eff</th></tr></thead>
+        <tbody id="waste-top-tbody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ── TRENDS ─────────────────────────────────────────────────────────────── -->
+<div class="view" id="v-trends">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Daily cost trend</div>
+        <div class="card-sub">GET /api/v1/k8s/{tenant}/allocation/trends</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="ctrl-label">Namespace</span>
+        <select id="trend-ns-sel" class="ctrl-sel" onchange="loadTrends()" style="min-width:160px">
+          <option value="">All (cluster)</option>
+        </select>
+      </div>
+    </div>
+    <svg id="trend-svg" style="width:100%;height:220px;overflow:visible;display:block">
+      <defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#2dd4bf" stop-opacity="0"/>
+      </linearGradient></defs>
+    </svg>
+    <div id="trend-x-labels" style="display:flex;justify-content:space-between;padding:0 10px;font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:4px"></div>
+    <div id="trend-tooltip" style="font-family:var(--mono);font-size:11px;color:var(--teal);min-height:18px;margin-top:8px;text-align:center"></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">Namespace sparklines</div><div class="card-sub">per-namespace spend trend</div></div>
+    <div id="sparkline-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+  </div>
+</div>
+
+<!-- ── REGISTER ───────────────────────────────────────────────────────────── -->
+<div class="view" id="v-register">
+  <div class="card">
+    <div class="card-head"><div class="card-title">Register OpenCost / Kubecost endpoint</div><div class="card-sub">POST /api/v1/k8s/{tenant}/clusters</div></div>
+    <div class="form-grid">
+      <div><label>Cluster name / ID</label><input id="c-name" placeholder="my-aks-cluster"/></div>
+      <div><label>OpenCost URL (reachable from CloudLens)</label><input id="c-url" placeholder="http://opencost.monitoring.svc:9003"/></div>
+      <div><label>Cloud provider</label>
+        <select id="c-provider"><option value="azure">Azure (AKS)</option><option value="aws">AWS (EKS)</option><option value="gcp">GCP (GKE)</option></select></div>
+      <div><label>Region</label><input id="c-region" placeholder="westeurope"/></div>
+      <div style="align-self:flex-end"><button class="btn" onclick="registerCluster()">Register ↗</button></div>
+    </div>
+    <div class="note" id="reg-note">CloudLens calls the OpenCost Allocation API on demand (agent-pull, no in-cluster code). For private clusters expose OpenCost via Azure Application Gateway or VPN-peered endpoint. Costs are normalised to EUR FocusRecords and reconcile with your cloud bill.</div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">Registered clusters</div><div class="card-sub">GET /api/v1/k8s/{tenant}/clusters</div></div>
+    <table><thead><tr><th>Cluster</th><th>OpenCost URL</th><th>Provider</th><th>Region</th><th>Status</th></tr></thead>
+      <tbody id="clusters-tbody"></tbody></table>
+  </div>
+</div>
 </div><!-- /wrap -->
 
 <script>
-const TENANT='t-acme';
-const API_BASE='';
+/* ═══════════════════════════════════════════════════════════════════════════
+   CloudLens Kubernetes — pod-level cost allocation
+   APIs:
+     GET /api/v1/k8s/{t}/allocation/namespaces
+     GET /api/v1/k8s/{t}/allocation/pods/{namespace}
+     GET /api/v1/k8s/{t}/allocation/workloads/{namespace}
+     GET /api/v1/k8s/{t}/allocation/nodes
+     GET /api/v1/k8s/{t}/allocation/efficiency
+     GET /api/v1/k8s/{t}/allocation/trends
+     GET /api/v1/k8s/{t}/allocation/components
+   ═══════════════════════════════════════════════════════════════════════════ */
+const TENANT='t-acme',API_BASE='';
+const EUR=n=>'€'+(n<1?n.toFixed(2):Math.round(n).toLocaleString('en-US'));
+const badge=v=>{const c=v>=70?'ok':v>=40?'warn':'bad';return`<span class="badge ${c}">${v.toFixed(0)}%</span>`;};
+const effRing=v=>{const c=v>=70?'good':v>=40?'ok':v>=20?'warn':'bad';return`<div class="eff-ring ${c}">${v.toFixed(0)}%</div>`;};
 
-/* ── Mock data (shaped to API responses) ─────────────────────────────────── */
-/* GET /api/v1/k8s/{t}/allocation/namespaces — {total_cost_eur, namespaces:[]} */
-const MOCK_NS={
-  'aks-prod':{total_cost_eur:4280,namespaces:[
-    {namespace:'production',cost_eur:1820,pct:42.5},
-    {namespace:'staging',cost_eur:980,pct:22.9},
-    {namespace:'monitoring',cost_eur:640,pct:14.9},
-    {namespace:'kube-system',cost_eur:420,pct:9.8},
-    {namespace:'ingress-nginx',cost_eur:230,pct:5.4},
-    {namespace:'cert-manager',cost_eur:190,pct:4.4},
-  ]},
-  'aks-staging':{total_cost_eur:1140,namespaces:[
-    {namespace:'staging',cost_eur:680,pct:59.6},
-    {namespace:'monitoring',cost_eur:280,pct:24.6},
-    {namespace:'kube-system',cost_eur:180,pct:15.8},
-  ]},
-};
-/* GET /api/v1/k8s/{t}/allocation?aggregate=deployment */
-const MOCK_WL={
-  'aks-prod':[
-    {workload:'api-server',namespace:'production',cost_eur:740,pct:17.3},
-    {workload:'web-frontend',namespace:'production',cost_eur:560,pct:13.1},
-    {workload:'worker-pool',namespace:'production',cost_eur:520,pct:12.1},
-    {workload:'prometheus',namespace:'monitoring',cost_eur:380,pct:8.9},
-    {workload:'nginx-controller',namespace:'ingress-nginx',cost_eur:230,pct:5.4},
-    {workload:'api-server',namespace:'staging',cost_eur:420,pct:9.8},
-    {workload:'web-frontend',namespace:'staging',cost_eur:340,pct:7.9},
-    {workload:'grafana',namespace:'monitoring',cost_eur:260,pct:6.1},
-    {workload:'kube-dns',namespace:'kube-system',cost_eur:220,pct:5.1},
-    {workload:'metrics-server',namespace:'kube-system',cost_eur:200,pct:4.7},
+let state={cluster:'aks-prod',days:7,ns:null,namespaces:[],components:{},efficiency:[],trend:[],pods:[],workloads:[],nodes:[]};
+
+/* ── Mock data ───────────────────────────────────────────────────────────── */
+const MOCK={
+'aks-prod':{
+  namespaces:[{namespace:'production',cost_eur:1820,pct:42.5},{namespace:'staging',cost_eur:980,pct:22.9},{namespace:'monitoring',cost_eur:640,pct:14.9},{namespace:'kube-system',cost_eur:420,pct:9.8},{namespace:'ingress-nginx',cost_eur:230,pct:5.4},{namespace:'cert-manager',cost_eur:190,pct:4.4}],
+  components:{cpu:1680,ram:1460,pv:420,network:280,gpu:0,shared:440,total:4280,cpu_pct:39.3,ram_pct:34.1,pv_pct:9.8,network_pct:6.5,gpu_pct:0},
+  nodes:[{node:'aks-nodepool1-12345-0',cost_eur:1890,pct:44.2,pod_count:22,namespace_count:4},{node:'aks-nodepool1-12345-1',cost_eur:1640,pct:38.3,pod_count:18,namespace_count:4},{node:'aks-nodepool1-12345-2',cost_eur:750,pct:17.5,pod_count:9,namespace_count:3}],
+  efficiency:[
+    {namespace:'production', cost_eur:1820,cpu_efficiency_pct:61,ram_efficiency_pct:74,avg_efficiency_pct:67.5,waste_estimate_eur:592},
+    {namespace:'staging',    cost_eur:980, cpu_efficiency_pct:38,ram_efficiency_pct:45,avg_efficiency_pct:41.5,waste_estimate_eur:574},
+    {namespace:'monitoring', cost_eur:640, cpu_efficiency_pct:72,ram_efficiency_pct:80,avg_efficiency_pct:76.0,waste_estimate_eur:154},
+    {namespace:'kube-system',cost_eur:420, cpu_efficiency_pct:55,ram_efficiency_pct:62,avg_efficiency_pct:58.5,waste_estimate_eur:174},
+    {namespace:'ingress-nginx',cost_eur:230,cpu_efficiency_pct:44,ram_efficiency_pct:51,avg_efficiency_pct:47.5,waste_estimate_eur:121},
+    {namespace:'cert-manager', cost_eur:190,cpu_efficiency_pct:29,ram_efficiency_pct:35,avg_efficiency_pct:32.0,waste_estimate_eur:129},
   ],
-  'aks-staging':[
-    {workload:'api-server',namespace:'staging',cost_eur:380,pct:33.3},
-    {workload:'web-frontend',namespace:'staging',cost_eur:300,pct:26.3},
-    {workload:'prometheus',namespace:'monitoring',cost_eur:280,pct:24.6},
-    {workload:'kube-dns',namespace:'kube-system',cost_eur:180,pct:15.8},
-  ],
+  trend:[{date:'2024-04-01',cost_eur:598},{date:'2024-04-02',cost_eur:612},{date:'2024-04-03',cost_eur:574},{date:'2024-04-04',cost_eur:621},{date:'2024-04-05',cost_eur:580},{date:'2024-04-06',cost_eur:561},{date:'2024-04-07',cost_eur:614}],
+  pods:{
+    production:[
+      {pod:'api-server-7d9f-rxlpq',controller:'api-server',   node:'aks-nodepool1-12345-0',cost_eur:192,pct:10.5,days_tracked:7,components:{cpu:115,ram:58,pv:0,  network:14,gpu:0,shared:5},cpu_pct:59.9,ram_pct:30.2},
+      {pod:'api-server-7d9f-8wbnv',controller:'api-server',   node:'aks-nodepool1-12345-1',cost_eur:188,pct:10.3,days_tracked:7,components:{cpu:113,ram:56,pv:0,  network:14,gpu:0,shared:5},cpu_pct:60.1,ram_pct:29.8},
+      {pod:'worker-pool-0',        controller:'worker-pool',  node:'aks-nodepool1-12345-0',cost_eur:175,pct:9.6, days_tracked:7,components:{cpu:88, ram:70,pv:8,  network:5, gpu:0,shared:4},cpu_pct:50.3,ram_pct:40.0},
+      {pod:'worker-pool-1',        controller:'worker-pool',  node:'aks-nodepool1-12345-1',cost_eur:172,pct:9.4, days_tracked:7,components:{cpu:86, ram:69,pv:8,  network:5, gpu:0,shared:4},cpu_pct:50.0,ram_pct:40.1},
+      {pod:'worker-pool-2',        controller:'worker-pool',  node:'aks-nodepool1-12345-2',cost_eur:168,pct:9.2, days_tracked:7,components:{cpu:84, ram:68,pv:8,  network:5, gpu:0,shared:3},cpu_pct:50.0,ram_pct:40.5},
+      {pod:'web-frontend-5c9b-qrz',controller:'web-frontend', node:'aks-nodepool1-12345-0',cost_eur:128,pct:7.0, days_tracked:7,components:{cpu:77, ram:44,pv:0,  network:5, gpu:0,shared:2},cpu_pct:60.2,ram_pct:34.4},
+      {pod:'web-frontend-5c9b-mnp',controller:'web-frontend', node:'aks-nodepool1-12345-1',cost_eur:121,pct:6.6, days_tracked:7,components:{cpu:73, ram:42,pv:0,  network:4, gpu:0,shared:2},cpu_pct:60.3,ram_pct:34.7},
+      {pod:'redis-master-0',       controller:'redis',        node:'aks-nodepool1-12345-2',cost_eur:94, pct:5.2, days_tracked:7,components:{cpu:32, ram:48,pv:10, network:2, gpu:0,shared:2},cpu_pct:34.0,ram_pct:51.1},
+      {pod:'postgres-0',           controller:'postgres',     node:'aks-nodepool1-12345-2',cost_eur:86, pct:4.7, days_tracked:7,components:{cpu:22, ram:50,pv:12, network:1, gpu:0,shared:1},cpu_pct:25.6,ram_pct:58.1},
+      {pod:'celery-beat-6d8c-xvp', controller:'celery-beat',  node:'aks-nodepool1-12345-0',cost_eur:82, pct:4.5, days_tracked:7,components:{cpu:58, ram:20,pv:0,  network:3, gpu:0,shared:1},cpu_pct:70.7,ram_pct:24.4},
+    ],
+    monitoring:[
+      {pod:'prometheus-0',        controller:'prometheus',   node:'aks-nodepool1-12345-2',cost_eur:310,pct:48.4,days_tracked:7,components:{cpu:124,ram:155,pv:25,network:4,gpu:0,shared:2},cpu_pct:40.0,ram_pct:50.0},
+      {pod:'grafana-7d4b-tqpl',   controller:'grafana',      node:'aks-nodepool1-12345-0',cost_eur:185,pct:28.9,days_tracked:7,components:{cpu:74, ram:92, pv:14,network:3,gpu:0,shared:2},cpu_pct:40.0,ram_pct:49.7},
+      {pod:'alertmanager-0',      controller:'alertmanager', node:'aks-nodepool1-12345-1',cost_eur:89, pct:13.9,days_tracked:7,components:{cpu:45, ram:40, pv:2, network:1,gpu:0,shared:1},cpu_pct:50.6,ram_pct:44.9},
+      {pod:'node-exporter-x8m2p', controller:'node-exporter',node:'aks-nodepool1-12345-0',cost_eur:31, pct:4.8, days_tracked:7,components:{cpu:25, ram:5,  pv:0, network:0,gpu:0,shared:1},cpu_pct:80.6,ram_pct:16.1},
+      {pod:'node-exporter-t7n1q', controller:'node-exporter',node:'aks-nodepool1-12345-1',cost_eur:25, pct:3.9, days_tracked:7,components:{cpu:20, ram:4,  pv:0, network:0,gpu:0,shared:1},cpu_pct:80.0,ram_pct:16.0},
+    ],
+  },
+  workloads:{
+    production:[
+      {workload:'worker-pool', namespace:'production',cost_eur:515,pct:28.3,pod_count:3,components:{cpu:258,ram:207,pv:24,network:15,gpu:0},cpu_pct:50.1,ram_pct:40.2},
+      {workload:'api-server',  namespace:'production',cost_eur:380,pct:20.9,pod_count:2,components:{cpu:228,ram:114,pv:0, network:28,gpu:0},cpu_pct:60.0,ram_pct:30.0},
+      {workload:'web-frontend',namespace:'production',cost_eur:249,pct:13.7,pod_count:2,components:{cpu:150,ram:86, pv:0, network:9, gpu:0},cpu_pct:60.2,ram_pct:34.5},
+      {workload:'postgres',    namespace:'production',cost_eur:86, pct:4.7, pod_count:1,components:{cpu:22, ram:50, pv:12,network:1, gpu:0},cpu_pct:25.6,ram_pct:58.1},
+      {workload:'redis',       namespace:'production',cost_eur:94, pct:5.2, pod_count:1,components:{cpu:32, ram:48, pv:10,network:2, gpu:0},cpu_pct:34.0,ram_pct:51.1},
+      {workload:'celery-beat', namespace:'production',cost_eur:82, pct:4.5, pod_count:1,components:{cpu:58, ram:20, pv:0, network:3, gpu:0},cpu_pct:70.7,ram_pct:24.4},
+    ],
+    monitoring:[
+      {workload:'prometheus',   namespace:'monitoring',cost_eur:310,pct:48.4,pod_count:1,components:{cpu:124,ram:155,pv:25,network:4, gpu:0},cpu_pct:40.0,ram_pct:50.0},
+      {workload:'grafana',      namespace:'monitoring',cost_eur:185,pct:28.9,pod_count:1,components:{cpu:74, ram:92, pv:14,network:3, gpu:0},cpu_pct:40.0,ram_pct:49.7},
+      {workload:'alertmanager', namespace:'monitoring',cost_eur:89, pct:13.9,pod_count:1,components:{cpu:45, ram:40, pv:2, network:1, gpu:0},cpu_pct:50.6,ram_pct:44.9},
+      {workload:'node-exporter',namespace:'monitoring',cost_eur:56, pct:8.7, pod_count:2,components:{cpu:45, ram:9,  pv:0, network:0, gpu:0},cpu_pct:80.4,ram_pct:16.1},
+    ],
+  },
+},
 };
+MOCK['aks-staging']={
+  namespaces:[{namespace:'staging',cost_eur:680,pct:59.6},{namespace:'monitoring',cost_eur:280,pct:24.6},{namespace:'kube-system',cost_eur:180,pct:15.8}],
+  components:{cpu:440,ram:380,pv:120,network:74,gpu:0,shared:126,total:1140,cpu_pct:38.6,ram_pct:33.3,pv_pct:10.5,network_pct:6.5,gpu_pct:0},
+  nodes:[{node:'aks-staging-pool-0',cost_eur:680,pct:59.6,pod_count:12,namespace_count:2},{node:'aks-staging-pool-1',cost_eur:460,pct:40.4,pod_count:10,namespace_count:2}],
+  efficiency:[{namespace:'staging',cost_eur:680,cpu_efficiency_pct:42,ram_efficiency_pct:55,avg_efficiency_pct:48.5,waste_estimate_eur:351},{namespace:'monitoring',cost_eur:280,cpu_efficiency_pct:70,ram_efficiency_pct:78,avg_efficiency_pct:74.0,waste_estimate_eur:73}],
+  trend:[{date:'2024-04-01',cost_eur:158},{date:'2024-04-02',cost_eur:162},{date:'2024-04-03',cost_eur:155},{date:'2024-04-04',cost_eur:169},{date:'2024-04-05',cost_eur:157},{date:'2024-04-06',cost_eur:163},{date:'2024-04-07',cost_eur:176}],
+  pods:{staging:[],monitoring:[]},workloads:{staging:[],monitoring:[]},
+};
+MOCK['eks-us']=MOCK['aks-staging'];
+
 const MOCK_CLUSTERS=[
-  {cluster_id:'aks-prod',url:'http://opencost.monitoring.svc:9003',provider:'azure',region:'westeurope',status:'healthy'},
-  {cluster_id:'aks-staging',url:'http://opencost.monitoring.svc:9003',provider:'azure',region:'uksouth',status:'healthy'},
+  {cluster_id:'aks-prod',opencost_url:'http://opencost.monitoring.svc:9003',cloud:'azure',region:'westeurope',enabled:true},
+  {cluster_id:'aks-staging',opencost_url:'http://opencost.monitoring.svc:9003',cloud:'azure',region:'uksouth',enabled:true},
+  {cluster_id:'eks-us',opencost_url:'http://opencost.monitoring.svc:9003',cloud:'aws',region:'us-east-1',enabled:true},
 ];
 
-/* ── State ────────────────────────────────────────────────────────────────── */
-let currentCluster='aks-prod';
-let currentView='namespaces';
-
-function EUR(n){return '\u20ac'+Math.round(n).toLocaleString('en-US');}
-
-/* ── Tab switch ──────────────────────────────────────────────────────────── */
-function vtab(id,btn){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
-  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));
-  document.getElementById('v-'+id).classList.add('on');
-  btn.classList.add('on');
-  currentView=id;
-  if(id==='register')renderClusters();
-}
-
-/* ── Load allocation from API (falls back to mock) ───────────────────────── */
-async function loadAllocation(){
-  currentCluster=document.getElementById('cluster-sel').value;
-  let nsData, wlData;
-
+/* ── API helper ──────────────────────────────────────────────────────────── */
+async function apiGet(path,params={}){
   try{
-    const [r1,r2]=await Promise.all([
-      fetch(`${API_BASE}/api/v1/k8s/${TENANT}/allocation/namespaces?cluster_id=${currentCluster}&days=7`),
-      fetch(`${API_BASE}/api/v1/k8s/${TENANT}/allocation?cluster_id=${currentCluster}&days=7&aggregate=deployment`),
-    ]);
-    if(r1.ok) nsData=await r1.json(); else nsData=null;
-    if(r2.ok) wlData=await r2.json(); else wlData=null;
-  }catch(e){nsData=null;wlData=null;}
-
-  /* fall back to mock when API is not connected */
-  if(!nsData) nsData=MOCK_NS[currentCluster];
-  if(!wlData) wlData={by_workload:MOCK_WL[currentCluster],total_cost_eur:nsData.total_cost_eur};
-
-  renderKPIs(nsData);
-  renderNamespaces(nsData);
-  renderWorkloads(wlData);
+    const url=new URL(`${API_BASE}${path}`,window.location.origin);
+    Object.entries(params).forEach(([k,v])=>v!=null&&url.searchParams.set(k,v));
+    const r=await fetch(url.toString());
+    if(r.ok)return r.json();
+  }catch(_){}return null;
 }
 
-function renderKPIs(d){
-  document.getElementById('kpi-total').textContent=EUR(d.total_cost_eur||0);
-  document.getElementById('kpi-sub').textContent=`7-day window \u00b7 ${currentCluster}`;
-  const ns=d.namespaces||[];
-  document.getElementById('kpi-ns').textContent=ns.length;
-  if(ns.length){
-    document.getElementById('kpi-top-ns').textContent=ns[0].namespace;
-    document.getElementById('kpi-top-pct').textContent=`${ns[0].pct.toFixed(1)}% of cluster spend`;
+/* ── Cluster / window change ─────────────────────────────────────────────── */
+function onClusterChange(){
+  state.cluster=document.getElementById('cluster-sel').value;
+  state.days=+document.getElementById('days-sel').value;
+  state.ns=null; loadAll();
+}
+
+async function loadAll(){
+  await Promise.all([loadNamespaces(),loadComponents(),loadEfficiency(),loadNodes(),loadTrends()]);
+  populateNsSelectors();loadPods();loadWorkloads();
+}
+
+/* ── Namespaces ──────────────────────────────────────────────────────────── */
+async function loadNamespaces(){
+  const data=await apiGet(`/api/v1/k8s/${TENANT}/allocation/namespaces`,{cluster_id:state.cluster,days:state.days});
+  const ns=data?.namespaces??MOCK[state.cluster].namespaces;
+  const total=data?.total_cost_eur??ns.reduce((s,r)=>s+r.cost_eur,0);
+  state.namespaces=ns;
+  document.getElementById('k-total').textContent=EUR(total);
+  document.getElementById('k-period').textContent=`${state.days}d · ${state.cluster}`;
+  renderNamespaces(ns);
+}
+function renderNamespaces(rows){
+  const comp=MOCK[state.cluster].components;
+  document.getElementById('ns-tbody').innerHTML=rows.map(r=>{
+    const cpu=r.cost_eur*comp.cpu_pct/100,ram=r.cost_eur*comp.ram_pct/100,
+          pv=r.cost_eur*comp.pv_pct/100,net=r.cost_eur*comp.network_pct/100;
+    return`<tr class="clickable" onclick="drillNamespace('${r.namespace}')">
+      <td style="font-family:var(--mono);font-size:12px">${r.namespace}</td>
+      <td style="font-family:var(--mono);color:var(--teal)">${EUR(r.cost_eur)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--txt2)">${r.pct.toFixed(1)}%</td>
+      <td style="font-family:var(--mono);font-size:10px">
+        <span style="color:var(--teal)">${EUR(cpu)}</span> ·
+        <span style="color:var(--purple)">${EUR(ram)}</span> ·
+        <span style="color:var(--amber)">${EUR(pv)}</span> ·
+        <span style="color:var(--blue)">${EUR(net)}</span>
+      </td>
+      <td><div class="comp-stack" title="CPU/RAM/PV/Net">
+        <div class="cs-cpu" style="flex:${cpu}"></div><div class="cs-ram" style="flex:${ram}"></div>
+        <div class="cs-pv"  style="flex:${pv||.01}"></div><div class="cs-net" style="flex:${net||.01}"></div>
+      </div></td>
+      <td><a style="font-family:var(--mono);font-size:10px;color:var(--teal);cursor:pointer" onclick="event.stopPropagation();drillNamespace('${r.namespace}')">→ pods</a></td>
+    </tr>`;}).join('');
+}
+function drillNamespace(ns){
+  state.ns=ns;
+  document.getElementById('pod-ns-sel').value=ns;
+  document.getElementById('wl-ns-sel').value=ns;
+  vtabDirect('pods');loadPods();
+}
+
+/* ── Components (KPIs) ───────────────────────────────────────────────────── */
+async function loadComponents(){
+  const data=await apiGet(`/api/v1/k8s/${TENANT}/allocation/components`,{cluster_id:state.cluster,days:state.days});
+  const comp=data??MOCK[state.cluster].components;
+  document.getElementById('k-cpu').textContent=EUR(comp.cpu);
+  document.getElementById('k-cpu-pct').textContent=`${comp.cpu_pct}% of spend`;
+  document.getElementById('k-ram').textContent=EUR(comp.ram);
+  document.getElementById('k-ram-pct').textContent=`${comp.ram_pct}% of spend`;
+  document.getElementById('k-pv').textContent=EUR(comp.pv);
+  document.getElementById('k-pv-pct').textContent=`${comp.pv_pct}% of spend`;
+  document.getElementById('k-net').textContent=EUR(comp.network);
+  document.getElementById('k-net-pct').textContent=`${comp.network_pct}% of spend`;
+  renderCompBars('comp-bars-eff',comp);
+}
+function renderCompBars(id,comp){
+  const items=[
+    {label:'CPU',    val:comp.cpu,     pct:comp.cpu_pct,     color:'var(--teal)'},
+    {label:'RAM',    val:comp.ram,     pct:comp.ram_pct,     color:'var(--purple)'},
+    {label:'Storage',val:comp.pv,      pct:comp.pv_pct,      color:'var(--amber)'},
+    {label:'Network',val:comp.network, pct:comp.network_pct, color:'var(--blue)'},
+    {label:'GPU',    val:comp.gpu||0,  pct:comp.gpu_pct||0,  color:'var(--orange)'},
+  ];
+  document.getElementById(id).innerHTML=items.map(i=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--txt2);width:64px">${i.label}</span>
+      <div style="flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
+        <div style="width:${i.pct}%;height:100%;background:${i.color};border-radius:4px"></div></div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--txt2);width:50px;text-align:right">${EUR(i.val)}</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--txt3);width:36px;text-align:right">${i.pct.toFixed(1)}%</span>
+    </div>`).join('');
+}
+
+/* ── Pods ────────────────────────────────────────────────────────────────── */
+async function loadPods(){
+  const ns=document.getElementById('pod-ns-sel').value||state.ns;
+  state.ns=ns||null;
+  const bc=document.getElementById('pod-breadcrumb');
+  if(ns){bc.style.display='flex';document.getElementById('pod-ns-label').textContent=ns;}
+  else bc.style.display='none';
+  let pods;
+  if(ns){
+    const data=await apiGet(`/api/v1/k8s/${TENANT}/allocation/pods/${ns}`,{cluster_id:state.cluster,days:state.days});
+    pods=data?.pods??(MOCK[state.cluster].pods?.[ns]??[]);
+  }else{pods=Object.values(MOCK[state.cluster].pods||{}).flat();}
+  state.pods=pods; renderPods(pods,ns);
+}
+function renderPods(pods,ns){
+  if(!pods.length){
+    document.getElementById('pod-tbody').innerHTML=`<tr><td colspan="10" style="color:var(--txt3);text-align:center;padding:20px">${ns?`No pod data for namespace "${ns}"`:'Select a namespace to drill into pod detail'}</td></tr>`;
+    document.getElementById('pod-summary-cards').innerHTML=''; return;
   }
+  const total=pods.reduce((s,p)=>s+p.cost_eur,0);
+  document.getElementById('pod-summary-cards').innerHTML=`
+    <div class="sum-card"><div class="sc-label">Pods</div><div class="sc-val" style="color:var(--teal)">${pods.length}</div></div>
+    <div class="sum-card"><div class="sc-label">Namespace total</div><div class="sc-val" style="color:var(--teal)">${EUR(total)}</div></div>
+    <div class="sum-card"><div class="sc-label">CPU cost</div><div class="sc-val" style="color:var(--purple)">${EUR(pods.reduce((s,p)=>s+p.components.cpu,0))}</div></div>
+    <div class="sum-card"><div class="sc-label">RAM cost</div><div class="sc-val" style="color:var(--blue)">${EUR(pods.reduce((s,p)=>s+p.components.ram,0))}</div></div>
+    <div class="sum-card"><div class="sc-label">Storage/PV</div><div class="sc-val" style="color:var(--amber)">${EUR(pods.reduce((s,p)=>s+p.components.pv,0))}</div></div>
+  `;
+  const maxCost=pods[0].cost_eur||1;
+  document.getElementById('pod-tbody').innerHTML=pods.map(p=>{
+    const t=p.cost_eur||1,c=p.components;
+    return`<tr>
+      <td style="font-family:var(--mono);font-size:11px">${p.pod}</td>
+      <td class="mono">${p.controller||'—'}</td>
+      <td class="mono" style="font-size:10px">${p.node||'—'}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--teal)">${EUR(p.cost_eur)}</td>
+      <td>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--teal)">${EUR(c.cpu)}</span>
+        <div class="bar-bg" style="width:50px"><div class="bar-fill bar-teal" style="width:${p.cpu_pct}%"></div></div>
+      </td>
+      <td>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--purple)">${EUR(c.ram)}</span>
+        <div class="bar-bg" style="width:50px"><div class="bar-fill bar-purple" style="width:${p.ram_pct}%"></div></div>
+      </td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--amber)">${EUR(c.pv)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--blue)">${EUR(c.network)}</td>
+      <td><div class="comp-stack" style="width:100px" title="CPU/RAM/PV/Net/GPU">
+        <div class="cs-cpu" style="flex:${c.cpu}"></div><div class="cs-ram" style="flex:${c.ram}"></div>
+        <div class="cs-pv"  style="flex:${c.pv||.01}"></div><div class="cs-net" style="flex:${c.network||.01}"></div>
+        <div class="cs-gpu" style="flex:${c.gpu||.01}"></div>
+      </div></td>
+      <td>
+        <div class="bar-bg"><div class="bar-fill bar-teal" style="width:${Math.round(p.cost_eur/maxCost*100)}%"></div></div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt2);margin-left:4px">${p.pct.toFixed(1)}%</span>
+      </td>
+    </tr>`;}).join('');
 }
 
-function renderNamespaces(d){
-  const rows=d.namespaces||[];
+/* ── Workloads ───────────────────────────────────────────────────────────── */
+async function loadWorkloads(){
+  const ns=document.getElementById('wl-ns-sel').value;
+  let wl;
+  if(ns){
+    const data=await apiGet(`/api/v1/k8s/${TENANT}/allocation/workloads/${ns}`,{cluster_id:state.cluster,days:state.days});
+    wl=data?.workloads??(MOCK[state.cluster].workloads?.[ns]??[]);
+  }else wl=Object.values(MOCK[state.cluster].workloads||{}).flat();
+  state.workloads=wl; renderWorkloads(wl);
+}
+function renderWorkloads(rows){
   const max=rows[0]?.cost_eur||1;
-  document.getElementById('ns-tbody').innerHTML=rows.map(r=>`<tr>
-    <td class="mono">${r.namespace}</td>
-    <td style="font-family:var(--mono);font-size:12px;color:var(--teal)">${EUR(r.cost_eur)}</td>
-    <td style="font-family:var(--mono);font-size:11px;color:var(--txt2)">${r.pct.toFixed(1)}%</td>
-    <td><span class="bar-wrap"><i class="bar-fill" style="width:${Math.round(r.cost_eur/max*100)}%"></i></span></td>
-    <td><span class="badge healthy">active</span></td>
-  </tr>`).join('');
+  document.getElementById('wl-tbody').innerHTML=rows.map(r=>{
+    const c=r.components;
+    return`<tr>
+      <td style="font-family:var(--mono);font-size:12px">${r.workload}</td>
+      <td class="mono">${r.namespace}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--txt2)">${r.pod_count}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--teal)">${EUR(r.cost_eur)}</td>
+      <td>
+        <div class="bar-bg"><div class="bar-fill bar-teal" style="width:${r.cpu_pct}%"></div></div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt2);margin-left:4px">${r.cpu_pct.toFixed(0)}%</span>
+      </td>
+      <td>
+        <div class="bar-bg"><div class="bar-fill bar-purple" style="width:${r.ram_pct}%"></div></div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt2);margin-left:4px">${r.ram_pct.toFixed(0)}%</span>
+      </td>
+      <td><div class="comp-stack" style="width:100px">
+        <div class="cs-cpu" style="flex:${c.cpu}"></div><div class="cs-ram" style="flex:${c.ram}"></div>
+        <div class="cs-pv"  style="flex:${c.pv||.01}"></div><div class="cs-net" style="flex:${c.network||.01}"></div>
+      </div></td>
+      <td>
+        <div class="bar-bg"><div class="bar-fill bar-teal" style="width:${Math.round(r.cost_eur/max*100)}%"></div></div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt2);margin-left:4px">${r.pct.toFixed(1)}%</span>
+      </td>
+    </tr>`;}).join('');
 }
 
-function renderWorkloads(d){
-  const rows=d.by_workload||[];
+/* ── Nodes ───────────────────────────────────────────────────────────────── */
+async function loadNodes(){
+  const data=await apiGet(`/api/v1/k8s/${TENANT}/allocation/nodes`,{cluster_id:state.cluster,days:state.days});
+  const nodes=data?.nodes??MOCK[state.cluster].nodes;
+  state.nodes=nodes; renderNodes(nodes);
+}
+function renderNodes(rows){
   const max=rows[0]?.cost_eur||1;
-  document.getElementById('wl-tbody').innerHTML=rows.map(r=>`<tr>
-    <td class="mono">${r.workload}</td>
-    <td class="mono" style="color:var(--txt2)">${r.namespace}</td>
-    <td style="font-family:var(--mono);font-size:12px;color:var(--teal)">${EUR(r.cost_eur)}</td>
-    <td style="font-family:var(--mono);font-size:11px;color:var(--txt2)">${r.pct.toFixed(1)}%</td>
-    <td><span class="bar-wrap"><i class="bar-fill" style="width:${Math.round(r.cost_eur/max*100)}%"></i></span></td>
-  </tr>`).join('');
+  document.getElementById('node-tbody').innerHTML=rows.map(r=>{
+    const cpp=r.pod_count>0?r.cost_eur/r.pod_count:0;
+    return`<tr>
+      <td style="font-family:var(--mono);font-size:11px">${r.node}</td>
+      <td style="font-family:var(--mono);color:var(--teal)">${EUR(r.cost_eur)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--txt2)">${r.pct.toFixed(1)}%</td>
+      <td style="font-family:var(--mono);font-size:12px">${r.pod_count}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--txt2)">${r.namespace_count||'—'}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--txt2)">${EUR(cpp)}</td>
+      <td><div class="bar-bg" style="width:110px"><div class="bar-fill bar-teal" style="width:${Math.round(r.cost_eur/max*100)}%"></div></div></td>
+    </tr>`;}).join('');
 }
 
-function renderClusters(){
-  document.getElementById('clusters-tbody').innerHTML=MOCK_CLUSTERS.map(c=>`<tr>
-    <td class="mono">${c.cluster_id}</td>
-    <td class="mono" style="color:var(--txt3);font-size:10px">${c.url}</td>
-    <td class="mono">${c.provider}</td>
-    <td class="mono">${c.region}</td>
-    <td><span class="badge healthy">${c.status}</span></td>
-  </tr>`).join('');
+/* ── Efficiency ──────────────────────────────────────────────────────────── */
+async function loadEfficiency(){
+  const data=await apiGet(`/api/v1/k8s/${TENANT}/allocation/efficiency`,{cluster_id:state.cluster,days:state.days});
+  const eff=data?.namespaces??MOCK[state.cluster].efficiency;
+  const avg=data?.cluster_avg_efficiency_pct??(eff.reduce((s,e)=>s+e.avg_efficiency_pct,0)/eff.length||0);
+  const waste=data?.total_waste_estimate_eur??eff.reduce((s,e)=>s+e.waste_estimate_eur,0);
+  state.efficiency=eff;
+  document.getElementById('k-eff').textContent=avg.toFixed(1)+'%';
+  document.getElementById('k-waste').textContent=EUR(waste);
+  renderEfficiency(eff,avg,waste);
+}
+function renderEfficiency(rows,avg,waste){
+  document.getElementById('eff-summary').innerHTML=`
+    <div class="sum-card"><div class="sc-label">Cluster avg eff</div>
+      <div class="sc-val" style="color:${avg>=70?'var(--green)':avg>=40?'var(--amber)':'var(--red)'}">
+        ${avg.toFixed(1)}%</div></div>
+    <div class="sum-card"><div class="sc-label">Total waste estimate</div><div class="sc-val" style="color:var(--red)">${EUR(waste)}</div></div>
+    <div class="sum-card"><div class="sc-label">Namespaces</div><div class="sc-val" style="color:var(--teal)">${rows.length}</div></div>
+    <div class="sum-card"><div class="sc-label">&lt;40% efficient</div><div class="sc-val" style="color:var(--amber)">${rows.filter(e=>e.avg_efficiency_pct<40).length}</div></div>
+  `;
+  document.getElementById('eff-tbody').innerHTML=rows.map(e=>{
+    const rec=e.avg_efficiency_pct>=70?'Right-sized ✓':e.avg_efficiency_pct>=40?'Review requests':'Over-provisioned — reduce requests';
+    return`<tr>
+      <td style="font-family:var(--mono);font-size:12px">${e.namespace}</td>
+      <td>${effRing(e.avg_efficiency_pct)}</td>
+      <td><div class="bar-bg" style="width:80px"><div class="bar-fill" style="width:${e.cpu_efficiency_pct}%;background:${e.cpu_efficiency_pct>=70?'var(--green)':e.cpu_efficiency_pct>=40?'var(--amber)':'var(--red)'}"></div></div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt2);margin-left:4px">${e.cpu_efficiency_pct.toFixed(0)}%</span></td>
+      <td><div class="bar-bg" style="width:80px"><div class="bar-fill" style="width:${e.ram_efficiency_pct}%;background:${e.ram_efficiency_pct>=70?'var(--green)':e.ram_efficiency_pct>=40?'var(--amber)':'var(--red)'}"></div></div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt2);margin-left:4px">${e.ram_efficiency_pct.toFixed(0)}%</span></td>
+      <td>${badge(e.avg_efficiency_pct)}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--teal)">${EUR(e.cost_eur)}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--red)">${EUR(e.waste_estimate_eur)}</td>
+      <td style="font-size:11px;color:var(--txt2)">${rec}</td>
+    </tr>`;}).join('');
+  document.getElementById('waste-top-tbody').innerHTML=
+    [...rows].sort((a,b)=>b.waste_estimate_eur-a.waste_estimate_eur).slice(0,5)
+    .map(e=>`<tr><td style="font-family:var(--mono);font-size:11px">${e.namespace}</td>
+      <td style="font-family:var(--mono);color:var(--red)">${EUR(e.waste_estimate_eur)}</td>
+      <td>${badge(e.avg_efficiency_pct)}</td></tr>`).join('');
 }
 
-/* ── Register cluster ─────────────────────────────────────────────────────── */
+/* ── Trends ──────────────────────────────────────────────────────────────── */
+async function loadTrends(){
+  const ns=document.getElementById('trend-ns-sel')?.value||null;
+  const data=await apiGet(`/api/v1/k8s/${TENANT}/allocation/trends`,{cluster_id:state.cluster,days:state.days,namespace:ns||undefined});
+  const trend=data?.trend??MOCK[state.cluster].trend;
+  state.trend=trend; renderTrendSVG(trend); renderSparklines();
+}
+function renderTrendSVG(data){
+  if(!data.length)return;
+  const svg=document.getElementById('trend-svg');
+  const W=svg.parentElement.clientWidth||800,H=200;
+  const PL=48,PR=20,PT=20,PB=24,PW=W-PL-PR,PHH=H-PT-PB;
+  const vals=data.map(d=>d.cost_eur);
+  const minV=Math.min(...vals)*.9,maxV=Math.max(...vals)*1.05;
+  const xS=PW/Math.max(data.length-1,1);
+  const yS=v=>PT+PHH-(v-minV)/(maxV-minV)*PHH;
+  const pts=data.map((d,i)=>[PL+i*xS,yS(d.cost_eur)]);
+  const lp=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const ap=lp+`L${(PL+PW).toFixed(1)},${(PT+PHH)} L${PL},${(PT+PHH)} Z`;
+  const ticks=Array.from({length:5},(_,i)=>minV+(maxV-minV)*i/4);
+  const ticksSVG=ticks.map(v=>`<line x1="${PL}" y1="${yS(v).toFixed(1)}" x2="${PL+PW}" y2="${yS(v).toFixed(1)}" class="trend-axis"/><text x="${PL-6}" y="${(yS(v)+3).toFixed(1)}" class="trend-label" text-anchor="end">${EUR(v)}</text>`).join('');
+  const dots=pts.map((p,i)=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="var(--teal)" opacity=".85" style="cursor:crosshair" onmouseover="document.getElementById('trend-tooltip').textContent='${data[i].date}: ${EUR(data[i].cost_eur)}'" onmouseout="document.getElementById('trend-tooltip').textContent=''"/>`).join('');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML=`<defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2dd4bf" stop-opacity=".35"/><stop offset="100%" stop-color="#2dd4bf" stop-opacity="0"/></linearGradient></defs>${ticksSVG}<path d="${ap}" class="trend-area"/><path d="${lp}" class="trend-line"/>${dots}`;
+  const step=Math.ceil(data.length/7);
+  document.getElementById('trend-x-labels').innerHTML=data.filter((_,i)=>i%step===0||i===data.length-1).map(d=>`<span>${d.date.slice(5)}</span>`).join('');
+}
+function renderSparklines(){
+  const ns_list=state.namespaces.length?state.namespaces:MOCK[state.cluster].namespaces;
+  const trend=MOCK[state.cluster].trend;
+  document.getElementById('sparkline-grid').innerHTML=ns_list.map(ns=>{
+    const frac=ns.pct/100;
+    const v=trend.map(d=>d.cost_eur*frac);
+    const max=Math.max(...v)||1,min=Math.min(...v)*.9;
+    const W=180,H=40,xS=W/(v.length-1||1);
+    const line=v.map((val,i)=>(i?'L':'M')+(i*xS).toFixed(1)+','+(H-(val-min)/(max-min)*H).toFixed(1)).join(' ');
+    return`<div style="background:var(--panel2);border:1px solid var(--lineSoft);border-radius:8px;padding:12px;cursor:pointer" onclick="drillNsTrend('${ns.namespace}')">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-family:var(--mono);font-size:11px">${ns.namespace}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--teal)">${EUR(ns.cost_eur)}</span>
+      </div>
+      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;width:100%">
+        <path d="${line}" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-linejoin="round"/>
+        <circle cx="${((v.length-1)*xS).toFixed(1)}" cy="${(H-(v[v.length-1]-min)/(max-min)*H).toFixed(1)}" r="3" fill="var(--teal)"/>
+      </svg>
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:4px">
+        <span>${trend[0]?.date.slice(5)||''}</span><span>${trend[trend.length-1]?.date.slice(5)||''}</span>
+      </div></div>`;}).join('');
+}
+function drillNsTrend(ns){document.getElementById('trend-ns-sel').value=ns;loadTrends();}
+
+/* ── Register ────────────────────────────────────────────────────────────── */
 async function registerCluster(){
   const name=document.getElementById('c-name').value.trim();
   const url=document.getElementById('c-url').value.trim();
-  const provider=document.getElementById('c-provider').value;
-  const region=document.getElementById('c-region').value.trim();
   if(!name||!url){document.getElementById('reg-note').textContent='Cluster name and URL are required.';return;}
-
-  document.getElementById('reg-note').textContent='Registering\u2026';
+  const cloud=document.getElementById('c-provider').value;
+  const region=document.getElementById('c-region').value.trim();
+  document.getElementById('reg-note').textContent='Registering…';
   try{
-    const r=await fetch(`${API_BASE}/api/v1/k8s/${TENANT}/clusters`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({cluster_id:name,opencost_url:url,provider,region})
-    });
-    if(r.ok){
-      const d=await r.json();
-      document.getElementById('reg-note').textContent=`\u2713 Registered "${d.cluster_id}" (status: ${d.status}).`;
-      MOCK_CLUSTERS.push({cluster_id:d.cluster_id,url,provider,region,status:'healthy'});
-      renderClusters();
-      document.getElementById('kpi-clusters').textContent=MOCK_CLUSTERS.length;
-    }else{
-      document.getElementById('reg-note').textContent=`API error HTTP ${r.status} \u2014 offline demo mode.`;
-      MOCK_CLUSTERS.push({cluster_id:name,url,provider,region,status:'healthy'});
-      renderClusters();
-    }
-  }catch(e){
-    document.getElementById('reg-note').textContent=`Offline demo \u2014 registered "${name}" locally. Wires to POST /api/v1/k8s/${TENANT}/clusters.`;
-    MOCK_CLUSTERS.push({cluster_id:name,url,provider,region,status:'healthy'});
-    renderClusters();
-    document.getElementById('kpi-clusters').textContent=MOCK_CLUSTERS.length;
-  }
+    const r=await fetch(`${API_BASE}/api/v1/k8s/${TENANT}/clusters`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cluster_id:name,opencost_url:url,cloud,region})});
+    if(r.ok){document.getElementById('reg-note').textContent=`✓ Cluster "${name}" registered.`;renderClusters([...MOCK_CLUSTERS,{cluster_id:name,opencost_url:url,cloud,region,enabled:true}]);}
+    else{const e=await r.json();document.getElementById('reg-note').textContent=`Error: ${e.detail?.message||r.status}`;}
+  }catch(_){document.getElementById('reg-note').textContent=`Demo: "${name}" would be saved via POST /api/v1/k8s/${TENANT}/clusters`;}
+}
+function renderClusters(clusters=MOCK_CLUSTERS){
+  const icon=c=>c.cloud==='azure'?'⎈':c.cloud==='aws'?'⬡':'◈';
+  document.getElementById('clusters-tbody').innerHTML=clusters.map(c=>`<tr>
+    <td style="font-family:var(--mono);font-size:12px">${c.cluster_id}</td>
+    <td class="mono" style="font-size:10px;color:var(--txt3)">${c.opencost_url||'—'}</td>
+    <td style="font-family:var(--mono);font-size:11px">${icon(c)} ${c.cloud}</td>
+    <td class="mono">${c.region||'—'}</td>
+    <td><span class="badge ${c.enabled?'ok':'warn'}">${c.enabled?'enabled':'disabled'}</span></td>
+  </tr>`).join('');
 }
 
-/* ── Active nav ─────────────────────────────────────────────────────────── */
-document.querySelectorAll('.snav-link').forEach(a=>{
-  if(location.pathname.endsWith(a.getAttribute('href')))a.classList.add('active');
-});
+/* ── NS selectors ────────────────────────────────────────────────────────── */
+function populateNsSelectors(){
+  const ns=state.namespaces.length?state.namespaces:MOCK[state.cluster].namespaces;
+  const opts=['<option value="">All namespaces</option>',...ns.map(n=>`<option value="${n.namespace}">${n.namespace}</option>`)].join('');
+  document.getElementById('pod-ns-sel').innerHTML=opts;
+  document.getElementById('wl-ns-sel').innerHTML=opts.replace('All namespaces','All');
+  document.getElementById('trend-ns-sel').innerHTML='<option value="">All (cluster)</option>'+ns.map(n=>`<option value="${n.namespace}">${n.namespace}</option>`).join('');
+  if(state.ns){document.getElementById('pod-ns-sel').value=state.ns;document.getElementById('wl-ns-sel').value=state.ns;}
+}
 
-loadAllocation();
+/* ── Tab switching ───────────────────────────────────────────────────────── */
+function vtab(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.tab-bar button').forEach(b=>b.classList.remove('on'));
+  document.getElementById('v-'+id).classList.add('on');btn.classList.add('on');
+  if(id==='register')renderClusters();
+  if(id==='trends')setTimeout(()=>renderTrendSVG(state.trend),50);
+}
+function vtabDirect(id){
+  const btn=Array.from(document.querySelectorAll('.tab-bar button')).find(b=>b.getAttribute('onclick')?.includes("'"+id+"'"));
+  if(btn)vtab(id,btn);
+}
+
+/* ── Init ────────────────────────────────────────────────────────────────── */
+window.addEventListener('load',()=>loadAll());
+window.addEventListener('resize',()=>{if(state.trend.length)renderTrendSVG(state.trend);});
 </script>
 </body>
 </html>

@@ -3,6 +3,7 @@ CloudLens FastAPI application entry point.
 Wires up routers, middleware, lifespan events, and global exception handlers.
 """
 from __future__ import annotations
+import asyncio
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -34,6 +35,18 @@ from app.routers.fx import router as fx_router
 from app.routers.k8s import router as k8s_router, admin_router as k8s_admin_router
 from app.routers.unit_economics import router as unit_economics_router
 from app.routers.ai_analyst import router as ai_analyst_router
+from app.routers.stream import router as stream_router
+from app.routers.policies import router as policies_router, admin_router as policies_admin_router
+from app.routers.hierarchy import router as hierarchy_router
+from app.routers.commitment_advisor import router as commitment_advisor_router
+from app.routers.commitment_purchaser import router as commitment_purchaser_router
+from app.routers.context_map import router as context_map_router
+from app.routers.escalation import router as escalation_router
+from app.routers.maturity import router as maturity_router
+from app.routers.nl_query import router as nl_query_router
+from app.routers.onboarding import router as onboarding_router
+from app.routers.cost_estimate import router as cost_estimate_router
+from app.routers.bots import router as bots_router
 from app.services import cosmos, blob, keyvault
 
 log = get_logger(__name__)
@@ -57,8 +70,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         log.info("fx.cache_warmed", currencies=settings.fx_prefetch_list)
     except Exception as exc:
         log.warning("fx.cache_warm_failed", error=str(exc))
+    # Start the sub-hourly realtime ingest scheduler
+    _scheduler_task = None
+    if settings.realtime_poll_enabled:
+        from app.services.realtime_ingest import run_scheduler
+        _scheduler_task = asyncio.create_task(
+            run_scheduler(settings.realtime_poll_interval_minutes)
+        )
+        log.info(
+            "realtime_ingest.scheduler_registered",
+            interval_minutes=settings.realtime_poll_interval_minutes,
+        )
     yield
     # Graceful shutdown
+    if _scheduler_task is not None:
+        _scheduler_task.cancel()
+        try:
+            await _scheduler_task
+        except asyncio.CancelledError:
+            pass
     log.info("app.shutdown")
     await cosmos.close()
     await blob.close()
@@ -134,8 +164,9 @@ def create_app() -> FastAPI:
         )
 
     # ── Routers ─────────────────────────────────────────────────────────────
-    for r in [tenants_router, costs_router, waste_router, reports_router, forecast_router, insights_router, budgets_router, multicloud_router, labels_router, drilldown_router, alerts_router, optimization_router, admin_router, ingest_router, health_router, fx_router, k8s_router, k8s_admin_router, unit_economics_router, ai_analyst_router]:
+    for r in [tenants_router, costs_router, waste_router, reports_router, forecast_router, insights_router, budgets_router, multicloud_router, labels_router, drilldown_router, alerts_router, optimization_router, admin_router, ingest_router, health_router, fx_router, k8s_router, k8s_admin_router, unit_economics_router, ai_analyst_router, stream_router, policies_router, policies_admin_router, hierarchy_router, commitment_advisor_router, commitment_purchaser_router, escalation_router, context_map_router, maturity_router, nl_query_router, onboarding_router, cost_estimate_router]:
         app.include_router(r)
+    app.include_router(bots_router)
 
     return app
 

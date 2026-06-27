@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Commitment Advisor</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--purpleDim:#2e2548;
+--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1120px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--tealDim);color:var(--teal)}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px;margin-bottom:14px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:11px;padding:13px 15px}
+.kpi .l{font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-family:var(--mono)}
+.kpi .v{font-family:var(--mono);font-size:22px;font-weight:700}
+.kpi .s{font-size:10.5px;color:var(--txt3);margin-top:3px}
+.kpi.teal .v{color:var(--teal)}.kpi.amber .v{color:var(--amber)}.kpi.green .v{color:var(--green)}.kpi.purple .v{color:var(--purple)}
+.adv-row{display:grid;grid-template-columns:1fr auto;gap:16px;padding:14px 0;border-bottom:1px solid var(--lineSoft);align-items:start}
+.adv-row:last-child{border-bottom:0}
+.adv-row .title{font-family:var(--mono);font-size:13.5px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.adv-row .sub{font-size:12px;color:var(--txt3);line-height:1.55}
+.adv-row .rationale{font-size:12px;color:var(--txt2);margin-top:6px;line-height:1.55}
+.badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:5px}
+.badge.commit{background:var(--tealDim);color:var(--teal)}
+.badge.wait{background:var(--amberDim);color:var(--amber)}
+.badge.high{background:var(--tealDim);color:var(--teal)}
+.badge.medium{background:var(--amberDim);color:var(--amber)}
+.badge.low{background:var(--redDim);color:var(--red)}
+.saving{text-align:right}
+.saving .amt{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--teal)}
+.saving .horizon{font-size:10.5px;color:var(--txt3);font-family:var(--mono)}
+.stability-bar{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:var(--txt3)}
+.stability-bar .track{flex:1;height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.stability-bar .fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),var(--amber) 40%,var(--teal))}
+.form-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px;margin-bottom:16px;flex-wrap:wrap}
+.form-bar label{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.form-bar input,.form-bar select{background:var(--bg2);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;padding:5px 10px;font-family:var(--mono);outline:none}
+.form-bar input:focus,.form-bar select:focus{border-color:var(--teal)}
+.btn{background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);font-family:var(--mono);font-size:11px;padding:7px 14px;border-radius:7px;cursor:pointer}
+.btn:hover{background:var(--teal);color:#0d1218}
+.note{font-size:11px;color:var(--txt3);line-height:1.6;margin-top:8px}
+.cloud-badge{font-family:var(--mono);font-size:9px;padding:1px 7px;border-radius:4px;font-weight:600}
+.cloud-azure{background:#0c2a3c;color:#4d9fff}
+.cloud-aws{background:#2a1f00;color:#ff9900}
+.cloud-gcp{background:#2a0000;color:#ea4335}
+.empty-state{text-align:center;padding:40px;color:var(--txt3);font-family:var(--mono);font-size:13px}
+#loading{display:none;text-align:center;padding:30px;color:var(--txt3);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
+  <a href="forecast.html" class="snav-link">∿ Forecast</a>
+  <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
+  <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="commitment_advisor.html" class="snav-link active">◈ Commitments</a>
+  <a href="maturity.html" class="snav-link">◬ Maturity</a>
+  <a href="context_mapper.html" class="snav-link">⊛ Context</a>
+  <a href="nl_query.html" class="snav-link">✦ Ask AI</a>
+  <a href="onboarding.html" class="snav-link">⊕ Onboarding</a>
+  <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+
+<div class="head">
+  <h1><span class="dot"></span> Commitment Advisor</h1>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <select id="tenant-sel" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:5px 10px;outline:none" onchange="loadAdvisories()">
+      <option value="t-acme">t-acme (Acme Corp)</option>
+      <option value="t-1">t-1 (Demo)</option>
+    </select>
+    <button class="btn" onclick="loadAdvisories()">↻ Refresh</button>
+  </div>
+</div>
+
+<div id="loading">⏳ Analysing 90 days of spend...</div>
+
+<!-- KPI summary strip -->
+<div class="kpi-grid" id="kpi-strip">
+  <div class="kpi teal"><div class="l">On-demand Eligible</div><div class="v" id="kpi-eligible">—</div><div class="s">commitment-eligible spend</div></div>
+  <div class="kpi green"><div class="l">Est. Monthly Saving</div><div class="v" id="kpi-saving">—</div><div class="s">if all advisories taken</div></div>
+  <div class="kpi purple"><div class="l">Ready to Commit</div><div class="v" id="kpi-ready">—</div><div class="s">high/medium confidence</div></div>
+  <div class="kpi amber"><div class="l">Wait / Monitor</div><div class="v" id="kpi-wait">—</div><div class="s">volatile or growing</div></div>
+</div>
+
+<!-- Advisories list -->
+<div class="card">
+  <h2>◈ Advisories — ranked by estimated saving</h2>
+  <div id="advisory-list"><div class="empty-state">Click Refresh to load advisories</div></div>
+</div>
+
+<!-- Info card -->
+<div class="card">
+  <h2>ℹ How it works</h2>
+  <p style="font-size:13px;color:var(--txt2);line-height:1.65">
+    CloudLens analyses 90 days of normalised FOCUS records per service and cloud. It fits a
+    <strong>Holt-Winters triple exponential smoothing</strong> model to measure forecast
+    stability (MAPE), detects trend direction, and identifies weekly calendar peaks.
+    A <em>confidence score</em> (0–1) combines stability, trend risk, and any planned events
+    you have declared. Services with confidence ≥ 0.70 are recommended for immediate
+    commitment; others are flagged to wait until usage stabilises.
+  </p>
+  <p class="note" style="margin-top:10px">
+    Discount rates shown are conservative no-upfront estimates:
+    Azure Savings Plans (35%/52%), AWS Savings Plans (27%/38%/57%), GCP Committed Use (37%/55%).
+  </p>
+</div>
+</div><!-- /wrap -->
+
+<script>
+const API = '';   // same origin — set to 'http://localhost:8000' for local dev
+
+function fmt(n){ return n >= 1000 ? '€'+(n/1000).toFixed(1)+'k' : '€'+n.toFixed(0); }
+function confColor(label){
+  if(label==='high')   return 'var(--teal)';
+  if(label==='medium') return 'var(--amber)';
+  return 'var(--red)';
+}
+
+async function loadAdvisories(){
+  const tid = document.getElementById('tenant-sel').value;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('advisory-list').innerHTML = '';
+  try{
+    const r = await fetch(`${API}/api/v1/commitment-advisor/${tid}?lookback_days=90`, {
+      headers:{'X-API-Key':'demo-key'}
+    });
+    if(!r.ok) throw new Error(r.statusText);
+    const data = await r.json();
+    renderSummary(data);
+    renderAdvisories(data.advisories || []);
+  } catch(e){
+    renderDemo();
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function renderSummary(d){
+  document.getElementById('kpi-eligible').textContent = fmt(d.total_on_demand_eligible_eur||0);
+  document.getElementById('kpi-saving').textContent   = fmt(d.total_estimated_saving_eur||0);
+  const advs = d.advisories||[];
+  document.getElementById('kpi-ready').textContent = advs.filter(a=>a.timing==='commit_now').length;
+  document.getElementById('kpi-wait').textContent  = advs.filter(a=>a.timing==='wait').length;
+}
+
+function renderAdvisories(advs){
+  const el = document.getElementById('advisory-list');
+  if(!advs.length){ el.innerHTML='<div class="empty-state">No on-demand eligible spend found in the past 90 days.</div>'; return; }
+  el.innerHTML = advs.map(a => `
+    <div class="adv-row">
+      <div>
+        <div class="title">
+          <span class="cloud-badge cloud-${a.cloud}">${a.cloud.toUpperCase()}</span>
+          ${a.service}
+          <span class="badge ${a.timing==='commit_now'?'commit':'wait'}">${a.timing==='commit_now'?'COMMIT NOW':'WAIT '+a.wait_months+'mo'}</span>
+          <span class="badge ${a.confidence_label}">${a.confidence_label.toUpperCase()} CONF</span>
+        </div>
+        <div class="sub">
+          ${a.recommended_type} · ${a.commitment_horizon_months}mo horizon ·
+          ${a.saving_pct}% discount · earliest commit ${a.earliest_commit_date}
+        </div>
+        <div class="stability-bar">
+          <span>Stability</span>
+          <div class="track"><div class="fill" style="width:${Math.round(a.stability_score*100)}%"></div></div>
+          <span>${(a.stability_score*100).toFixed(0)}%</span>
+          <span style="margin-left:8px;color:${a.trend_direction==='stable'?'var(--teal)':a.trend_direction==='growing'?'var(--amber)':'var(--red)'}">
+            ${a.trend_direction} (${a.trend_pct_30d>0?'+':''}${a.trend_pct_30d.toFixed(1)}%)
+          </span>
+        </div>
+        ${a.calendar_notes.length ? `<div class="note" style="margin-top:6px">📅 ${a.calendar_notes.join(' · ')}</div>` : ''}
+        <div class="rationale">${a.rationale}</div>
+      </div>
+      <div class="saving">
+        <div class="amt">-${fmt(a.estimated_monthly_saving_eur)}/mo</div>
+        <div class="horizon">€${a.current_monthly_eur.toFixed(0)}/mo current</div>
+        <div class="horizon" style="margin-top:4px;color:var(--txt3)">Conf: ${(a.confidence_score*100).toFixed(0)}%</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDemo(){
+  // Render demo data when API is not available
+  const demo = {
+    total_on_demand_eligible_eur: 18420,
+    total_estimated_saving_eur: 5984,
+    advisories: [
+      {service:'Virtual Machines',cloud:'azure',current_monthly_eur:8200,estimated_monthly_saving_eur:4264,saving_pct:52,recommended_type:'savings-plan-3yr',commitment_horizon_months:36,confidence_score:0.84,confidence_label:'high',timing:'commit_now',wait_months:0,earliest_commit_date:new Date().toISOString().slice(0,10),stability_score:0.91,trend_direction:'stable',trend_pct_30d:-1.2,calendar_notes:['Weekly peak on Mon (+18% vs Sat)'],rationale:'Stable workload with 84% confidence. Recommend 3yr Savings Plan.'},
+      {service:'EC2',cloud:'aws',current_monthly_eur:4800,estimated_monthly_saving_eur:1824,saving_pct:38,recommended_type:'1yr-ri',commitment_horizon_months:12,confidence_score:0.76,confidence_label:'high',timing:'commit_now',wait_months:0,earliest_commit_date:new Date().toISOString().slice(0,10),stability_score:0.82,trend_direction:'stable',trend_pct_30d:2.1,calendar_notes:[],rationale:'Stable EC2 usage. 1yr RI recommended.'},
+      {service:'Cloud Run',cloud:'gcp',current_monthly_eur:5420,estimated_monthly_saving_eur:0,saving_pct:37,recommended_type:'committed-use-1yr',commitment_horizon_months:12,confidence_score:0.38,confidence_label:'low',timing:'wait',wait_months:3,earliest_commit_date:'',stability_score:0.42,trend_direction:'growing',trend_pct_30d:28.5,calendar_notes:[],rationale:'Growing at 28.5%/mo — wait 3 months for spend to stabilise.'},
+    ]
+  };
+  renderSummary(demo);
+  renderAdvisories(demo.advisories);
+}
+
+// Auto-load on page open
+loadAdvisories();
+</script>
+</body>
+</html>

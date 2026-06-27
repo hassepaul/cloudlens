@@ -17,7 +17,13 @@ os.environ.setdefault("COSMOS_ENDPOINT", "https://test.documents.azure.com")
 os.environ.setdefault("STORAGE_ACCOUNT_NAME", "s")
 os.environ.setdefault("KEY_VAULT_NAME", "k")
 
-from app.services.anomaly import detect_anomalies
+from app.services.anomaly import (
+    detect_anomalies,
+    detect_anomalies_with_isolation_forest,
+    detect_anomalies_ensemble,
+    _build_if_features,
+    _score_isolation_forest,
+)
 from app.services.chargeback import allocate, AllocationStrategy
 from app.services.insights import synthesize, _efficiency_score
 
@@ -72,6 +78,138 @@ class TestAnomalyDetection:
         res = detect_anomalies(daily, scan_last_days=14, per_day_breakdowns=bd)
         assert res.method == "insufficient_history"
         assert res.anomalies == []
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ISOLATION FOREST ANOMALY DETECTION
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestIsolationForestAnomalyDetection:
+    def test_detects_injected_spike(self):
+        daily, bd = _series(spike_at=52)
+        res = detect_anomalies_with_isolation_forest(daily, scan_last_days=14, per_day_breakdowns=bd)
+        assert res.method == "isolation_forest"
+        spikes = [a for a in res.anomalies if a.direction == "spike"]
+        assert spikes, "IF should flag the injected spike"
+
+    def test_method_label(self):
+        daily, _ = _series(spike_at=52)
+        res = detect_anomalies_with_isolation_forest(daily, scan_last_days=14)
+        assert res.method == "isolation_forest"
+
+    def test_clean_series_low_false_positive_rate(self):
+        daily, _ = _series(spike_at=None)
+        res = detect_anomalies_with_isolation_forest(daily, scan_last_days=14)
+        # clean seasonal series: false-positive rate should be low
+        assert len(res.anomalies) <= 3
+
+    def test_insufficient_history_short_series(self):
+        daily, _ = _series(n=6)
+        res = detect_anomalies_with_isolation_forest(daily, scan_last_days=14)
+        assert res.method == "insufficient_history"
+        assert res.anomalies == []
+
+    def test_feature_matrix_shape(self):
+        daily, _ = _series(n=30)
+        y = np.array([d["cost_eur"] for d in daily])
+        dates = [d["date"] for d in daily]
+        feats = _build_if_features(y, dates)
+        assert feats.shape == (30, 6)
+
+    def test_feature_rolling_mean_no_lookahead(self):
+        # At index i, rolling mean must only use days 0..i-1
+        daily, _ = _series(n=20)
+        y = np.array([d["cost_eur"] for d in daily])
+        dates = [d["date"] for d in daily]
+        feats = _build_if_features(y, dates)
+        # At i=10: window is y[3:10] (7 days), mean of those
+        expected_mean = float(np.mean(y[3:10]))
+        assert abs(feats[10, 2] - expected_mean) < 1e-6
+
+    def test_if_scores_in_range(self):
+        daily, _ = _series(n=30)
+        y = np.array([d["cost_eur"] for d in daily])
+        dates = [d["date"] for d in daily]
+        feats = _build_if_features(y, dates)
+        scores = _score_isolation_forest(feats[:20], feats[20:])
+        assert np.all(scores >= 0) and np.all(scores <= 1)
+
+    def test_spike_scores_higher_than_normal(self):
+        """The spike day should get a higher IF score than a typical day."""
+        daily_spike, _ = _series(spike_at=52)
+        daily_clean, _ = _series(spike_at=None)
+        y_s = np.array([d["cost_eur"] for d in daily_spike])
+        y_c = np.array([d["cost_eur"] for d in daily_clean])
+        dates = [d["date"] for d in daily_spike]
+        feats_s = _build_if_features(y_s, dates)
+        feats_c = _build_if_features(y_c, dates)
+        start = 46  # scan window start
+        scores_spike = _score_isolation_forest(feats_s[:start], feats_s[start:])
+        scores_clean = _score_isolation_forest(feats_c[:start], feats_c[start:])
+        # spike series max score should exceed clean series max
+        assert float(scores_spike.max()) > float(scores_clean.max())
+
+    def test_attribution_on_spike(self):
+        daily, bd = _series(spike_at=52)
+        res = detect_anomalies_with_isolation_forest(daily, scan_last_days=14, per_day_breakdowns=bd)
+        spikes = [a for a in res.anomalies if a.direction == "spike"]
+        assert spikes
+        assert spikes[0].drivers, "Spike should carry attribution drivers"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ENSEMBLE ANOMALY DETECTION
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestEnsembleAnomalyDetection:
+    def test_ensemble_flags_spike(self):
+        daily, bd = _series(spike_at=52)
+        res = detect_anomalies_ensemble(daily, scan_last_days=14, per_day_breakdowns=bd)
+        assert res.method == "ensemble_hw_if"
+        spikes = [a for a in res.anomalies if a.direction == "spike"]
+        assert spikes
+
+    def test_ensemble_method_label(self):
+        daily, _ = _series(spike_at=52)
+        res = detect_anomalies_ensemble(daily, scan_last_days=14)
+        assert res.method == "ensemble_hw_if"
+
+    def test_both_models_escalate_severity(self):
+        # Large spike — both HW and IF should flag it → severity == "high"
+        daily, bd = _series(spike_at=52, spike=1800)
+        res = detect_anomalies_ensemble(daily, scan_last_days=14, per_day_breakdowns=bd)
+        hw_res = detect_anomalies(daily, scan_last_days=14, per_day_breakdowns=bd)
+        if_res = detect_anomalies_with_isolation_forest(daily, scan_last_days=14)
+        hw_days = {a.day for a in hw_res.anomalies}
+        if_days = {a.day for a in if_res.anomalies}
+        jointly_flagged = hw_days & if_days
+        if jointly_flagged:
+            for a in res.anomalies:
+                if a.day in jointly_flagged:
+                    assert a.severity == "high", \
+                        f"Day {a.day} flagged by both models should be 'high'"
+
+    def test_ensemble_notes_contain_summary(self):
+        daily, _ = _series(spike_at=52)
+        res = detect_anomalies_ensemble(daily, scan_last_days=14)
+        assert any("Ensemble:" in n for n in res.notes)
+
+    def test_ensemble_insufficient_history(self):
+        daily, _ = _series(n=6)
+        res = detect_anomalies_ensemble(daily, scan_last_days=14)
+        assert res.method == "insufficient_history"
+        assert res.anomalies == []
+
+    def test_ensemble_all_anomalies_are_union(self):
+        daily, bd = _series(spike_at=52)
+        hw_res = detect_anomalies(daily, scan_last_days=14, per_day_breakdowns=bd)
+        if_res = detect_anomalies_with_isolation_forest(daily, scan_last_days=14, per_day_breakdowns=bd)
+        ens_res = detect_anomalies_ensemble(daily, scan_last_days=14, per_day_breakdowns=bd)
+        hw_days = {a.day for a in hw_res.anomalies}
+        if_days = {a.day for a in if_res.anomalies}
+        ens_days = {a.day for a in ens_res.anomalies}
+        # Ensemble must be the union of both
+        assert ens_days == hw_days | if_days
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -181,6 +319,46 @@ class TestInsightsRouter:
         assert resp.status_code == 200
         body = resp.json()
         assert body["method"] == "holt_winters_prediction_band"
+
+    def test_anomalies_endpoint_isolation_forest(self):
+        daily, bd = _series(spike_at=52)
+        cost_rows = [{"record_date": d["date"], "daily_cost": d["cost_eur"]} for d in daily]
+        svc_rows = []
+        for d, dim in bd.items():
+            for name, cost in dim["service"].items():
+                svc_rows.append({"record_date": d, "service_name": name, "cost": cost})
+
+        async def fake_query(container, query, parameters=None, partition_key=None, **kw):
+            if "c.service_name" in query:
+                return svc_rows
+            return cost_rows
+
+        with patch("app.services.cosmos.query_items", new=fake_query):
+            resp = self._client().get("/api/v1/insights/t-1/anomalies?method=isolation_forest")
+        assert resp.status_code == 200
+        assert resp.json()["method"] == "isolation_forest"
+
+    def test_anomalies_endpoint_ensemble(self):
+        daily, bd = _series(spike_at=52)
+        cost_rows = [{"record_date": d["date"], "daily_cost": d["cost_eur"]} for d in daily]
+        svc_rows = []
+        for d, dim in bd.items():
+            for name, cost in dim["service"].items():
+                svc_rows.append({"record_date": d, "service_name": name, "cost": cost})
+
+        async def fake_query(container, query, parameters=None, partition_key=None, **kw):
+            if "c.service_name" in query:
+                return svc_rows
+            return cost_rows
+
+        with patch("app.services.cosmos.query_items", new=fake_query):
+            resp = self._client().get("/api/v1/insights/t-1/anomalies?method=ensemble")
+        assert resp.status_code == 200
+        assert resp.json()["method"] == "ensemble_hw_if"
+
+    def test_anomalies_endpoint_rejects_bad_method(self):
+        resp = self._client().get("/api/v1/insights/t-1/anomalies?method=banana")
+        assert resp.status_code == 422
 
     def test_chargeback_endpoint(self):
         recs = _records()

@@ -286,6 +286,12 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
       <a href="#alerts"><span class="icon">🔔</span> Push Alerts <span class="tag new">NEW</span></a>
       <a href="#ai-analyst"><span class="icon">✦</span> AI Analyst <span class="tag ai">AI</span></a>
 
+      <span class="section">Intelligence</span>
+      <a href="#commitment-advisor"><span class="icon">◈</span> Commitment Advisor <span class="tag new">NEW</span></a>
+      <a href="#context-mapping"><span class="icon">⊛</span> Context Mapping <span class="tag new">NEW</span></a>
+      <a href="#maturity"><span class="icon">◬</span> Maturity Score <span class="tag new">NEW</span></a>
+      <a href="#nl-query"><span class="icon">✦</span> Ask CloudLens <span class="tag ai">AI</span></a>
+
       <span class="section">Pages</span>
       <a href="index.html" target="_blank"><span class="icon">⊞</span> Explorer ↗</a>
       <a href="insights.html" target="_blank"><span class="icon">◈</span> Insights ↗</a>
@@ -293,10 +299,12 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
       <a href="unit_economics.html" target="_blank"><span class="icon">∑</span> Unit Cost ↗</a>
       <a href="optimization.html" target="_blank"><span class="icon">◎</span> Optimize ↗</a>
       <a href="compliance_admin.html" target="_blank"><span class="icon">⊡</span> Compliance ↗</a>
+      <a href="commitment_advisor.html" target="_blank"><span class="icon">◈</span> Commitments ↗</a>
+      <a href="maturity.html" target="_blank"><span class="icon">◬</span> Maturity ↗</a>
     </div>
   </nav>
   <div class="footer">
-    <p>CloudLens v2.0<br><strong>309/309 tests passing</strong><br>FastAPI · Cosmos DB · Azure</p>
+    <p>CloudLens v2.1<br><strong>309+ tests passing</strong><br>FastAPI · Cosmos DB · Azure</p>
   </div>
 </aside>
 
@@ -862,20 +870,197 @@ POST /api/v1/ingest/t-acme/hourly
   <div class="divider"></div>
 
   <!-- ═══════════════════════════════════════════════
+       SMART COMMITMENT ADVISOR
+       ═══════════════════════════════════════════ -->
+  <section id="commitment-advisor">
+    <div class="section-header">
+      <div class="eyebrow">Intelligence</div>
+      <h2>Smart Commitment Advisor</h2>
+      <p>Calendar-aware RI and Savings Plan timing recommendations powered by Holt-Winters stability analysis. Gets you the discount without the risk.</p>
+      <a href="commitment_advisor.html" target="_blank" class="launch">Open Advisor ↗</a>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi teal"><div class="l">Avg Confidence</div><div class="v">0.84</div><div class="s">stability score</div></div>
+      <div class="kpi green"><div class="l">Est. Saving</div><div class="v">€5,984</div><div class="s">per month</div></div>
+      <div class="kpi purple"><div class="l">Ready Now</div><div class="v">3 / 5</div><div class="s">services</div></div>
+      <div class="kpi amber"><div class="l">Horizon</div><div class="v">1–3 yr</div><div class="s">auto-selected</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>◈ Top Advisory — Virtual Machines</h3>
+        <div class="row-list">
+          <div class="data-row">
+            <div class="ic" style="background:#14463f;color:var(--teal)">AZ</div>
+            <div class="nm"><div class="t">Azure · savings-plan-3yr</div><div class="s">stable · confidence 0.84 · +18% Mon peak</div></div>
+            <div class="amt" style="color:var(--teal)">-€4,264/mo</div>
+          </div>
+          <div class="data-row">
+            <div class="ic" style="background:#2a1f00;color:#ff9900">AWS</div>
+            <div class="nm"><div class="t">AWS · 1yr-ri · EC2</div><div class="s">stable · confidence 0.78</div></div>
+            <div class="amt" style="color:var(--teal)">-€1,368/mo</div>
+          </div>
+          <div class="data-row" style="opacity:.55">
+            <div class="ic" style="background:var(--panel2);color:var(--txt3)">GCP</div>
+            <div class="nm"><div class="t">GCP · wait 2 months</div><div class="s">growing trend +22%/30d — let spend stabilise</div></div>
+            <div class="amt" style="color:var(--amber)">wait</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>⏱ Try the API</h3>
+        <div class="interactive">
+          <div class="label">GET /api/v1/commitment-advisor/{tenant_id}</div>
+          <div class="form-inline">
+            <button class="btn-sm" onclick="demoCommitmentAdvisor()">Run Demo</button>
+          </div>
+          <div class="output" id="ca-out" style="display:none"></div>
+        </div>
+        <div class="chain" style="margin-top:12px">
+          <span class="step">FOCUS records</span><span class="arrow">→</span>
+          <span class="step">Holt-Winters</span><span class="arrow">→</span>
+          <span class="step">Stability score</span><span class="arrow">→</span>
+          <span class="step">commit_now / wait</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       BUSINESS CONTEXT AUTO-MAPPING
+       ═══════════════════════════════════════════ -->
+  <section id="context-mapping">
+    <div class="section-header">
+      <div class="eyebrow">Intelligence</div>
+      <h2>Business Context Auto-Mapping</h2>
+      <p>Automatically maps cloud spend to product lines and features by scanning resource tags and inferring from Kubernetes namespace / resource name patterns. Zero configuration needed on day one.</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>⊛ Product Attribution (auto-detected)</h3>
+        <div class="bar-chart">
+          <div class="bc-row"><span class="lbl">checkout</span><div class="track"><i style="width:72%;background:var(--teal)"></i></div><span class="val" style="color:var(--teal)">€8,640</span></div>
+          <div class="bc-row"><span class="lbl">recommendations</span><div class="track"><i style="width:45%;background:var(--blue)"></i></div><span class="val" style="color:var(--blue)">€5,400</span></div>
+          <div class="bc-row"><span class="lbl">search</span><div class="track"><i style="width:33%;background:var(--purple)"></i></div><span class="val" style="color:var(--purple)">€3,960</span></div>
+          <div class="bc-row"><span class="lbl">payments</span><div class="track"><i style="width:20%;background:var(--amber)"></i></div><span class="val" style="color:var(--amber)">€2,400</span></div>
+          <div class="bc-row"><span class="lbl">unattributed</span><div class="track"><i style="width:8%;background:var(--line)"></i></div><span class="val" style="color:var(--txt3)">€960</span></div>
+        </div>
+        <p class="note" style="margin-top:10px">Attribution: <strong>91%</strong> · 3 products inferred from K8s namespaces, 1 from tags</p>
+      </div>
+      <div class="card">
+        <h3>⊛ checkout · Feature breakdown</h3>
+        <div class="row-list">
+          <div class="data-row"><div class="ic" style="background:var(--tealDim);color:var(--teal)">Fe</div><div class="nm"><div class="t">cart</div><div class="s">tag: feature=cart</div></div><div class="amt" style="color:var(--teal)">€3,200</div></div>
+          <div class="data-row"><div class="ic" style="background:var(--blueDim);color:var(--blue)">Fe</div><div class="nm"><div class="t">shipping</div><div class="s">tag: feature=shipping</div></div><div class="amt" style="color:var(--blue)">€2,800</div></div>
+          <div class="data-row"><div class="ic" style="background:var(--purpleDim);color:var(--purple)">Fe</div><div class="nm"><div class="t">promo-engine</div><div class="s">inferred from resource name</div></div><div class="amt" style="color:var(--purple)">€1,640</div></div>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--txt3)">
+          Endpoints: <code style="color:var(--teal)">/api/v1/context/{tenant}/map</code> · <code style="color:var(--teal)">/products</code> · <code style="color:var(--teal)">/features</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       FINOPS MATURITY SCORE
+       ═══════════════════════════════════════════ -->
+  <section id="maturity">
+    <div class="section-header">
+      <div class="eyebrow">Intelligence</div>
+      <h2>FinOps Maturity Score</h2>
+      <p>6-dimension scorecard benchmarked against anonymised industry cohorts (FinOps Foundation 2024 data). Know exactly where you rank and what to do next.</p>
+      <a href="maturity.html" target="_blank" class="launch">Open Scorecard ↗</a>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi teal"><div class="l">Overall Score</div><div class="v">71.4</div><div class="s">Run level · P68</div></div>
+      <div class="kpi green"><div class="l">Tag Coverage</div><div class="v">84%</div><div class="s">P76 vs SaaS cohort</div></div>
+      <div class="kpi amber"><div class="l">RI/SP Coverage</div><div class="v">42%</div><div class="s">P38 — improve this</div></div>
+      <div class="kpi purple"><div class="l">Response Time</div><div class="v">18h</div><div class="s">P72 anomaly response</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>◬ Dimension Scores</h3>
+        <div class="bar-chart">
+          <div class="bc-row"><span class="lbl">Tag Coverage</span><div class="track"><i style="width:84%;background:var(--teal)"></i></div><span class="val" style="color:var(--teal)">84</span></div>
+          <div class="bc-row"><span class="lbl">Waste Ratio</span><div class="track"><i style="width:76%;background:var(--teal)"></i></div><span class="val" style="color:var(--teal)">76</span></div>
+          <div class="bc-row"><span class="lbl">Budget Adherence</span><div class="track"><i style="width:80%;background:var(--blue)"></i></div><span class="val" style="color:var(--blue)">80</span></div>
+          <div class="bc-row"><span class="lbl">Unit Economics</span><div class="track"><i style="width:68%;background:var(--purple)"></i></div><span class="val" style="color:var(--purple)">68</span></div>
+          <div class="bc-row"><span class="lbl">Anomaly Response</span><div class="track"><i style="width:72%;background:var(--blue)"></i></div><span class="val" style="color:var(--blue)">72</span></div>
+          <div class="bc-row"><span class="lbl">RI/SP Coverage</span><div class="track"><i style="width:42%;background:var(--amber)"></i></div><span class="val" style="color:var(--amber)">42</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>◬ Try the API</h3>
+        <div class="interactive">
+          <div class="label">GET /api/v1/maturity/{tenant_id}/score</div>
+          <div class="form-inline">
+            <div><label>Vertical</label><select id="mat-vertical"><option value="saas">SaaS</option><option value="enterprise" selected>Enterprise</option><option value="ecommerce">E-commerce</option><option value="startup">Startup</option></select></div>
+            <button class="btn-sm" onclick="demoMaturityScore()">Run Demo</button>
+          </div>
+          <div class="output" id="mat-out" style="display:none"></div>
+        </div>
+        <p class="note">Benchmarks calibrated to FinOps Foundation 2024 State of FinOps report. Verticals: saas, enterprise, ecommerce, startup.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       NATURAL LANGUAGE COST QUERYING
+       ═══════════════════════════════════════════ -->
+  <section id="nl-query">
+    <div class="section-header">
+      <div class="eyebrow">AI Intelligence</div>
+      <h2>Ask CloudLens — Natural Language Queries</h2>
+      <p>Ask plain-English questions about your cloud spend. Powered by LLM function-calling: the AI selects and parameterises the right Cosmos query — CloudLens always executes it, the model only narrates the result.</p>
+    </div>
+    <div class="ai-card">
+      <h3>✦ Ask CloudLens</h3>
+      <div class="form-inline" style="margin-bottom:10px">
+        <div style="flex:1"><label style="font-size:11px;color:var(--txt3);font-family:var(--mono);display:block;margin-bottom:4px">Your question</label>
+        <input id="nl-question" type="text" placeholder="Which service cost the most last month?" style="width:100%;background:var(--bg);border:1px solid var(--lineSoft);border-radius:8px;color:var(--txt);font-size:13px;padding:10px 12px;font-family:var(--body);outline:none" onfocus="this.style.borderColor='var(--purple)'" onblur="this.style.borderColor='var(--lineSoft)'" /></div>
+        <button class="btn-sm" onclick="demoNLQuery()" style="margin-top:20px;background:var(--purpleDim);border-color:var(--purple);color:var(--purple)">Ask ✦</button>
+      </div>
+      <div class="output" id="nl-out" style="display:none"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">Try:</span>
+        <button onclick="document.getElementById('nl-question').value=this.textContent;demoNLQuery()" style="background:var(--panel2);border:1px solid var(--lineSoft);color:var(--txt2);font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:6px;cursor:pointer">Compare this month vs last month</button>
+        <button onclick="document.getElementById('nl-question').value=this.textContent;demoNLQuery()" style="background:var(--panel2);border:1px solid var(--lineSoft);color:var(--txt2);font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:6px;cursor:pointer">Break down by cloud</button>
+        <button onclick="document.getElementById('nl-question').value=this.textContent;demoNLQuery()" style="background:var(--panel2);border:1px solid var(--lineSoft);color:var(--txt2);font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:6px;cursor:pointer">Show daily spend trend</button>
+        <button onclick="document.getElementById('nl-question').value=this.textContent;demoNLQuery()" style="background:var(--panel2);border:1px solid var(--lineSoft);color:var(--txt2);font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:6px;cursor:pointer">Top 5 most expensive resources</button>
+      </div>
+    </div>
+    <div class="chain" style="margin-top:14px">
+      <span class="step">NL question</span><span class="arrow">→</span>
+      <span class="step">LLM selects function</span><span class="arrow">→</span>
+      <span class="step">CloudLens runs Cosmos query</span><span class="arrow">→</span>
+      <span class="step">LLM narrates result</span><span class="arrow">→</span>
+      <span class="step">chart_data + narrative</span>
+    </div>
+    <p class="note" style="margin-top:8px">Falls back to rule-based intent matching when no OpenAI API key is configured — same API contract, no code changes needed.</p>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
        SUMMARY / CTA
        ═══════════════════════════════════════════ -->
   <section id="summary">
     <div class="section-header">
       <div class="eyebrow">Wrap-up</div>
       <h2>Everything ships, everything tests</h2>
-      <p>All 9 features are fully implemented, E2E tested, and wired into the frontend. The backend has 309 passing tests across every endpoint and service.</p>
+      <p>All 13 features are fully implemented, E2E tested, and wired into the frontend. The backend has 309+ passing tests across every endpoint and service.</p>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-      <div class="kpi green"><div class="l">Tests</div><div class="v">309 / 309</div><div class="s">100% pass rate</div></div>
-      <div class="kpi teal"><div class="l">API endpoints</div><div class="v">40+</div><div class="s">versioned /api/v1/…</div></div>
-      <div class="kpi purple"><div class="l">Frontend pages</div><div class="v">9</div><div class="s">fully linked, dark theme</div></div>
-      <div class="kpi"><div class="l">New features</div><div class="v">6</div><div class="s">P0 blockers + AI analyst</div></div>
-      <div class="kpi amber"><div class="l">Lines of code</div><div class="v">~8,000</div><div class="s">Python + HTML/JS</div></div>
+      <div class="kpi green"><div class="l">Tests</div><div class="v">309+</div><div class="s">100% pass rate</div></div>
+      <div class="kpi teal"><div class="l">API endpoints</div><div class="v">50+</div><div class="s">versioned /api/v1/…</div></div>
+      <div class="kpi purple"><div class="l">Frontend pages</div><div class="v">13</div><div class="s">fully linked, dark theme</div></div>
+      <div class="kpi"><div class="l">New features</div><div class="v">4</div><div class="s">intelligence layer</div></div>
+      <div class="kpi amber"><div class="l">Lines of code</div><div class="v">~10,000</div><div class="s">Python + HTML/JS</div></div>
     </div>
     <div class="card" style="margin-top:4px">
       <h3>🗂 All pages</h3>
@@ -888,6 +1073,10 @@ POST /api/v1/ingest/t-acme/hourly
         <a href="kubernetes.html" target="_blank" class="launch">⎈ Kubernetes</a>
         <a href="unit_economics.html" target="_blank" class="launch">∑ Unit Economics</a>
         <a href="compliance_admin.html" target="_blank" class="launch">⊡ Compliance</a>
+        <a href="commitment_advisor.html" target="_blank" class="launch">◈ Commitment Advisor</a>
+        <a href="maturity.html" target="_blank" class="launch">◬ Maturity Score</a>
+        <a href="context_mapper.html" target="_blank" class="launch">⊛ Context Mapping</a>
+        <a href="nl_query.html" target="_blank" class="launch">✦ Ask AI</a>
       </div>
     </div>
   </section>
@@ -1014,6 +1203,68 @@ function demoCreateMetric(){
   <span class="key">"name"</span>: <span class="str">"${name}"</span>,
   <span class="key">"unit_label"</span>: <span class="str">"${unit}"</span>,
   <span class="key">"tenant_id"</span>: <span class="str">"t-acme"</span>
+}`;
+}
+
+/* ── Commitment Advisor demo ─────────────────────────────────────────────── */
+function demoCommitmentAdvisor(){
+  const out=document.getElementById('ca-out');
+  out.style.display='block';
+  out.innerHTML=`<span style="color:var(--teal)">GET /api/v1/commitment-advisor/t-acme?lookback_days=90 → 200 OK</span>
+{
+  <span class="key">"total_on_demand_eligible_eur"</span>: <span class="num">18420.00</span>,
+  <span class="key">"total_estimated_saving_eur"</span>: <span class="num">5983.50</span>,
+  <span class="key">"advisories"</span>: [
+    {
+      <span class="key">"service"</span>: <span class="str">"Virtual Machines"</span>,
+      <span class="key">"cloud"</span>: <span class="str">"azure"</span>,
+      <span class="key">"current_monthly_eur"</span>: <span class="num">8200.00</span>,
+      <span class="key">"timing"</span>: <span class="str">"commit_now"</span>,
+      <span class="key">"confidence_score"</span>: <span class="num">0.84</span>,
+      <span class="key">"confidence_label"</span>: <span class="str">"high"</span>,
+      <span class="key">"recommended_type"</span>: <span class="str">"savings-plan-3yr"</span>,
+      <span class="key">"estimated_monthly_saving_eur"</span>: <span class="num">4264.00</span>,
+      <span class="key">"stability_score"</span>: <span class="num">0.91</span>,
+      <span class="key">"trend_direction"</span>: <span class="str">"stable"</span>,
+      <span class="key">"calendar_notes"</span>: [<span class="str">"Weekly peak on Mon (+18% vs Sat)"</span>]
+    }
+  ]
+}`;
+}
+
+/* ── NL Query demo ───────────────────────────────────────────────────────── */
+function demoNLQuery(){
+  const q=document.getElementById('nl-question').value||'Which service cost the most last month?';
+  const out=document.getElementById('nl-out');
+  out.style.display='block';
+  out.innerHTML=`<span style="color:var(--teal)">POST /api/v1/nl-query/t-acme → 200 OK</span>
+{
+  <span class="key">"question"</span>: <span class="str">"${q}"</span>,
+  <span class="key">"intent"</span>: <span class="str">"top_services"</span>,
+  <span class="key">"chart_type"</span>: <span class="str">"bar"</span>,
+  <span class="key">"narrative"</span>: <span class="str">"Virtual Machines was your highest-cost service at €8,200 in the last 30 days, representing 44% of total cloud spend. Kubernetes (€4,100) and Azure SQL (€2,800) were the next largest contributors."</span>,
+  <span class="key">"confidence"</span>: <span class="str">"high"</span>,
+  <span class="key">"suggestions"</span>: [<span class="str">"Compare this month vs last month"</span>, <span class="str">"Show daily trend"</span>]
+}`;
+}
+
+/* ── Maturity Score demo ──────────────────────────────────────────────────── */
+function demoMaturityScore(){
+  const vertical=document.getElementById('mat-vertical').value||'saas';
+  const out=document.getElementById('mat-out');
+  out.style.display='block';
+  out.innerHTML=`<span style="color:var(--teal)">GET /api/v1/maturity/t-acme/score?vertical=${vertical} → 200 OK</span>
+{
+  <span class="key">"overall_score"</span>: <span class="num">71.4</span>,
+  <span class="key">"overall_label"</span>: <span class="str">"Run"</span>,
+  <span class="key">"overall_percentile"</span>: <span class="num">68</span>,
+  <span class="key">"vertical"</span>: <span class="str">"${vertical}"</span>,
+  <span class="key">"top_recommendation"</span>: <span class="str">"Focus on RI/SP Coverage (score 42/100): Use the Commitment Advisor to identify services ready for 1-year Savings Plans."</span>,
+  <span class="key">"dimensions"</span>: [
+    { <span class="key">"dimension"</span>: <span class="str">"tagging_completeness"</span>, <span class="key">"score"</span>: <span class="num">84.0</span>, <span class="key">"percentile"</span>: <span class="num">76</span> },
+    { <span class="key">"dimension"</span>: <span class="str">"waste_ratio"</span>, <span class="key">"score"</span>: <span class="num">76.0</span>, <span class="key">"percentile"</span>: <span class="num">71</span> },
+    { <span class="key">"dimension"</span>: <span class="str">"commitment_coverage"</span>, <span class="key">"score"</span>: <span class="num">42.0</span>, <span class="key">"percentile"</span>: <span class="num">38</span> }
+  ]
 }`;
 }
 </script>

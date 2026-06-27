@@ -1,0 +1,170 @@
+# CloudLens Cost Estimate — GitLab CI template
+#
+# Include this file in your .gitlab-ci.yml to get per-MR cost estimates
+# with optional budget gate enforcement.
+#
+# Required CI/CD variables (Settings > CI/CD > Variables):
+#   CLOUDLENS_API_URL  — Base URL of your CloudLens deployment
+#   CLOUDLENS_API_KEY  — CloudLens internal API key
+#
+# Optional variables:
+#   CLOUDLENS_TENANT_ID   — Persist run history (leave blank to skip)
+#   CLOUDLENS_BUDGET_GATE — Max net monthly EUR increase (e.g. "100")
+#   TF_ROOT               — Subdirectory containing Terraform files (default: ".")
+#
+# Usage — add to .gitlab-ci.yml:
+#
+#   include:
+#     - project: 'your-group/cloudlens'
+#       file: 'ci-templates/gitlab-ci.yml'
+#       ref: main
+#
+#   variables:
+#     CLOUDLENS_API_URL: "https://api.cloudlens.io"
+#     CLOUDLENS_BUDGET_GATE: "200"
+
+stages:
+  - cost-estimate
+
+.cloudlens_cost_estimate:
+  stage: cost-estimate
+  image: hashicorp/terraform:1.9
+  before_script:
+    - apk add --no-cache curl python3 jq
+    - cd "${TF_ROOT:-.}"
+    - terraform init -input=false
+  script:
+    # ── 1. Generate plan JSON ─────────────────────────────────────────────
+    - terraform plan -input=false -out=cloudlens_plan.tfplan
+    - terraform show -json cloudlens_plan.tfplan > cloudlens_plan.json
+    - echo "Plan JSON generated ($(wc -c < cloudlens_plan.json) bytes)"
+
+    # ── 2. Stateless estimate ─────────────────────────────────────────────
+    - |
+      LABEL="${CI_MERGE_REQUEST_TITLE:-${CI_COMMIT_REF_NAME}}"
+      PLAN_JSON_ESCAPED=$(python3 -c 'import json,sys; print(json.dumps(open("cloudlens_plan.json").read()))')
+      RESPONSE=$(curl -s -w "\n%{http_code}" \
+        -X POST "${CLOUDLENS_API_URL}/api/v1/estimate/terraform" \
+        -H "Content-Type: application/json" \
+        -H "X-API-Key: ${CLOUDLENS_API_KEY}" \
+        -d "{\"plan_json\": ${PLAN_JSON_ESCAPED}, \"label\": \"${LABEL}\"}")
+      HTTP_STATUS=$(echo "$RESPONSE" | tail -1)
+      ESTIMATE=$(echo "$RESPONSE" | head -n -1)
+      if [ "$HTTP_STATUS" != "200" ]; then
+        echo "WARNING: CloudLens API returned HTTP $HTTP_STATUS — skipping estimate"
+        exit 0
+      fi
+      echo "$ESTIMATE" > /tmp/cloudlens_estimate.json
+      MONTHLY=$(echo "$ESTIMATE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('total_monthly_delta_eur',0))")
+      ANNUAL=$(echo "$ESTIMATE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('total_annual_delta_eur',0))")
+      echo "CLOUDLENS_MONTHLY_DELTA=${MONTHLY}" >> cost_estimate.env
+      echo "CLOUDLENS_ANNUAL_DELTA=${ANNUAL}" >> cost_estimate.env
+      echo "Cost estimate: +€${MONTHLY}/month  (+€${ANNUAL}/year)"
+
+    # ── 3. Persist run (optional) ─────────────────────────────────────────
+    - |
+      if [ -n "${CLOUDLENS_TENANT_ID:-}" ]; then
+        PAYLOAD=$(python3 -c "
+      import json, os
+      plan = json.loads(open('cloudlens_plan.json').read())
+      body = {
+          'plan_json': json.dumps(plan),
+          'tenant_id': os.environ['CLOUDLENS_TENANT_ID'],
+          'label': os.environ.get('CI_MERGE_REQUEST_TITLE', os.environ.get('CI_COMMIT_REF_NAME','')),
+          'ci_system': 'gitlab_ci',
+          'repo': os.environ.get('CI_PROJECT_PATH',''),
+          'branch': os.environ.get('CI_COMMIT_REF_NAME',''),
+          'commit_sha': os.environ.get('CI_COMMIT_SHA',''),
+      }
+      mr = os.environ.get('CI_MERGE_REQUEST_IID','')
+      if mr:
+          body['pr_number'] = int(mr)
+      gate = os.environ.get('CLOUDLENS_BUDGET_GATE','')
+      if gate:
+          body['budget_gate_eur'] = float(gate)
+      print(json.dumps(body))
+      ")
+        RECORD_RESP=$(curl -s -w "\n%{http_code}" \
+          -X POST "${CLOUDLENS_API_URL}/api/v1/estimate/terraform/record" \
+          -H "Content-Type: application/json" \
+          -H "X-API-Key: ${CLOUDLENS_API_KEY}" \
+          -d "$PAYLOAD")
+        RECORD_STATUS=$(echo "$RECORD_RESP" | tail -1)
+        if [ "$RECORD_STATUS" = "200" ]; then
+          RUN_ID=$(echo "$RECORD_RESP" | head -n -1 | python3 -c "import json,sys; print(json.load(sys.stdin).get('run_id',''))")
+          echo "CloudLens run recorded: $RUN_ID"
+          echo "CLOUDLENS_RUN_ID=${RUN_ID}" >> cost_estimate.env
+        else
+          echo "WARNING: Failed to record run (HTTP $RECORD_STATUS)"
+        fi
+      fi
+
+    # ── 4. Budget gate ────────────────────────────────────────────────────
+    - |
+      if [ -n "${CLOUDLENS_BUDGET_GATE:-}" ]; then
+        MONTHLY=$(grep CLOUDLENS_MONTHLY_DELTA cost_estimate.env | cut -d= -f2)
+        GATE_RESP=$(curl -s -w "\n%{http_code}" \
+          -X POST "${CLOUDLENS_API_URL}/api/v1/estimate/gate" \
+          -H "Content-Type: application/json" \
+          -d "{\"monthly_delta_eur\": ${MONTHLY}, \"gate_eur\": ${CLOUDLENS_BUDGET_GATE}}")
+        GATE_STATUS=$(echo "$GATE_RESP" | tail -1)
+        if [ "$GATE_STATUS" = "200" ]; then
+          PASSED=$(echo "$GATE_RESP" | head -n -1 | python3 -c "import json,sys; print(json.load(sys.stdin)['passed'])")
+          MESSAGE=$(echo "$GATE_RESP" | head -n -1 | python3 -c "import json,sys; print(json.load(sys.stdin)['message'])")
+          echo "Budget gate: $MESSAGE"
+          if [ "$PASSED" = "False" ]; then
+            echo "ERROR: Budget gate FAILED — pipeline will fail"
+            exit 1
+          fi
+        else
+          echo "WARNING: Budget gate API unavailable (HTTP $GATE_STATUS)"
+        fi
+      fi
+
+    # ── 5. Print summary ──────────────────────────────────────────────────
+    - |
+      echo "=== CloudLens Cost Estimate Summary ==="
+      python3 -c "
+      import json
+      try:
+          d = json.load(open('/tmp/cloudlens_estimate.json'))
+      except Exception:
+          print('No estimate data'); exit(0)
+      monthly = d.get('total_monthly_delta_eur', 0)
+      sign = '+' if monthly >= 0 else ''
+      print(f'Net monthly delta:  {sign}EUR {monthly:,.2f}')
+      print(f'Net annual delta:   {sign}EUR {monthly*12:,.2f}')
+      resources = d.get('resources', [])
+      if resources:
+          print(f'Resources changed:  {len(resources)}')
+          print('{:<45} {:>12}'.format('Resource', 'EUR/month'))
+          print('-' * 59)
+          for r in sorted(resources, key=lambda x: abs(x.get('monthly_delta_eur',0)), reverse=True)[:10]:
+              s = '+' if r['monthly_delta_eur'] >= 0 else ''
+              print('{:<45} {:>+12.2f}'.format(r['address'][:44], r['monthly_delta_eur']))
+      unsup = d.get('unsupported_resource_types', [])
+      if unsup:
+          print(f'Unsupported types:  {len(unsup)} (not priced)')
+      "
+
+  after_script:
+    - rm -f "${TF_ROOT:-.}/cloudlens_plan.tfplan" "${TF_ROOT:-.}/cloudlens_plan.json"
+
+  artifacts:
+    reports:
+      dotenv: "${TF_ROOT:-.}/cost_estimate.env"
+    paths:
+      - "${TF_ROOT:-.}/cost_estimate.env"
+    expire_in: 7 days
+    when: always
+
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# Concrete job that uses the template above.
+# Override variables per-project as needed.
+cloudlens:cost-estimate:
+  extends: .cloudlens_cost_estimate
+  variables:
+    TF_ROOT: "${TF_ROOT:-infra}"

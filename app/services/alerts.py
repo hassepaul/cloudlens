@@ -374,5 +374,15 @@ async def deliver(event: "AlertEvent", rule: "AlertRule") -> "AlertEvent":
                      rule_id=rule.id)
             delivered.append("email_pending")
 
+        elif ch in (
+            AlertChannel.PAGERDUTY,
+            AlertChannel.JIRA,
+            AlertChannel.ADO,
+            AlertChannel.TEAMS,
+        ):
+            from app.services.escalation import deliver_escalation
+            label = await deliver_escalation(event, rule.tenant_id, ch.value)
+            delivered.append(label)
+
     event.delivered_channels = delivered
     return event

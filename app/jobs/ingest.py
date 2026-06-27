@@ -180,15 +180,7 @@ async def ingest_tenant_cloud_provider(
     total_stored = 0
 
     for account_id in account_ids:
-        try:
-            provider = provider_cls(**{_provider_cred_key(cloud): provider_creds,
-                                       "project_id": account_id,        # GCP
-                                       "access_key_id": provider_creds.get("access_key_id", ""),  # AWS / Alibaba
-                                       "access_key_secret": provider_creds.get("access_key_secret", ""),
-                                       "region": provider_creds.get("region", "eu-central-1")})
-        except TypeError:
-            # Provider __init__ may not accept all kwargs — build with only what's needed.
-            provider = provider_cls()
+        provider = _build_provider(cloud, account_id, provider_creds)
 
         raw = await provider.fetch_cost_data(start_date, end_date)
         focus_records: list[FocusRecord] = provider.normalize(config.id, raw)
@@ -204,10 +196,54 @@ async def ingest_tenant_cloud_provider(
     return {"cloud": cloud, "focus_records": total_stored}
 
 
-def _provider_cred_key(cloud: str) -> str:
-    """Return the primary credential kwarg name for a provider constructor."""
-    return {"gcp": "sa_key", "aws": "role_arn", "alibaba": "access_key_id",
-            "oci": "tenancy_ocid"}.get(cloud, "credentials")
+def _build_provider(cloud: str, account_id: str, creds: dict) -> "CloudProvider":
+    """
+    Construct a cloud provider instance from Key Vault credentials.
+
+    Expected secret shapes per provider:
+      aws:     {role_arn, external_id?, region?}
+      gcp:     service-account JSON + billing_export_table key
+      alibaba: {access_key_id, access_key_secret, region?}
+      oci:     {tenancy_ocid, ...oci config fields}
+    """
+    from app.providers.base import _PROVIDERS  # type: ignore[attr-defined]
+    cls = _PROVIDERS.get(cloud)
+    if cls is None:
+        raise ValueError(f"No provider adapter registered for cloud '{cloud}'")
+
+    if cloud == "aws":
+        return cls(
+            role_arn=creds.get("role_arn", ""),
+            external_id=creds.get("external_id", ""),
+            region=creds.get("region", "us-east-1"),
+        )
+    if cloud == "gcp":
+        # The secret is the full service-account JSON with an extra
+        # 'billing_export_table' field embedded.  GCPProvider.__init__
+        # pops that field from sa_key automatically.
+        sa_key = dict(creds)  # copy so we don't mutate Key Vault cache
+        billing_table = sa_key.pop("billing_export_table", "")
+        return cls(
+            project_id=account_id,
+            billing_export_table=billing_table,
+            sa_key=sa_key,
+        )
+    if cloud == "alibaba":
+        return cls(
+            access_key_id=creds.get("access_key_id", ""),
+            access_key_secret=creds.get("access_key_secret", ""),
+            region=creds.get("region", "eu-central-1"),
+        )
+    if cloud == "oci":
+        return cls(
+            tenancy_ocid=creds.get("tenancy_ocid", ""),
+            config=creds,
+        )
+    # Generic fallback: pass the whole creds dict as kwargs, ignore extras
+    try:
+        return cls(**{k: v for k, v in creds.items()})
+    except TypeError:
+        return cls()
 
 
 async def run_full_ingest() -> None:
@@ -256,6 +292,43 @@ async def run_full_ingest() -> None:
                     except CloudLensError as exc:
                         log.error("ingest_job.cloud_failed",
                                   tenant_id=config.id, cloud=cloud, error=str(exc))
+
+                # ── Policy evaluation ────────────────────────────────────────────
+                # Run after all clouds are ingested so policies can see
+                # the full cross-cloud picture. Pass the Azure ARM token
+                # so AUTOSTOP_RESOURCE actions can execute immediately
+                # when action_execution_enabled=true.
+                try:
+                    from app.services.policy_engine import evaluate_tenant_policies
+                    # Re-use the last known Azure ARM token if available
+                    arm_token: str | None = None
+                    if creds:
+                        try:
+                            from app.services.azure_cost import AzureCostClient
+                            async with AzureCostClient(
+                                subscription_id=config.subscription_ids[0],
+                                client_id=creds["client_id"],
+                                client_secret=creds["client_secret"],
+                                tenant_id=creds["azure_tenant_id"],
+                            ) as _tmp_client:
+                                arm_token = await _tmp_client.get_access_token()
+                        except Exception:
+                            pass
+                    violations = await evaluate_tenant_policies(
+                        config.id, access_token=arm_token
+                    )
+                    if violations:
+                        log.info(
+                            "ingest_job.policy_violations",
+                            tenant_id=config.id,
+                            count=len(violations),
+                        )
+                except Exception as exc:
+                    log.warning(
+                        "ingest_job.policy_eval_failed",
+                        tenant_id=config.id,
+                        error=str(exc),
+                    )
 
                 # Update last_ingested_at on success
                 updated = config.model_copy(update={

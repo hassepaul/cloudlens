@@ -108,12 +108,22 @@ async def _open_waste(tenant_id: str) -> list[dict]:
 async def get_anomalies(
     tenant_id: str,
     scan_last_days: int = Query(14, ge=1, le=60),
+    method: str = Query(
+        "holt_winters",
+        pattern="^(holt_winters|isolation_forest|ensemble)$",
+        description="Detection model: holt_winters, isolation_forest, or ensemble (both).",
+    ),
 ) -> AnomalyResponse:
-    """Detect spend anomalies outside the seasonal forecast band, with attribution."""
+    """Detect spend anomalies with choice of model: holt_winters, isolation_forest, or ensemble."""
     try:
         daily = await _daily_series(tenant_id, 90)
         breakdowns = await _per_day_service_breakdown(tenant_id, 90)
-        res = anomaly_svc.detect_anomalies(daily, scan_last_days, breakdowns)
+        if method == "isolation_forest":
+            res = anomaly_svc.detect_anomalies_with_isolation_forest(daily, scan_last_days, breakdowns)
+        elif method == "ensemble":
+            res = anomaly_svc.detect_anomalies_ensemble(daily, scan_last_days, breakdowns)
+        else:
+            res = anomaly_svc.detect_anomalies(daily, scan_last_days, breakdowns)
         return AnomalyResponse(
             tenant_id=tenant_id, method=res.method, scanned_days=res.scanned_days,
             total_anomalous_excess_eur=res.total_anomalous_excess_eur,

@@ -80,6 +80,64 @@ class Settings(BaseSettings):
         description="Currencies to warm FX cache for at startup.",
     )
 
+    # ── Cosmos containers (policy + hierarchy) ─────────────────────────────────
+    cosmos_container_policies:  str = Field(default="policies")
+    cosmos_container_hierarchy: str = Field(default="hierarchy")
+    cosmos_container_poll_state: str = Field(default="poll_state")
+    cosmos_container_pipeline_runs: str = Field(default="pipeline_runs")
+    cosmos_container_onboarding_sessions: str = Field(default="onboarding_sessions")
+
+    # ── Real-time ingest scheduler ────────────────────────────────────────
+    realtime_poll_interval_minutes: int = Field(
+        default=30,
+        ge=5,
+        le=120,
+        description="Minutes between automatic sub-hourly ingest cycles for all active tenants",
+    )
+    realtime_poll_enabled: bool = Field(
+        default=True,
+        description="Enable the background sub-hourly polling scheduler",
+    )
+
+    # ── Action Execution ──────────────────────────────────────────────────
+    # Safety gate for AutoStop / AutoStart control-plane actions.
+    # Requires the tenant service principal to have VM Contributor (or equivalent)
+    # RBAC on the customer subscription. Off by default — opt in explicitly.
+    action_execution_enabled: bool = Field(
+        default=False,
+        description="Enable AutoStop/AutoStart action execution (requires VM Contributor role on customer subs)",
+    )
+
+    # ── Automated Commitment Purchasing ───────────────────────────────────
+    # Global kill switch for automated AWS RI / Savings Plan purchasing.
+    # BOTH this flag AND the per-tenant enabled flag must be true for any
+    # purchase to execute.  Default is false — operators must explicitly opt in.
+    commitment_auto_purchase_enabled: bool = Field(
+        default=False,
+        description=(
+            "Enable automated AWS RI/SP purchasing globally. "
+            "Per-tenant enabled flag must also be set to true."
+        ),
+    )
+    # Cosmos containers for commitment purchase audit trail and settings.
+    cosmos_container_commitment_purchases: str = Field(default="commitment_purchases")
+    cosmos_container_commitment_purchase_settings: str = Field(default="commitment_purchase_settings")
+    cosmos_container_escalation_configs: str = Field(default="escalation_configs")
+
+    # ── Real-time cost streaming (SSE) ────────────────────────────────────
+    sse_poll_interval_seconds: int = Field(
+        default=60,
+        ge=15,
+        le=300,
+        description="Default seconds between Cosmos polls for the SSE cost stream",
+    )
+    sse_keepalive_seconds: int = Field(
+        default=30,
+        ge=5,
+        le=120,
+        description="Seconds between SSE keep-alive comment frames (prevents proxy timeouts)",
+    )
+
     # ── AI Cost Analyst ────────────────────────────────────────────────────
     # Set openai_api_key (or store in Key Vault as "openai-api-key") to enable
     # LLM-powered root-cause explanations. Leave empty to use rule-based fallback.
@@ -90,6 +148,16 @@ class Settings(BaseSettings):
     openai_model: str = Field(default="gpt-4o", description="Model name / Azure deployment name")
     ai_analyst_max_tokens: int = Field(default=700, ge=100, le=2000)
     ai_explanation_cache_ttl: int = Field(default=604_800, ge=0, description="Cache AI explanations for N seconds (default 7 days)")
+
+    # ── Bot integrations (Slack / Teams) ──────────────────────────────────
+    # Webhook URLs and signing secrets are stored per-tenant in Key Vault:
+    #   slack-webhook-{tenant_id}          Slack incoming webhook URL
+    #   slack-signing-secret-{tenant_id}   Slack signing secret
+    #   teams-webhook-{tenant_id}          Teams incoming webhook URL
+    # The settings below are optional global defaults (override per-tenant via KV).
+    slack_default_webhook: str = Field(default="", description="Global fallback Slack webhook URL")
+    teams_default_webhook: str = Field(default="", description="Global fallback Teams webhook URL")
+    bot_signature_max_age_seconds: int = Field(default=300, ge=60, le=900, description="Max age for Slack request signatures")
 
     @property
     def fx_prefetch_list(self) -> list[str]:

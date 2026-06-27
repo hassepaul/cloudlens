@@ -111,6 +111,37 @@ async def trigger_hourly_ingest(tenant_id: str, background_tasks: BackgroundTask
     }
 
 
+@ingest_router.get("/{tenant_id}/lag")
+async def get_data_lag(tenant_id: str) -> dict:
+    """
+    Return the current data lag for a tenant: when it was last polled,
+    how many records were pulled, and the lag in minutes.
+    """
+    from app.services.realtime_ingest import get_poll_state
+    state = await get_poll_state(tenant_id)
+    return {
+        "tenant_id": tenant_id,
+        "last_polled_at": state.get("last_polled_at"),
+        "last_success_at": state.get("last_success_at"),
+        "lag_minutes": state.get("lag_minutes"),
+        "records_last_pull": state.get("records_last_pull", 0),
+        "total_records_pulled": state.get("total_records_pulled", 0),
+        "consecutive_errors": state.get("consecutive_errors", 0),
+        "last_error": state.get("last_error"),
+    }
+
+
+@ingest_router.post("/poll-all", status_code=202)
+async def trigger_poll_all(background_tasks: BackgroundTasks) -> dict:
+    """
+    Admin: immediately trigger a delta pull for all active tenants.
+    Normally driven by the background scheduler; this allows manual forcing.
+    """
+    from app.services.realtime_ingest import poll_all_active_tenants
+    background_tasks.add_task(poll_all_active_tenants)
+    return {"status": "accepted", "message": "Delta pull queued for all active tenants"}
+
+
 @health_router.get("/")
 async def health_check() -> dict:
     """Liveness + dependency health check."""

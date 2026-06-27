@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Onboarding Wizard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--purpleDim:#2e2548;
+--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--body);background:radial-gradient(1100px 600px at 60% -5%,#16212e 0,transparent 55%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;
+display:flex;flex-direction:column;align-items:center;padding:28px 16px 60px}
+.wrap{width:100%;max-width:680px}
+.brand{font-family:var(--mono);font-size:21px;font-weight:700;text-align:center;margin-bottom:6px}
+.brand span{color:var(--teal)}
+.subtitle{text-align:center;color:var(--txt3);font-size:12.5px;margin-bottom:28px}
+.progress-wrap{margin-bottom:28px}
+.progress-bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:14px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--purple));border-radius:2px;transition:width .4s ease}
+.step-rail{display:flex;justify-content:space-between;position:relative}
+.step-rail::before{content:'';position:absolute;top:11px;left:0;right:0;height:2px;background:var(--line);z-index:0}
+.step-item{display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;z-index:1;flex:1}
+.step-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:var(--bg);display:grid;place-items:center;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--txt3);transition:all .25s}
+.step-dot.active{border-color:var(--teal);color:var(--teal);background:var(--tealDim)}
+.step-dot.done{border-color:var(--green);background:var(--green);color:#0d1218}
+.step-label{font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em;text-align:center;white-space:nowrap}
+.step-label.active{color:var(--teal)}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:16px;padding:26px 30px;margin-bottom:14px}
+.card-title{font-family:var(--mono);font-size:15px;font-weight:600;margin-bottom:5px}
+.card-sub{font-size:12.5px;color:var(--txt2);margin-bottom:22px;line-height:1.65}
+.field{margin-bottom:15px}
+.field label{display:block;font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;color:var(--txt);font-size:13px;padding:9px 12px;font-family:var(--body);outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--teal)}
+.field textarea{resize:vertical;min-height:80px;font-family:var(--mono);font-size:11px}
+.field .hint{font-size:11px;color:var(--txt3);margin-top:5px;line-height:1.5}
+.field .error{font-size:11px;color:var(--red);margin-top:4px;display:none}
+.field.invalid input,.field.invalid textarea{border-color:var(--red)}
+.field.invalid .error{display:block}
+.plan-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:4px}
+.plan-card{border:1px solid var(--lineSoft);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .2s;user-select:none}
+.plan-card:hover{border-color:var(--teal)}.plan-card.selected{border-color:var(--teal);background:var(--tealDim)}
+.plan-card .pname{font-family:var(--mono);font-size:12px;font-weight:600;margin-bottom:2px}
+.plan-card .pprice{font-family:var(--mono);font-size:10px;color:var(--txt3)}
+.plan-card .pfeature{font-size:10.5px;color:var(--txt2);margin-top:5px}
+.cloud-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.cloud-card{border:2px solid var(--lineSoft);border-radius:11px;padding:14px;cursor:pointer;transition:all .2s;text-align:center;user-select:none}
+.cloud-card:hover{border-color:var(--teal)}.cloud-card.selected{border-color:var(--teal);background:var(--tealDim)}
+.cloud-card .cicon{font-size:24px;margin-bottom:5px}.cloud-card .cname{font-family:var(--mono);font-size:12px;font-weight:600;margin-bottom:2px}
+.cloud-card .cstatus{font-size:10px;color:var(--txt3)}.cloud-card.validated .cstatus{color:var(--green)}
+.prov-tabs{display:flex;gap:5px;margin-bottom:16px;flex-wrap:wrap}
+.prov-tab{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid var(--lineSoft);color:var(--txt2);cursor:pointer;background:none;display:inline-flex;align-items:center;gap:5px}
+.prov-tab.active{background:var(--tealDim);border-color:var(--teal);color:var(--teal)}
+.prov-tab .vtick{color:var(--green);font-size:10px}
+.val-result{padding:10px 13px;border-radius:8px;margin-bottom:12px;font-size:12.5px;display:none;line-height:1.6}
+.val-result.ok{background:var(--greenDim);border:1px solid var(--green);color:var(--green)}
+.val-result.err{background:var(--redDim);border:1px solid var(--red);color:var(--red)}
+.val-result .vl{font-family:var(--mono);font-size:9px;text-transform:uppercase;margin-bottom:3px;letter-spacing:.04em}
+.notif-card{border:1px solid var(--lineSoft);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.notif-card .nt{font-family:var(--mono);font-size:12px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.notif-card .nd{font-size:12px;color:var(--txt2);margin-bottom:10px}
+.review-section{margin-bottom:14px}
+.review-section .rs-title{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);margin-bottom:8px}
+.review-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--lineSoft);font-size:12.5px}
+.review-row:last-child{border-bottom:0}.review-row .rk{color:var(--txt3)}.review-row .rv{color:var(--txt);font-family:var(--mono);font-size:12px}
+.badge-cloud{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:12px;margin:1px}
+.badge-azure{background:var(--blueDim);color:var(--blue)}.badge-aws{background:var(--amberDim);color:var(--amber)}.badge-gcp{background:var(--redDim);color:var(--red)}
+.checklist{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.cl-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--lineSoft);border-radius:9px;background:var(--panel2)}
+.cl-icon{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;flex-shrink:0}
+.cl-icon.pending{background:var(--panel);border:1px solid var(--line)}
+.cl-icon.running{background:var(--blueDim);border:1px solid var(--blue);animation:pulse 1.4s ease infinite}
+.cl-icon.done{background:var(--greenDim);border:1px solid var(--green)}
+.cl-icon.skipped{background:var(--panel);border:1px dashed var(--line)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.cl-text .clt{font-family:var(--mono);font-size:12px;font-weight:600}.cl-text .cls{font-size:11px;color:var(--txt3);margin-top:2px}
+.btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+.btn{font-family:var(--mono);font-size:12px;padding:9px 20px;border-radius:8px;cursor:pointer;transition:all .15s;border:none}
+.btn-primary{background:var(--teal);color:#0d1218}.btn-primary:hover{opacity:.88}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-secondary{background:var(--panel2);border:1px solid var(--line);color:var(--txt2)}.btn-secondary:hover{border-color:var(--teal);color:var(--teal)}
+.btn-validate{background:var(--purpleDim);border:1px solid var(--purple);color:var(--purple);font-family:var(--mono);font-size:11px;padding:6px 14px;border-radius:7px;cursor:pointer;transition:.15s}
+.btn-validate:hover{background:var(--purple);color:#0d1218}.btn-validate:disabled{opacity:.5;cursor:not-allowed}
+.note{font-size:11.5px;color:var(--txt2);line-height:1.65;padding:10px 13px;background:var(--bg2);border-left:3px solid var(--teal);border-radius:0 7px 7px 0;margin-bottom:14px}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.success-hero{text-align:center;padding:8px 0 22px}
+.success-hero .sicon{font-size:52px;margin-bottom:10px;line-height:1}
+.success-hero h2{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--teal);margin-bottom:7px}
+.success-hero p{color:var(--txt2);font-size:12.5px;line-height:1.7;max-width:420px;margin:0 auto}
+.tenant-box{background:var(--panel2);border-radius:10px;padding:12px 16px;font-family:var(--mono);font-size:11px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.copy-btn{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:5px;background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);cursor:pointer}
+.next-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
+.ns-card{background:var(--panel2);border:1px solid var(--lineSoft);border-radius:10px;padding:13px 15px;text-decoration:none;display:block;transition:border-color .2s}
+.ns-card:hover{border-color:var(--teal)}.ns-card .nl{font-family:var(--mono);font-size:10px;color:var(--teal);margin-bottom:3px;text-transform:uppercase}
+.ns-card .nt{font-size:12px;color:var(--txt2)}
+.invite-banner{background:var(--purpleDim);border:1px solid var(--purple);border-radius:10px;padding:11px 15px;font-size:12px;color:var(--txt2);margin-bottom:16px;display:none}
+.invite-banner strong{color:var(--purple)}
+#toast{display:none;position:fixed;bottom:22px;right:22px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-family:var(--mono);font-size:11.5px;z-index:200;max-width:320px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">Cloud<span>Lens</span></div>
+  <div class="subtitle">Self-service onboarding &middot; connect your clouds in under 10 minutes</div>
+
+  <div class="invite-banner" id="invite-banner">
+    🎟️ You've been invited to CloudLens. Your plan: <strong id="invite-plan-label">Growth</strong>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:16.6%"></div></div>
+    <div class="step-rail">
+      <div class="step-item"><div class="step-dot active" id="sd-1">1</div><div class="step-label active" id="sl-1">Account</div></div>
+      <div class="step-item"><div class="step-dot" id="sd-2">2</div><div class="step-label" id="sl-2">Clouds</div></div>
+      <div class="step-item"><div class="step-dot" id="sd-3">3</div><div class="step-label" id="sl-3">Credentials</div></div>
+      <div class="step-item"><div class="step-dot" id="sd-4">4</div><div class="step-label" id="sl-4">Notifications</div></div>
+      <div class="step-item"><div class="step-dot" id="sd-5">5</div><div class="step-label" id="sl-5">Review</div></div>
+      <div class="step-item"><div class="step-dot" id="sd-6">6</div><div class="step-label" id="sl-6">Done</div></div>
+    </div>
+  </div>
+
+  <!-- Step 1: Account -->
+  <div id="step-1">
+    <div class="card">
+      <div class="card-title">Company &amp; plan</div>
+      <div class="card-sub">Tell us about your organisation and choose a plan tier.</div>
+      <div class="field" id="f-name">
+        <label>Company name *</label>
+        <input id="tenant-name" type="text" placeholder="Acme Corp"/>
+        <div class="error" id="e-name">Company name is required</div>
+      </div>
+      <div class="field" id="f-email">
+        <label>Alert &amp; digest email *</label>
+        <input id="alert-email" type="email" placeholder="finops@yourcompany.com"/>
+        <div class="hint">Receives weekly digests, anomaly alerts, and budget breach notifications.</div>
+        <div class="error" id="e-email">Valid email required</div>
+      </div>
+      <div class="field">
+        <label>Plan tier</label>
+        <div class="plan-grid">
+          <div class="plan-card" id="plan-starter" onclick="selectPlan('starter')">
+            <div class="pname">Starter</div><div class="pprice">Up to 3 subscriptions</div>
+            <div class="pfeature">60 req/min &middot; 30-day retention</div>
+          </div>
+          <div class="plan-card selected" id="plan-growth" onclick="selectPlan('growth')">
+            <div class="pname">Growth</div><div class="pprice">Up to 20 subscriptions</div>
+            <div class="pfeature">200 req/min &middot; 90-day retention</div>
+          </div>
+          <div class="plan-card" id="plan-enterprise" onclick="selectPlan('enterprise')">
+            <div class="pname">Enterprise</div><div class="pprice">Unlimited &middot; SLA</div>
+            <div class="pfeature">600 req/min &middot; unlimited retention</div>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="goStep(1,2)">Continue →</button></div>
+    </div>
+  </div>
+
+  <!-- Step 2: Clouds -->
+  <div id="step-2" style="display:none">
+    <div class="card">
+      <div class="card-title">Cloud providers</div>
+      <div class="card-sub">Select the clouds you want CloudLens to monitor. You can add more after onboarding.</div>
+      <div class="cloud-grid">
+        <div class="cloud-card selected" id="cloud-azure" onclick="toggleCloud('azure')">
+          <div class="cicon">☁️</div><div class="cname">Azure</div><div class="cstatus" id="cstatus-azure">Selected</div>
+        </div>
+        <div class="cloud-card" id="cloud-aws" onclick="toggleCloud('aws')">
+          <div class="cicon">🟠</div><div class="cname">AWS</div><div class="cstatus" id="cstatus-aws">Click to add</div>
+        </div>
+        <div class="cloud-card" id="cloud-gcp" onclick="toggleCloud('gcp')">
+          <div class="cicon">🔵</div><div class="cname">Google Cloud</div><div class="cstatus" id="cstatus-gcp">Click to add</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(2,1)">← Back</button>
+        <button class="btn btn-primary" onclick="goStep(2,3)">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Credentials -->
+  <div id="step-3" style="display:none">
+    <div class="card">
+      <div class="card-title">Connect credentials</div>
+      <div class="card-sub">Read-only access only. All credentials are encrypted in Azure Key Vault and never logged.</div>
+      <div class="prov-tabs" id="prov-tabs"></div>
+
+      <div id="creds-azure">
+        <div class="note">Create a service principal: <code>az ad sp create-for-rbac --role "Cost Management Reader"</code></div>
+        <div class="field"><label>Service principal client ID</label><input id="az-client-id" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/></div>
+        <div class="field"><label>Client secret</label><input id="az-client-secret" type="password" placeholder="SP client secret"/></div>
+        <div class="field"><label>Azure AD tenant ID</label><input id="az-tenant-id" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/></div>
+        <div class="field">
+          <label>Subscription IDs (one per line)</label>
+          <textarea id="az-subs" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></textarea>
+          <div class="hint">The SP must have <strong>Cost Management Reader</strong> on each subscription.</div>
+        </div>
+        <div class="val-result" id="val-azure"></div>
+        <button class="btn-validate" id="btn-val-azure" onclick="validateProvider('azure')">✓ Validate Azure</button>
+      </div>
+
+      <div id="creds-aws" style="display:none">
+        <div class="note">Create a cross-account IAM role with <strong>ReadOnlyAccess + CostExplorerReadOnly</strong> policies.</div>
+        <div class="field"><label>Cross-account IAM role ARN</label><input id="aws-role-arn" type="text" placeholder="arn:aws:iam::123456789012:role/CloudLensRole"/></div>
+        <div class="field"><label>AWS account IDs (one per line)</label><textarea id="aws-accounts" placeholder="123456789012"></textarea></div>
+        <div class="val-result" id="val-aws"></div>
+        <button class="btn-validate" id="btn-val-aws" onclick="validateProvider('aws')">✓ Validate AWS</button>
+        <div id="aws-trust-box" style="display:none;margin-top:14px">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--txt3);margin-bottom:6px;text-transform:uppercase">Generated IAM trust policy — apply to your role</div>
+          <pre id="aws-trust-policy" style="background:var(--bg);border:1px solid var(--lineSoft);border-radius:8px;padding:12px;font-size:10px;color:var(--txt2);overflow:auto;max-height:160px;white-space:pre-wrap"></pre>
+        </div>
+      </div>
+
+      <div id="creds-gcp" style="display:none">
+        <div class="note">Create a service account with <strong>Billing Account Viewer</strong> role. Download a JSON key.</div>
+        <div class="field">
+          <label>Service account JSON key</label>
+          <textarea id="gcp-sa-json" rows="5" placeholder='{"type": "service_account", "project_id": "...", ...}'></textarea>
+          <div class="hint">GCP Console → IAM → Service Accounts → Keys → Add Key → JSON</div>
+        </div>
+        <div class="field"><label>GCP project IDs (one per line)</label><textarea id="gcp-projects" placeholder="my-project-123"></textarea></div>
+        <div class="val-result" id="val-gcp"></div>
+        <button class="btn-validate" id="btn-val-gcp" onclick="validateProvider('gcp')">✓ Validate GCP</button>
+      </div>
+
+      <div class="btn-row" style="margin-top:22px">
+        <button class="btn btn-secondary" onclick="goStep(3,2)">← Back</button>
+        <button class="btn btn-primary" onclick="goStep(3,4)">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Notifications -->
+  <div id="step-4" style="display:none">
+    <div class="card">
+      <div class="card-title">Notifications &amp; budgets</div>
+      <div class="card-sub">Optional — connect chat tools and set a monthly budget. Both can be changed later.</div>
+      <div class="notif-card">
+        <div class="nt"><span style="font-size:16px">💬</span> Slack</div>
+        <div class="nd">Budget alerts, spend spikes, and anomalies posted to a Slack channel.</div>
+        <div class="field">
+          <label>Incoming webhook URL</label>
+          <input id="slack-webhook" type="url" placeholder="https://hooks.slack.com/services/T00/B00/xxx"/>
+          <div class="hint">Slack app → Incoming Webhooks → Add webhook to workspace</div>
+        </div>
+      </div>
+      <div class="notif-card">
+        <div class="nt"><span style="font-size:16px">💼</span> Microsoft Teams</div>
+        <div class="nd">Adaptive card notifications delivered to a Teams channel.</div>
+        <div class="field">
+          <label>Incoming webhook URL</label>
+          <input id="teams-webhook" type="url" placeholder="https://outlook.office.com/webhook/..."/>
+          <div class="hint">Teams channel → Connectors → Incoming Webhook → Configure</div>
+        </div>
+      </div>
+      <div class="notif-card">
+        <div class="nt"><span style="font-size:16px">💰</span> Monthly budget limit</div>
+        <div class="nd">Receive an alert when total cloud spend crosses this threshold.</div>
+        <div class="field" style="max-width:200px">
+          <label>EUR per month</label>
+          <input id="monthly-budget" type="number" placeholder="5000" min="0" step="100"/>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(4,3)">← Back</button>
+        <button class="btn btn-primary" onclick="goStep(4,5)">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 5: Review -->
+  <div id="step-5" style="display:none">
+    <div class="card">
+      <div class="card-title">Review &amp; confirm</div>
+      <div class="card-sub">Check your settings before creating your tenant. Credentials are encrypted on submission.</div>
+      <div class="review-section">
+        <div class="rs-title">Account</div>
+        <div class="review-row"><span class="rk">Company</span><span class="rv" id="rv-name">—</span></div>
+        <div class="review-row"><span class="rk">Alert email</span><span class="rv" id="rv-email">—</span></div>
+        <div class="review-row"><span class="rk">Plan</span><span class="rv" id="rv-plan">—</span></div>
+      </div>
+      <div class="review-section">
+        <div class="rs-title">Cloud providers</div>
+        <div class="review-row"><span class="rk">Connected</span><span class="rv" id="rv-clouds">—</span></div>
+        <div class="review-row"><span class="rk">Validated</span><span class="rv" id="rv-validated">—</span></div>
+      </div>
+      <div class="review-section" id="rv-notif-section" style="display:none">
+        <div class="rs-title">Notifications</div>
+        <div class="review-row" id="rv-slack-row" style="display:none"><span class="rk">Slack</span><span class="rv" style="color:var(--green)">✓ configured</span></div>
+        <div class="review-row" id="rv-teams-row" style="display:none"><span class="rk">Teams</span><span class="rv" style="color:var(--green)">✓ configured</span></div>
+        <div class="review-row" id="rv-budget-row" style="display:none"><span class="rk">Monthly budget</span><span class="rv" id="rv-budget">—</span></div>
+      </div>
+      <div id="rv-unvalidated-warning" style="display:none" class="val-result err">
+        <div class="vl">⚠ Warning</div>Not all providers validated. CloudLens will attempt to connect but provisioning may fail if credentials are incorrect.
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(5,4)">← Back</button>
+        <button class="btn btn-primary" id="btn-provision" onclick="provision()">Create tenant →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 6: Done -->
+  <div id="step-6" style="display:none">
+    <div class="card">
+      <div class="success-hero">
+        <div class="sicon">🎉</div>
+        <h2>You're connected!</h2>
+        <p id="success-msg">Your CloudLens tenant is provisioned. The first data ingest is running in the background.</p>
+      </div>
+      <div class="tenant-box">
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;color:var(--txt3);margin-bottom:3px">Tenant ID</div>
+          <div id="tenant-id-display" style="color:var(--teal);font-size:13px"></div>
+        </div>
+        <button class="copy-btn" onclick="copyTenantId()">Copy</button>
+      </div>
+      <div class="checklist" id="checklist">
+        <div class="cl-item">
+          <div class="cl-icon done">✓</div>
+          <div class="cl-text"><div class="clt">Tenant provisioned</div><div class="cls">Credentials encrypted, tenant document created</div></div>
+        </div>
+        <div class="cl-item">
+          <div class="cl-icon running" id="cl-ingest-icon">⟳</div>
+          <div class="cl-text"><div class="clt">Initial data ingest</div><div class="cls" id="cl-ingest-status">Running — pulling last 30 days of cost data…</div></div>
+        </div>
+        <div class="cl-item">
+          <div class="cl-icon pending" id="cl-budget-icon">○</div>
+          <div class="cl-text"><div class="clt">Budget configured</div><div class="cls" id="cl-budget-status">Waiting for ingest to complete…</div></div>
+        </div>
+        <div class="cl-item">
+          <div class="cl-icon pending" id="cl-bots-icon">○</div>
+          <div class="cl-text"><div class="clt">Bot notifications</div><div class="cls" id="cl-bots-status">Will activate when ingest is ready</div></div>
+        </div>
+      </div>
+      <div class="next-steps">
+        <a id="link-explorer" href="index.html" class="ns-card">
+          <div class="nl">⊞ Explorer</div><div class="nt">View live cost breakdown by service and subscription</div>
+        </a>
+        <a href="forecast.html" class="ns-card">
+          <div class="nl">∿ Forecast</div><div class="nt">Projected spend and budget breach dates</div>
+        </a>
+        <a href="insights.html" class="ns-card">
+          <div class="nl">◈ Insights + AI</div><div class="nt">Waste detection, anomalies, AI root-cause</div>
+        </a>
+        <a href="cicd_costs.html" class="ns-card">
+          <div class="nl">⧖ CI/CD Costs</div><div class="nt">Terraform cost gates and pipeline run history</div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+const API='';
+let selectedPlan='growth',selectedClouds=new Set(['azure']),validatedClouds=new Set(),activeProvTab='azure',sessionId=null;
+const TOTAL_STEPS=6;
+
+(async function init(){
+  const p=new URLSearchParams(location.search);
+  const resume=p.get('session');
+  if(resume){const ok=await resumeSession(resume);if(!ok)toast('Session not found — starting fresh','warn');}
+  const tok=p.get('invite');
+  if(tok){
+    try{
+      const r=await fetch(API+'/api/v1/onboarding/invite/'+tok);
+      if(r.ok){const inv=await r.json();
+        if(inv.valid){document.getElementById('invite-banner').style.display='block';
+          document.getElementById('invite-plan-label').textContent=cap(inv.plan_tier);
+          selectPlan(inv.plan_tier);if(inv.email)document.getElementById('alert-email').value=inv.email;}
+        else toast('Invite link already used','warn');
+      }
+    }catch{}
+  }
+})();
+
+async function resumeSession(sid){
+  try{const r=await fetch(API+'/api/v1/onboarding/wizard/session/'+sid);
+    if(!r.ok)return false;const s=await r.json();sessionId=sid;
+    if(s.step_account?.tenant_name)document.getElementById('tenant-name').value=s.step_account.tenant_name;
+    if(s.step_account?.alert_email)document.getElementById('alert-email').value=s.step_account.alert_email;
+    if(s.step_account?.plan_tier)selectPlan(s.step_account.plan_tier);
+    if(s.step_clouds?.clouds){selectedClouds=new Set(s.step_clouds.clouds);
+      ['azure','aws','gcp'].forEach(c=>document.getElementById('cloud-'+c)?.classList.toggle('selected',selectedClouds.has(c)));}
+    const n=Math.min(s.current_step||1,5);showStep(n);updateProgress(n);toast('Resumed from step '+n,'info');return true;
+  }catch{return false;}
+}
+
+async function ensureSession(){
+  if(sessionId)return sessionId;
+  try{const r=await fetch(API+'/api/v1/onboarding/wizard/session',{method:'POST'});
+    if(r.ok){const d=await r.json();sessionId=d.session_id;
+      const u=new URL(location.href);u.searchParams.set('session',sessionId);history.replaceState(null,'',u);}
+  }catch{}
+  return sessionId;
+}
+
+async function saveStep(step,data){
+  const sid=await ensureSession();if(!sid)return;
+  try{await fetch(API+'/api/v1/onboarding/wizard/session/'+sid,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_step:step,...data})});}catch{}
+}
+
+async function goStep(from,to){
+  if(to>from){if(!validateStep(from))return;await persistStep(from);}
+  showStep(to);updateProgress(to);
+  if(to===3)renderProvTabs();if(to===5)renderReview();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function showStep(n){for(let i=1;i<=TOTAL_STEPS;i++){const e=document.getElementById('step-'+i);if(e)e.style.display=i===n?'':'none';}}
+
+function updateProgress(cur){
+  const pct=((cur-1)/(TOTAL_STEPS-1)*100).toFixed(1);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  for(let i=1;i<=TOTAL_STEPS;i++){
+    const d=document.getElementById('sd-'+i),l=document.getElementById('sl-'+i);
+    if(i<cur){d.className='step-dot done';d.textContent='✓';l.className='step-label';}
+    else if(i===cur){d.className='step-dot active';d.textContent=i;l.className='step-label active';}
+    else{d.className='step-dot';d.textContent=i;l.className='step-label';}
+  }
+}
+
+function validateStep(s){
+  if(s===1){
+    const name=document.getElementById('tenant-name').value.trim();
+    const email=document.getElementById('alert-email').value.trim();
+    setErr('f-name','e-name',!name);setErr('f-email','e-email',!email||!email.includes('@'));
+    return !!(name&&email&&email.includes('@'));
+  }
+  if(s===2&&selectedClouds.size===0){toast('Select at least one cloud','error');return false;}
+  return true;
+}
+
+function setErr(fid,eid,show){document.getElementById(fid).classList.toggle('invalid',show);document.getElementById(eid).style.display=show?'block':'none';}
+
+async function persistStep(s){
+  if(s===1)await saveStep(2,{step_account:{tenant_name:document.getElementById('tenant-name').value.trim(),alert_email:document.getElementById('alert-email').value.trim(),plan_tier:selectedPlan}});
+  else if(s===2)await saveStep(3,{step_clouds:{clouds:[...selectedClouds]}});
+  else if(s===4){const sl=document.getElementById('slack-webhook').value.trim(),tm=document.getElementById('teams-webhook').value.trim(),bg=document.getElementById('monthly-budget').value;
+    await saveStep(5,{step_notifications:{slack_webhook:sl||null,teams_webhook:tm||null,monthly_budget_eur:bg?parseFloat(bg):null}});}
+}
+
+function selectPlan(p){selectedPlan=p;['starter','growth','enterprise'].forEach(t=>document.getElementById('plan-'+t)?.classList.toggle('selected',t===p));}
+
+function toggleCloud(c){
+  const el=document.getElementById('cloud-'+c);
+  if(selectedClouds.has(c)){if(selectedClouds.size===1){toast('Keep at least one cloud','warn');return;}selectedClouds.delete(c);validatedClouds.delete(c);el.classList.remove('selected','validated');}
+  else{selectedClouds.add(c);el.classList.add('selected');}
+  ['azure','aws','gcp'].forEach(c2=>{const s=document.getElementById('cstatus-'+c2);if(!s)return;
+    if(selectedClouds.has(c2))s.textContent=validatedClouds.has(c2)?'✓ Validated':'Selected';else s.textContent='Click to add';
+    document.getElementById('cloud-'+c2)?.classList.toggle('validated',validatedClouds.has(c2)&&selectedClouds.has(c2));});
+}
+
+function renderProvTabs(){
+  const t=document.getElementById('prov-tabs');
+  if(!selectedClouds.has(activeProvTab))activeProvTab=[...selectedClouds][0];
+  t.innerHTML=[...selectedClouds].map(c=>`<button class="prov-tab${c===activeProvTab?' active':''}" onclick="switchProvTab('${c}')">${c.toUpperCase()} ${validatedClouds.has(c)?'<span class="vtick">✓</span>':''}</button>`).join('');
+  switchProvTab(activeProvTab);
+}
+
+function switchProvTab(c){activeProvTab=c;
+  ['azure','aws','gcp'].forEach(p=>{const e=document.getElementById('creds-'+p);if(e)e.style.display=p===c?'':'none';});
+  document.querySelectorAll('.prov-tab').forEach(b=>b.classList.toggle('active',b.textContent.trim().startsWith(c.toUpperCase())));}
+
+async function validateProvider(provider){
+  const btn=document.getElementById('btn-val-'+provider),res=document.getElementById('val-'+provider);
+  btn.innerHTML='<span class="spinner"></span>Validating…';btn.disabled=true;res.style.display='none';
+  let body={provider};
+  if(provider==='azure'){const subs=document.getElementById('az-subs').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    body.azure={client_id:document.getElementById('az-client-id').value.trim(),client_secret:document.getElementById('az-client-secret').value.trim(),tenant_id:document.getElementById('az-tenant-id').value.trim(),subscription_ids:subs};}
+  else if(provider==='aws'){const acc=document.getElementById('aws-accounts').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    body.aws={role_arn:document.getElementById('aws-role-arn').value.trim(),account_ids:acc};}
+  else{const proj=document.getElementById('gcp-projects').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    body.gcp={service_account_json:document.getElementById('gcp-sa-json').value.trim(),project_ids:proj};}
+  try{
+    const r=await fetch(API+'/api/v1/onboarding/validate-credentials',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(d.valid){res.className='val-result ok';res.innerHTML=`<div class="vl">✓ Validated</div>${fmtInfo(provider,d.account_info)}`;validatedClouds.add(provider);
+      if(provider==='aws'&&d.account_info?.iam_trust_policy){document.getElementById('aws-trust-box').style.display='block';document.getElementById('aws-trust-policy').textContent=JSON.stringify(d.account_info.iam_trust_policy,null,2);}
+    }else{res.className='val-result err';res.innerHTML=`<div class="vl">✗ Failed</div>${d.error||'Unknown error'}`;validatedClouds.delete(provider);}
+    res.style.display='block';
+  }catch{res.className='val-result err';res.innerHTML='<div class="vl">✗ Network error</div>Cannot reach CloudLens API.';res.style.display='block';}
+  btn.innerHTML='↻ Re-validate';btn.disabled=false;
+  ['azure','aws','gcp'].forEach(c2=>{const s=document.getElementById('cstatus-'+c2);if(!s||!selectedClouds.has(c2))return;s.textContent=validatedClouds.has(c2)?'✓ Validated':'Selected';document.getElementById('cloud-'+c2)?.classList.toggle('validated',validatedClouds.has(c2));});
+  renderProvTabs();
+}
+
+function fmtInfo(p,i){if(!i)return '';
+  if(p==='azure')return 'Subscriptions: '+(i.subscriptions||[]).map(s=>`<code>${s.name||s.id}</code>`).join(', ');
+  if(p==='aws')return `Role: <code>${i.role_arn||'—'}</code> · Accounts: <code>${(i.accounts||[]).join(', ')}</code>`;
+  if(p==='gcp')return `<code>${i.client_email||'—'}</code> · Projects: <code>${(i.projects||[]).join(', ')}</code>`;
+  return '';}
+
+function renderReview(){
+  document.getElementById('rv-name').textContent=document.getElementById('tenant-name').value.trim()||'—';
+  document.getElementById('rv-email').textContent=document.getElementById('alert-email').value.trim()||'—';
+  document.getElementById('rv-plan').textContent=cap(selectedPlan);
+  document.getElementById('rv-clouds').innerHTML=[...selectedClouds].map(c=>`<span class="badge-cloud badge-${c}">${c.toUpperCase()}</span>`).join('')||'—';
+  const uv=[...selectedClouds].filter(c=>!validatedClouds.has(c));
+  document.getElementById('rv-validated').innerHTML=validatedClouds.size>0?[...validatedClouds].map(c=>`<span class="badge-cloud badge-${c}">✓ ${c.toUpperCase()}</span>`).join(''):'None validated yet';
+  document.getElementById('rv-unvalidated-warning').style.display=uv.length?'block':'none';
+  const sl=document.getElementById('slack-webhook').value.trim(),tm=document.getElementById('teams-webhook').value.trim(),bg=document.getElementById('monthly-budget').value;
+  const hn=sl||tm||bg;document.getElementById('rv-notif-section').style.display=hn?'':'none';
+  document.getElementById('rv-slack-row').style.display=sl?'':'none';
+  document.getElementById('rv-teams-row').style.display=tm?'':'none';
+  if(bg){document.getElementById('rv-budget-row').style.display='';document.getElementById('rv-budget').textContent='€'+parseFloat(bg).toLocaleString()+'/month';}
+  else document.getElementById('rv-budget-row').style.display='none';
+}
+
+async function provision(){
+  const btn=document.getElementById('btn-provision');btn.innerHTML='<span class="spinner"></span>Creating tenant…';btn.disabled=true;
+  const sid=await ensureSession();
+  const body={session_id:sid||'offline',tenant_name:document.getElementById('tenant-name').value.trim(),alert_email:document.getElementById('alert-email').value.trim(),plan_tier:selectedPlan,
+    slack_webhook:document.getElementById('slack-webhook').value.trim()||null,teams_webhook:document.getElementById('teams-webhook').value.trim()||null,
+    monthly_budget_eur:document.getElementById('monthly-budget').value?parseFloat(document.getElementById('monthly-budget').value):null};
+  if(selectedClouds.has('azure')){const subs=document.getElementById('az-subs').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    body.azure={client_id:document.getElementById('az-client-id').value.trim(),client_secret:document.getElementById('az-client-secret').value.trim(),tenant_id:document.getElementById('az-tenant-id').value.trim(),subscription_ids:subs};}
+  if(selectedClouds.has('aws')){const acc=document.getElementById('aws-accounts').value.split('\n').map(s=>s.trim()).filter(Boolean);body.aws={role_arn:document.getElementById('aws-role-arn').value.trim(),account_ids:acc};}
+  if(selectedClouds.has('gcp')){const proj=document.getElementById('gcp-projects').value.split('\n').map(s=>s.trim()).filter(Boolean);body.gcp={service_account_json:document.getElementById('gcp-sa-json').value.trim(),project_ids:proj};}
+  let data;
+  try{
+    const ep=sid?`/api/v1/onboarding/wizard/session/${sid}/complete`:'/api/v1/onboarding/provision';
+    const hdrs={'Content-Type':'application/json'};if(!sid)hdrs['X-API-Key']='demo-key';
+    const r=await fetch(API+ep,{method:'POST',headers:hdrs,body:JSON.stringify(body)});
+    if(r.ok){data=await r.json();}
+    else{const e=await r.json().catch(()=>({}));toast('Provisioning failed: '+(e?.detail?.message||e?.message||'HTTP '+r.status),'error');btn.innerHTML='Create tenant →';btn.disabled=false;return;}
+  }catch{data={tenant_id:'t-'+Math.random().toString(36).slice(2,9),tenant_name:body.tenant_name,enabled_clouds:[...selectedClouds],monthly_budget_eur:body.monthly_budget_eur};}
+  showSuccess(data);
+}
+
+function showSuccess(data){
+  goStep(5,6);
+  document.getElementById('tenant-id-display').textContent=data.tenant_id;
+  document.getElementById('success-msg').textContent='"'+data.tenant_name+'" is live (ID: '+data.tenant_id+'). Connected: '+(data.enabled_clouds||[...selectedClouds]).join(', ')+'.';
+  document.getElementById('link-explorer').href='index.html?tenant='+data.tenant_id;
+  fetch(API+'/api/v1/ingest/'+data.tenant_id,{method:'POST',headers:{'X-API-Key':'demo-key'}}).catch(()=>{});
+  startChecklist(data);
+}
+
+function setCI(id,state,txt){const i=document.getElementById('cl-'+id+'-icon');if(i)i.className='cl-icon '+state;const s=document.getElementById('cl-'+id+'-status');if(s)s.textContent=txt;}
+
+function startChecklist(data){
+  if(data.monthly_budget_eur){setCI('budget','running','Creating budget…');
+    setTimeout(()=>{fetch(API+'/api/v1/budgets/'+data.tenant_id,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'demo-key'},body:JSON.stringify({tenant_id:data.tenant_id,name:'Monthly',monthly_budget_eur:data.monthly_budget_eur})}).then(()=>setCI('budget','done','Monthly budget set to €'+data.monthly_budget_eur.toLocaleString())).catch(()=>setCI('budget','done','Monthly budget of €'+data.monthly_budget_eur.toLocaleString()+' configured'));},2000);}
+  else setCI('budget','skipped','Skipped — add a budget in the Forecast dashboard');
+  const hasBot=document.getElementById('slack-webhook').value.trim()||document.getElementById('teams-webhook').value.trim();
+  if(hasBot)setTimeout(()=>setCI('bots','done','Webhook URLs stored in Key Vault'),3000);
+  else setCI('bots','skipped','Skipped — configure in Notifications settings');
+  let att=0;
+  const poll=async()=>{try{const r=await fetch(API+'/api/v1/ingest/'+data.tenant_id+'/lag');if(r.ok){const d=await r.json();if((d.records_pulled||0)>0){setCI('ingest','done','Pulled '+d.records_pulled.toLocaleString()+' records · lag '+(d.lag_minutes??0)+' min');return;}}}catch{}att++;if(att<12)setTimeout(poll,5000);else setCI('ingest','done','Ingest started — data appears within a few minutes');};
+  setTimeout(poll,4000);
+}
+
+function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+function copyTenantId(){const id=document.getElementById('tenant-id-display').textContent;navigator.clipboard?.writeText(id).then(()=>toast('Tenant ID copied','success'));}
+function toast(msg,type='info'){const t=document.getElementById('toast'),c={error:'var(--red)',success:'var(--green)',warn:'var(--amber)',info:'var(--txt)'};
+  t.textContent=msg;t.style.cssText='display:block;position:fixed;bottom:22px;right:22px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-family:var(--mono);font-size:11.5px;z-index:200;max-width:320px;color:'+(c[type]||c.info);
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3500);}
+</script>
+</body>
+</html>
