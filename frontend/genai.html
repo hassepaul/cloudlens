@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CloudLens — GenAI Cost Intelligence</title>
+<style>
+:root{
+  --bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;
+  --txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;
+  --teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+  --red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;
+  --purple:#a78bfa;--purpleDim:#2e2548;--green:#4ade80;--greenDim:#14321f;
+  --mono:'Space Grotesk',system-ui,sans-serif;--body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(900px 400px at 70% -5%,#16212e 0,transparent 55%),var(--bg);color:var(--txt);font-size:14px;line-height:1.55;padding:22px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1140px;margin:0 auto}
+a{color:var(--blue);text-decoration:none}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--purple);box-shadow:0 0 10px var(--purple)}
+.ctrl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,input{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 12px;font-size:13px;outline:none}
+select:focus,input:focus{border-color:var(--purple)}
+button.btn{background:var(--purple);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s}
+button.btn:hover{opacity:.85}
+button.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt2)}
+
+/* KPI strip */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);margin-bottom:6px}
+.kpi .value{font-family:var(--mono);font-size:24px;font-weight:700}
+.kpi .sub{font-size:12px;color:var(--txt3);margin-top:4px}
+.kpi.purple .value{color:var(--purple)}
+.kpi.teal .value{color:var(--teal)}
+.kpi.amber .value{color:var(--amber)}
+.kpi.green .value{color:var(--green)}
+
+/* Grid layout */
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.panel h3{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--txt2);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.panel h3 .badge{font-size:10px;background:var(--purpleDim);color:var(--purple);border-radius:6px;padding:2px 7px}
+
+/* Table */
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--txt3);text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;font-size:13px;border-bottom:1px solid #1a2433;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--panel2)}
+.pill{display:inline-block;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:500}
+.pill-purple{background:var(--purpleDim);color:var(--purple)}
+.pill-teal{background:var(--tealDim);color:var(--teal)}
+.pill-amber{background:var(--amberDim);color:var(--amber)}
+.pill-green{background:var(--greenDim);color:var(--green)}
+.pill-red{background:var(--redDim);color:var(--red)}
+
+/* Alert card */
+.alert-card{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left-width:4px}
+.alert-card.warning{border-left-color:var(--amber)}
+.alert-card.breach{border-left-color:var(--red)}
+.alert-card .name{font-weight:600;font-size:14px}
+.alert-card .meta{font-size:12px;color:var(--txt3);margin-top:3px}
+.progress{height:6px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
+.progress-bar{height:100%;border-radius:3px;transition:width .3s}
+
+/* Comparison card */
+.cmp-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px}
+.cmp-card .arrow{color:var(--green);font-size:18px;line-height:1}
+.cmp-card .saving{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--green)}
+
+/* Trend chart */
+canvas{display:block;width:100%!important}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Header -->
+<div class="head">
+  <h1><span class="dot"></span> GenAI Cost Intelligence</h1>
+  <div class="ctrl">
+    <input id="tenant-input" type="text" value="demo" placeholder="tenant_id" style="width:120px" />
+    <input id="api-key" type="password" placeholder="API key" style="width:140px" />
+    <select id="period-select" onchange="loadAll()">
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="60">Last 60 days</option>
+      <option value="90">Last 90 days</option>
+    </select>
+    <button class="btn" onclick="loadAll()">Refresh</button>
+    <button class="btn ghost" onclick="showIngestModal()">+ Ingest</button>
+  </div>
+</div>
+
+<!-- KPI strip -->
+<div class="kpi-row" id="kpi-row">
+  <div class="kpi purple"><div class="label">Total GenAI Cost</div><div class="value" id="kpi-total-usd">—</div><div class="sub" id="kpi-total-eur">EUR —</div></div>
+  <div class="kpi teal"><div class="label">Total Requests</div><div class="value" id="kpi-requests">—</div><div class="sub" id="kpi-tokens">— tokens</div></div>
+  <div class="kpi amber"><div class="label">Avg Cost / Request</div><div class="value" id="kpi-avg-cost">—</div><div class="sub">USD per call</div></div>
+  <div class="kpi green"><div class="label">Cost / 1M Tokens</div><div class="value" id="kpi-per-1m">—</div><div class="sub" id="kpi-top-model">—</div></div>
+</div>
+
+<!-- Trend + Provider -->
+<div class="grid2">
+  <div class="panel">
+    <h3>Daily Spend Trend <span class="badge" id="trend-badge">by model</span></h3>
+    <div style="height:220px;position:relative"><canvas id="trend-chart"></canvas></div>
+  </div>
+  <div class="panel">
+    <h3>By Provider</h3>
+    <div id="provider-table"></div>
+  </div>
+</div>
+
+<!-- Model breakdown -->
+<div class="panel" style="margin-bottom:16px">
+  <h3>Model Breakdown <span class="badge" id="model-count-badge">0 models</span></h3>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th>Provider</th><th>Model</th><th>Requests</th>
+        <th>Input tokens</th><th>Output tokens</th>
+        <th>Blended / 1M tok</th><th>Avg / request</th><th>Total cost</th>
+      </tr></thead>
+      <tbody id="model-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Comparisons + Alerts + Apps -->
+<div class="grid3">
+  <div class="panel" style="grid-column:span 2">
+    <h3>💰 Model Savings Opportunities</h3>
+    <div id="comparisons-section"><p style="color:var(--txt3);font-size:13px">No comparison data yet — start ingesting usage records.</p></div>
+  </div>
+  <div class="panel">
+    <h3>🚨 Budget Alerts</h3>
+    <div id="alerts-section"><p style="color:var(--txt3);font-size:13px">No active alerts.</p></div>
+  </div>
+</div>
+
+<!-- Top Apps -->
+<div class="panel" style="margin-bottom:16px">
+  <h3>Top Applications by GenAI Spend</h3>
+  <div id="apps-section"><p style="color:var(--txt3);font-size:13px">No app attribution data. Set <code>app_name</code> when ingesting usage.</p></div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- Ingest modal -->
+<div id="ingest-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;width:480px;max-width:95vw">
+    <h2 style="font-size:16px;margin-bottom:16px;font-family:var(--mono)">Ingest Usage Record</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;color:var(--txt3)">Provider</label>
+        <select id="i-provider" style="width:100%;margin-top:4px">
+          <option>openai</option><option>azure_openai</option>
+          <option>bedrock</option><option>vertex_ai</option><option>custom</option>
+        </select>
+      </div>
+      <div><label style="font-size:11px;color:var(--txt3)">Model</label>
+        <input id="i-model" type="text" value="gpt-4o-mini" style="width:100%;margin-top:4px"/>
+      </div>
+      <div><label style="font-size:11px;color:var(--txt3)">Input tokens</label>
+        <input id="i-in" type="number" value="500" style="width:100%;margin-top:4px"/>
+      </div>
+      <div><label style="font-size:11px;color:var(--txt3)">Output tokens</label>
+        <input id="i-out" type="number" value="200" style="width:100%;margin-top:4px"/>
+      </div>
+      <div><label style="font-size:11px;color:var(--txt3)">App name</label>
+        <input id="i-app" type="text" placeholder="my-app" style="width:100%;margin-top:4px"/>
+      </div>
+      <div><label style="font-size:11px;color:var(--txt3)">Environment</label>
+        <select id="i-env" style="width:100%;margin-top:4px">
+          <option>prod</option><option>staging</option><option>dev</option>
+        </select>
+      </div>
+    </div>
+    <div id="ingest-result" style="margin-top:12px;font-size:12px;color:var(--teal)"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="btn ghost" onclick="hideIngestModal()">Cancel</button>
+      <button class="btn" onclick="submitIngest()">Ingest</button>
+    </div>
+  </div>
+</div>
+
+<script>
+Chart.defaults.color = '#647386';
+Chart.defaults.borderColor = '#263340';
+
+let trendChart = null;
+const COLOURS = ['#a78bfa','#2dd4bf','#f5a524','#4d9fff','#4ade80','#f0506e','#818cf8','#fb923c'];
+
+// ── API helpers ───────────────────────────────────────────────────────────
+function tenant() { return document.getElementById('tenant-input').value.trim() || 'demo'; }
+function apiKey() { return document.getElementById('api-key').value.trim() || sessionStorage.getItem('cl_api_key') || ''; }
+function period() { return document.getElementById('period-select').value; }
+function baseUrl() { return window.CL_API_URL || ''; }
+function hdrs() { const h = {}; const k = apiKey(); if (k) h['X-API-Key'] = k; return h; }
+
+async function get(path) {
+  const r = await fetch(`${baseUrl()}${path}`, { headers: hdrs() });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+async function post(path, body) {
+  const r = await fetch(`${baseUrl()}${path}`, { method: 'POST', headers: { ...hdrs(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.detail?.message || e.message || r.statusText); }
+  return r.json();
+}
+
+// ── Number formatting ─────────────────────────────────────────────────────
+function fmt(v, dec=2) { return v == null ? '—' : Number(v).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+function fmtK(v) { return v >= 1e6 ? `${(v/1e6).toFixed(1)}M` : v >= 1e3 ? `${(v/1e3).toFixed(0)}k` : String(v); }
+
+// ── Load all ──────────────────────────────────────────────────────────────
+async function loadAll() {
+  const p = period();
+  try {
+    const [summary, trends, apps, alerts] = await Promise.all([
+      get(`/api/v1/genai/${tenant()}/summary?period_days=${p}`),
+      get(`/api/v1/genai/${tenant()}/trends?period_days=${p}&group_by=model`),
+      get(`/api/v1/genai/${tenant()}/apps?period_days=${p}`),
+      get(`/api/v1/genai/${tenant()}/alerts`).catch(() => []),
+    ]);
+    renderKPIs(summary);
+    renderTrend(trends);
+    renderProviders(summary.by_provider);
+    renderModels(summary.by_model);
+    renderComparisons(summary.comparisons);
+    renderAlerts(alerts);
+    renderApps(apps);
+  } catch (e) {
+    console.error('Load failed:', e);
+  }
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────
+function renderKPIs(s) {
+  document.getElementById('kpi-total-usd').textContent = `$${fmt(s.total_cost_usd)}`;
+  document.getElementById('kpi-total-eur').textContent = `€${fmt(s.total_cost_eur)} EUR`;
+  document.getElementById('kpi-requests').textContent = fmtK(s.total_requests);
+  document.getElementById('kpi-tokens').textContent = `${fmtK(s.total_tokens)} tokens`;
+  const avgCost = s.total_requests ? s.total_cost_usd / s.total_requests : 0;
+  document.getElementById('kpi-avg-cost').textContent = `$${(avgCost).toFixed(4)}`;
+  document.getElementById('kpi-per-1m').textContent = `$${fmt(s.cost_per_1m_tokens_usd)}`;
+  document.getElementById('kpi-top-model').textContent = s.top_model || '—';
+}
+
+// ── Trend chart ───────────────────────────────────────────────────────────
+function renderTrend(rows) {
+  const days = [...new Set(rows.map(r => r.date))].sort();
+  const groups = [...new Set(rows.map(r => r.group))];
+
+  const datasets = groups.map((g, i) => ({
+    label: g || 'total',
+    data: days.map(d => {
+      const row = rows.find(r => r.date === d && r.group === g);
+      return row ? row.cost_usd : 0;
+    }),
+    borderColor: COLOURS[i % COLOURS.length],
+    backgroundColor: COLOURS[i % COLOURS.length] + '22',
+    fill: true,
+    tension: 0.35,
+    borderWidth: 2,
+    pointRadius: 2,
+  }));
+
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(document.getElementById('trend-chart'), {
+    type: 'line',
+    data: { labels: days, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }, tooltip: { mode: 'index', callbacks: { label: ctx => `  ${ctx.dataset.label}: $${ctx.raw.toFixed(4)}` } } },
+      scales: {
+        x: { grid: { color: '#1e2a36' }, ticks: { font: { size: 10 }, maxTicksLimit: 8 } },
+        y: { grid: { color: '#1e2a36' }, ticks: { font: { size: 10 }, callback: v => `$${v.toFixed(3)}` } },
+      },
+    },
+  });
+  document.getElementById('trend-badge').textContent = `${groups.length} models`;
+}
+
+// ── Provider table ────────────────────────────────────────────────────────
+function renderProviders(byProvider) {
+  if (!byProvider.length) { document.getElementById('provider-table').innerHTML = '<p style="color:var(--txt3);font-size:13px">No data yet.</p>'; return; }
+  const total = byProvider.reduce((s, p) => s + p.cost_usd, 0) || 1;
+  const prov_colours = { openai: 'pill-teal', azure_openai: 'pill-blue', bedrock: 'pill-amber', vertex_ai: 'pill-purple', custom: 'pill-green' };
+  const rows = byProvider.map(p => {
+    const pct = (p.cost_usd / total * 100).toFixed(1);
+    const cls = prov_colours[p.provider] || 'pill-purple';
+    return `<tr>
+      <td><span class="pill ${cls}">${p.provider}</span></td>
+      <td style="font-family:var(--mono)">$${fmt(p.cost_usd)}</td>
+      <td style="color:var(--txt3)">${fmtK(p.requests)}</td>
+      <td><div class="progress"><div class="progress-bar" style="width:${pct}%;background:var(--purple)"></div></div><span style="font-size:11px;color:var(--txt3)">${pct}%</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('provider-table').innerHTML = `<table><thead><tr><th>Provider</th><th>Cost (USD)</th><th>Requests</th><th>Share</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ── Model table ───────────────────────────────────────────────────────────
+function renderModels(models) {
+  document.getElementById('model-count-badge').textContent = `${models.length} model${models.length !== 1 ? 's' : ''}`;
+  if (!models.length) { document.getElementById('model-tbody').innerHTML = '<tr><td colspan="8" style="color:var(--txt3);text-align:center;padding:20px">No usage data for this period</td></tr>'; return; }
+  const total = models.reduce((s, m) => s + m.total_cost_usd, 0) || 1;
+  const rows = models.map(m => {
+    const pct = (m.total_cost_usd / total * 100).toFixed(1);
+    const prov_cls = { openai: 'pill-teal', azure_openai: 'pill-blue', bedrock: 'pill-amber', vertex_ai: 'pill-purple', custom: 'pill-green' };
+    const cls = prov_cls[m.provider] || 'pill-purple';
+    return `<tr>
+      <td><span class="pill ${cls}">${m.provider}</span></td>
+      <td style="font-weight:500">${m.model}</td>
+      <td style="font-family:var(--mono)">${fmtK(m.total_requests)}</td>
+      <td style="font-family:var(--mono);color:var(--txt2)">${fmtK(m.total_input_tokens)}</td>
+      <td style="font-family:var(--mono);color:var(--txt2)">${fmtK(m.total_output_tokens)}</td>
+      <td style="font-family:var(--mono)">$${fmt(m.blended_cost_per_1m_tokens_usd, 2)}</td>
+      <td style="font-family:var(--mono);font-size:12px">$${(m.avg_cost_per_request_usd).toFixed(5)}</td>
+      <td style="font-family:var(--mono);font-weight:600;color:var(--purple)">$${fmt(m.total_cost_usd, 4)} <span style="font-size:11px;color:var(--txt3);font-weight:400">(${pct}%)</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('model-tbody').innerHTML = rows;
+}
+
+// ── Comparisons ───────────────────────────────────────────────────────────
+function renderComparisons(comparisons) {
+  const el = document.getElementById('comparisons-section');
+  if (!comparisons || !comparisons.length) { el.innerHTML = '<p style="color:var(--txt3);font-size:13px">No switching opportunities found for current usage patterns.</p>'; return; }
+  el.innerHTML = comparisons.slice(0, 4).map(c => `
+    <div class="cmp-card">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">${c.current_provider}/<strong>${c.current_model}</strong></div>
+          <div style="font-size:12px;color:var(--txt3)">Current: $${fmt(c.current_cost_usd)}/period</div>
+        </div>
+        <div class="arrow">→</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--green)">${c.alternative_provider}/<strong>${c.alternative_model}</strong></div>
+          <div style="font-size:12px;color:var(--txt3)">Alternative: $${fmt(c.alternative_cost_usd)}/period</div>
+        </div>
+        <div style="text-align:right">
+          <div class="saving">-$${fmt(c.saving_usd)}</div>
+          <div style="font-size:12px;color:var(--green)">${c.saving_pct}% cheaper</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:8px;border-top:1px solid var(--line);padding-top:6px">${c.caveat}</div>
+    </div>`).join('');
+}
+
+// ── Budget alerts ─────────────────────────────────────────────────────────
+function renderAlerts(alerts) {
+  const el = document.getElementById('alerts-section');
+  if (!alerts.length) { el.innerHTML = '<p style="color:var(--txt3);font-size:13px">No active budget alerts. 🎉</p>'; return; }
+  el.innerHTML = alerts.map(a => {
+    const barColour = a.status === 'breach' ? 'var(--red)' : 'var(--amber)';
+    const pct = Math.min(a.utilisation_pct, 100);
+    return `<div class="alert-card ${a.status}">
+      <div class="name">${a.budget_name}</div>
+      <div class="meta">$${fmt(a.current_spend_usd)} / $${fmt(a.monthly_limit_usd)} this month · proj $${fmt(a.projected_monthly_usd)}</div>
+      <div class="progress"><div class="progress-bar" style="width:${pct}%;background:${barColour}"></div></div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:4px">${a.utilisation_pct.toFixed(1)}% used · <span style="color:${a.status==='breach'?'var(--red)':'var(--amber)'};font-weight:600">${a.status.toUpperCase()}</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ── Top apps ──────────────────────────────────────────────────────────────
+function renderApps(apps) {
+  const el = document.getElementById('apps-section');
+  if (!apps || !apps.length) { el.innerHTML = '<p style="color:var(--txt3);font-size:13px">No app attribution data. Set <code>app_name</code> when ingesting usage.</p>'; return; }
+  const rows = apps.slice(0, 10).map(a => `<tr>
+    <td style="font-weight:500">${a.app_name}</td>
+    <td style="font-family:var(--mono)">$${fmt(a.cost_usd, 4)}</td>
+    <td style="color:var(--txt3)">${fmtK(a.requests)}</td>
+    <td style="color:var(--txt3)">${fmtK(a.tokens)}</td>
+    <td><div class="progress" style="width:120px"><div class="progress-bar" style="width:${a.pct}%;background:var(--purple)"></div></div><span style="font-size:11px;color:var(--txt3);margin-left:6px">${a.pct}%</span></td>
+  </tr>`).join('');
+  el.innerHTML = `<table><thead><tr><th>Application</th><th>Cost (USD)</th><th>Requests</th><th>Tokens</th><th>Share</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ── Ingest modal ──────────────────────────────────────────────────────────
+function showIngestModal() { document.getElementById('ingest-modal').style.display = 'flex'; }
+function hideIngestModal() { document.getElementById('ingest-modal').style.display = 'none'; }
+async function submitIngest() {
+  const body = {
+    provider: document.getElementById('i-provider').value,
+    model: document.getElementById('i-model').value,
+    input_tokens: parseInt(document.getElementById('i-in').value) || 0,
+    output_tokens: parseInt(document.getElementById('i-out').value) || 0,
+    app_name: document.getElementById('i-app').value,
+    environment: document.getElementById('i-env').value,
+    request_type: 'chat',
+  };
+  const resultEl = document.getElementById('ingest-result');
+  try {
+    const r = await post(`/api/v1/genai/${tenant()}/usage`, body);
+    resultEl.style.color = 'var(--teal)';
+    resultEl.textContent = `✓ Ingested ${r.id} — $${r.total_cost_usd.toFixed(6)} USD`;
+    setTimeout(() => { hideIngestModal(); loadAll(); }, 1500);
+  } catch (e) {
+    resultEl.style.color = 'var(--red)';
+    resultEl.textContent = `Error: ${e.message}`;
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = sessionStorage.getItem('cl_api_key');
+  if (saved) document.getElementById('api-key').value = saved;
+  document.getElementById('api-key').addEventListener('input', e => sessionStorage.setItem('cl_api_key', e.target.value));
+  loadAll();
+});
+</script>
+</body>
+</html>

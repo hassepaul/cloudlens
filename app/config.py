@@ -149,6 +149,31 @@ class Settings(BaseSettings):
     ai_analyst_max_tokens: int = Field(default=700, ge=100, le=2000)
     ai_explanation_cache_ttl: int = Field(default=604_800, ge=0, description="Cache AI explanations for N seconds (default 7 days)")
 
+    # ── GenAI Cost Tracking ──────────────────────────────────────────────────────
+    cosmos_container_genai_usage: str = Field(default="genai_usage")
+    cosmos_container_genai_budgets: str = Field(default="genai_budgets")
+
+    # ── AI Agent ───────────────────────────────────────────────────────────────
+    # Conversational agentic layer — chat, streaming, action approval.
+    cosmos_container_agent_sessions: str = Field(default="agent_sessions")
+    agent_max_history_turns: int = Field(default=20, ge=5, le=50, description="Max turns included in LLM context window")
+    agent_session_ttl_days: int = Field(default=30, ge=1, le=365, description="Session TTL in Cosmos (days)")
+    agent_max_tool_iterations: int = Field(default=5, ge=1, le=10, description="Max LLM→tool→LLM cycles per chat turn")
+    agent_model: str = Field(default="", description="Override model for agent (empty = use openai_model)")
+
+    # ── Terraform Drift / Autonomous Execution ─────────────────────────────────
+    # When the AI autonomously provisions cloud resources, Terraform state
+    # drifts. These settings govern the reconciliation workflow.
+    cosmos_container_terraform_drift: str = Field(default="terraform_drift")
+    terraform_drift_webhook_url: str = Field(
+        default="",
+        description="Slack/Teams/PagerDuty incoming webhook URL for drift notifications"
+    )
+    terraform_drift_resource_prefix: str = Field(
+        default="cloudlens_auto",
+        description="Terraform resource name prefix for autonomously created resources"
+    )
+
     # ── Bot integrations (Slack / Teams) ──────────────────────────────────
     # Webhook URLs and signing secrets are stored per-tenant in Key Vault:
     #   slack-webhook-{tenant_id}          Slack incoming webhook URL

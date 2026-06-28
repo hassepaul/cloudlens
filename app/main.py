@@ -47,6 +47,9 @@ from app.routers.nl_query import router as nl_query_router
 from app.routers.onboarding import router as onboarding_router
 from app.routers.cost_estimate import router as cost_estimate_router
 from app.routers.bots import router as bots_router
+from app.routers.agent import router as agent_router
+from app.routers.genai_cost import router as genai_cost_router
+from app.routers.terraform_sync import router as terraform_sync_router
 from app.services import cosmos, blob, keyvault
 
 log = get_logger(__name__)
@@ -167,6 +170,9 @@ def create_app() -> FastAPI:
     for r in [tenants_router, costs_router, waste_router, reports_router, forecast_router, insights_router, budgets_router, multicloud_router, labels_router, drilldown_router, alerts_router, optimization_router, admin_router, ingest_router, health_router, fx_router, k8s_router, k8s_admin_router, unit_economics_router, ai_analyst_router, stream_router, policies_router, policies_admin_router, hierarchy_router, commitment_advisor_router, commitment_purchaser_router, escalation_router, context_map_router, maturity_router, nl_query_router, onboarding_router, cost_estimate_router]:
         app.include_router(r)
     app.include_router(bots_router)
+    app.include_router(agent_router)
+    app.include_router(genai_cost_router)
+    app.include_router(terraform_sync_router)
 
     return app
 

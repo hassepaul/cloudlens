@@ -48,7 +48,7 @@ em{color:var(--txt);font-style:normal;border-bottom:1px dotted var(--txt3)}
 <body>
 <nav>
   <div class="brand">CloudLens</div>
-  <div class="sub">Technical Documentation v2.1</div>
+  <div class="sub">Technical Documentation v3.0</div>
   <a href="#func">1. Functional spec</a>
 <a href="#arch">2. Architecture</a>
 <a href="#hld">&nbsp;&nbsp;2.1 HLD</a>
@@ -66,6 +66,9 @@ em{color:var(--txt);font-style:normal;border-bottom:1px dotted var(--txt3)}
 <a href="#context-api">&nbsp;&nbsp;7.9 Context Mapping</a>
 <a href="#maturity-api">&nbsp;&nbsp;7.10 Maturity Score</a>
 <a href="#nlquery-api">&nbsp;&nbsp;7.11 NL Cost Query</a>
+<a href="#agent-api">&nbsp;&nbsp;7.12 AI Agent</a>
+<a href="#genai-api">&nbsp;&nbsp;7.13 GenAI Costs</a>
+<a href="#terraform-api">&nbsp;&nbsp;7.14 Terraform Drift</a>
 <a href="#intelligence">8. Intelligence layer</a>
 <a href="#deploy">9. Deployment</a>
 <a href="#wiring">10. Wiring guide</a>
@@ -75,7 +78,7 @@ em{color:var(--txt);font-style:normal;border-bottom:1px dotted var(--txt3)}
 <main>
   <h1><span class="dot">◈</span> CloudLens Technical Documentation</h1>
   <div class="docsub">Multi-Cloud FinOps Managed Service &middot; complete reference: functional spec, architecture,
-  multi-cloud, optimization, security &amp; compliance, API, intelligence layer, deployment, wiring, and user guide &middot; June 2026 &middot; CONFIDENTIAL</div>
+  multi-cloud, optimization, security &amp; compliance, API, intelligence layer, deployment, wiring, and user guide &middot; v3.0 &middot; June 2026 &middot; CONFIDENTIAL</div>
   
 <h2 id="func">1. Functional Specification</h2>
 <p class="lead">CloudLens is a multi-tenant, read-only multi-cloud FinOps managed service. It ingests
@@ -90,9 +93,9 @@ and a drill-down console available in eight EU languages.</p>
 <table class="data">
 <thead><tr><th>Goal</th><th>Non-goal</th></tr></thead>
 <tbody>
-<tr><td>Surface recoverable spend with concrete, quantified actions</td><td>Make any change to customer resources (read-only by architecture)</td></tr>
+<tr><td>Surface recoverable spend with concrete, quantified actions</td><td>Make any change to customer resources without explicit human approval (autonomous execution requires a per-action approval gate)</td></tr>
 <tr><td>Forecast spend and the cost of <em>not</em> acting on waste</td><td>Replace Azure-native billing as the system of record</td></tr>
-<tr><td>Allocate cost to teams/cost-centres (chargeback/showback)</td><td>Provision or manage customer infrastructure</td></tr>
+<tr><td>Allocate cost to teams/cost-centres (chargeback/showback)</td><td>Provision or manage customer infrastructure without approval</td></tr>
 <tr><td>Run on the cheapest viable infrastructure (scale-to-zero)</td><td>Real-time (sub-hourly) cost streaming</td></tr>
 </tbody></table>
 
@@ -101,9 +104,10 @@ and a drill-down console available in eight EU languages.</p>
 <thead><tr><th>Persona</th><th>Needs</th><th>Primary surfaces</th></tr></thead>
 <tbody>
 <tr><td>CloudLens operator (MSP)</td><td>Onboard tenants, manage the platform</td><td>Tenant API (API-key), deploy script</td></tr>
-<tr><td>Customer FinOps lead</td><td>See recoverable spend, chargeback, budgets</td><td>Console, insights digest, chargeback view</td></tr>
-<tr><td>Customer engineering director</td><td>Act on waste, understand anomalies</td><td>Drill-down explorer, waste detail, roadmap</td></tr>
-<tr><td>Customer CFO / finance</td><td>Forecast, budget breach, exec summary</td><td>Forecast view, budget gauges, digest summary</td></tr>
+<tr><td>Customer FinOps lead</td><td>See recoverable spend, chargeback, budgets, act via AI agent</td><td>Console, insights digest, chargeback view, agent.html</td></tr>
+<tr><td>Customer engineering director</td><td>Act on waste, understand anomalies, approve autonomous actions</td><td>Drill-down explorer, waste detail, roadmap, terraform drift view</td></tr>
+<tr><td>Customer CFO / finance</td><td>Forecast, budget breach, exec summary, GenAI cost visibility</td><td>Forecast view, budget gauges, digest summary, genai.html</td></tr>
+<tr><td>Platform/SRE engineer</td><td>Reconcile Terraform state after autonomous execution</td><td>Terraform drift API, HCL snippets, tag-policy</td></tr>
 </tbody></table>
 
 <h3>1.3 Feature catalogue</h3>
@@ -144,6 +148,9 @@ and a drill-down console available in eight EU languages.</p>
 <tr><td>F32</td><td>Business Context Auto-Mapping</td><td>Zero-config attribution of cloud resources to products, features, and teams from tags, K8s namespaces, and resource-name patterns</td><td><code>/context/{tid}/map</code></td></tr>
 <tr><td>F33</td><td>FinOps Maturity Score</td><td>6-dimension scorecard (tagging, waste, commitments, unit economics, anomaly response, budget adherence) with cohort benchmarks (SaaS/Enterprise/eCommerce/Startup) and maturity label Crawl→Walk→Run→Fly</td><td><code>/maturity/{tid}/score</code></td></tr>
 <tr><td>F34</td><td>Natural Language Cost Querying</td><td>LLM function-calling maps plain English questions to Cosmos queries; rule-based fallback for zero-latency offline answers; narrative summary generated per response</td><td><code>/nl-query/{tid}</code></td></tr>
+<tr><td>F35</td><td>AI Agent &mdash; Conversational FinOps</td><td>Agentic chat interface with 15 tools covering all CloudLens capabilities. Streaming SSE responses. Write-tools (create_budget, create_alert_rule) require explicit per-action human approval. Cosmos-backed session management (30-day TTL). Proactive daily briefing summarising 7 parallel signals.</td><td><code>/agent/{tid}/chat</code>, <code>/briefing</code>, <code>/actions/{id}/approve</code></td></tr>
+<tr><td>F36</td><td>GenAI Cost Tracking</td><td>First-class LLM/AI API spend across OpenAI, Azure OpenAI, AWS Bedrock, GCP Vertex AI, Anthropic. Pricing table for 40+ models with billing-type awareness (token-based, per_image, per_minute). Model comparison with savings estimates. Per-provider/global budget alerts.</td><td><code>/genai/{tid}/summary</code>, <code>/usage</code>, <code>/pricing</code>, <code>/budgets</code>, <code>/alerts</code></td></tr>
+<tr><td>F37</td><td>Autonomous Execution + Terraform Drift Management</td><td>Every approved write-action tags the created resource with 7 CloudLens provenance tags. A Terraform drift record is written with the HCL snippet and <code>terraform import</code> command for the engineer to reconcile. Webhook fires to Slack/Teams on each record. Status transitions: pending &rarr; acknowledged &rarr; imported.</td><td><code>/terraform/{tid}/drift</code>, <code>/drift/summary</code>, <code>/tag-policy</code></td></tr>
 </tbody></table>
 
 <h3>1.4 Non-functional requirements</h3>
@@ -252,8 +259,9 @@ flowchart LR
 </div>
 
 <h3 id="erd">2.3 Data model (ERD)</h3>
-<p>Four Cosmos containers, all partitioned by <code>tenant_id</code> (tenants by <code>id</code>).
-Budgets are co-located in the waste_items container, discriminated by <code>type='budget'</code>.</p>
+<p>Eight Cosmos containers, all partitioned by <code>tenant_id</code> (tenants by <code>id</code>).
+Budgets are co-located in the waste_items container, discriminated by <code>type='budget'</code>.
+Four new containers support GenAI cost tracking, AI agent sessions, and Terraform drift records.</p>
 <div class="mermaid">
 erDiagram
   TENANTS ||--o{ COST_RECORDS : tenant_id
@@ -608,6 +616,10 @@ contract every integration point depends on.</p>
 <tr><td>cost_records</td><td><code>/tenant_id</code></td><td>cost_record</td><td>90 days</td></tr>
 <tr><td>waste_items</td><td><code>/tenant_id</code></td><td>waste_item, budget</td><td>none</td></tr>
 <tr><td>reports</td><td><code>/tenant_id</code></td><td>report</td><td>none</td></tr>
+<tr><td>genai_usage</td><td><code>/tenant_id</code></td><td>genai_usage</td><td>365 days</td></tr>
+<tr><td>genai_budgets</td><td><code>/tenant_id</code></td><td>genai_budget</td><td>none</td></tr>
+<tr><td>agent_sessions</td><td><code>/tenant_id</code></td><td>agent_session (history turns)</td><td>30 days</td></tr>
+<tr><td>terraform_drift</td><td><code>/tenant_id</code></td><td>terraform_drift (HCL + import cmd + status)</td><td>none</td></tr>
 </tbody></table>
 
 <h3>4.4 Error code mapping</h3>
@@ -701,7 +713,7 @@ Endpoints: <code>POST /optimization/{tid}/savings</code>, <code>.../savings/{id}
 <code>GET .../savings/ledger</code>.</p>
 
 <h2 id="security">6. Security &amp; Compliance</h2>
-<p class="lead">CloudLens is read-only by architecture and built to be SOC 2 audit-ready. It cannot
+<p class="lead">CloudLens is approval-gated by design and built to be SOC 2 audit-ready. Write operations (autonomous execution) require explicit per-action human approval; read paths are always read-only. It cannot
 self-certify — a SOC 1/SOC 2 attestation is issued by a licensed CPA firm over a defined period — but it
 implements the technical controls and produces the evidence that audit requires.</p>
 
@@ -876,6 +888,40 @@ lookup failure degrades to the Growth limit.</p>
 <h3 id="nlquery-api" class="api-group">nl-query</h3>
 <table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
 <tr><td><span class="method post">POST</span></td><td><code>/api/v1/nl-query/{tenant_id}</code></td><td>Natural language cost question → structured answer</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 id="agent-api" class="api-group">agent</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/agent/{tenant_id}/chat</code></td><td>Send a chat message; returns SSE stream</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/agent/{tenant_id}/sessions</code></td><td>List conversation sessions</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/agent/{tenant_id}/sessions/{session_id}/history</code></td><td>Get session turn history</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method delete">DELETE</span></td><td><code>/api/v1/agent/{tenant_id}/sessions/{session_id}</code></td><td>Delete a session</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/agent/{tenant_id}/briefing</code></td><td>Daily FinOps briefing (7 signals, parallel)</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/agent/{tenant_id}/actions/{action_id}/approve</code></td><td>Approve a pending write-tool action</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/agent/{tenant_id}/actions/{action_id}/reject</code></td><td>Reject a pending write-tool action</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 id="genai-api" class="api-group">genai-costs</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/genai/{tenant_id}/usage</code></td><td>Ingest single GenAI usage record → 201</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/genai/{tenant_id}/usage/batch</code></td><td>Ingest batch of GenAI usage records → 201</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/genai/{tenant_id}/summary</code></td><td>Aggregated cost summary with provider/model breakdown, daily trend, comparisons</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/genai/{tenant_id}/models</code></td><td>Per-model cost statistics</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/genai/{tenant_id}/trends</code></td><td>Daily cost trend time series</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/genai/{tenant_id}/apps</code></td><td>Top applications by spend</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/genai/{tenant_id}/budgets</code></td><td>Create GenAI spend budget → 201</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/genai/{tenant_id}/budgets</code></td><td>List GenAI budgets</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method delete">DELETE</span></td><td><code>/api/v1/genai/{tenant_id}/budgets/{budget_id}</code></td><td>Delete GenAI budget → 204</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/genai/{tenant_id}/alerts</code></td><td>Check budget alerts</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/genai/{tenant_id}/pricing</code></td><td>Full model pricing table (40+ models)</td><td>Bearer + rate-limit</td></tr>
+</tbody></table>
+<h3 id="terraform-api" class="api-group">terraform-drift</h3>
+<table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th></tr></thead><tbody>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/terraform/{tenant_id}/drift/summary</code></td><td>Drift counts by status and resource type</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/terraform/{tenant_id}/drift</code></td><td>List drift records (filter by status)</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/terraform/{tenant_id}/drift/{record_id}</code></td><td>Get single drift record with HCL snippet</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/terraform/{tenant_id}/drift/{record_id}/acknowledge</code></td><td>Mark record acknowledged by engineer</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method post">POST</span></td><td><code>/api/v1/terraform/{tenant_id}/drift/{record_id}/imported</code></td><td>Mark record as terraform-imported</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method delete">DELETE</span></td><td><code>/api/v1/terraform/{tenant_id}/drift/{record_id}</code></td><td>Dismiss drift record → 204</td><td>Bearer + rate-limit</td></tr>
+<tr><td><span class="method get">GET</span></td><td><code>/api/v1/terraform/{tenant_id}/tag-policy</code></td><td>Tag convention applied to all autonomous resources</td><td>Bearer + rate-limit</td></tr>
 </tbody></table>
 <h3 class="api-group">Core schemas</h3>
 <h4 class="schema-name"><code>TenantCreate</code></h4>
@@ -1121,7 +1167,59 @@ lookup failure degrades to the Growth limit.</p>
 <tr><td><code>fallback</code></td><td>boolean</td><td>True if rule-based fallback was used instead of LLM</td></tr>
 </tbody></table>
 
+<h3>8.5 AI Agent &mdash; Conversational FinOps</h3>
+<p>An agentic chat interface that wraps all CloudLens capabilities in natural conversation. The agent runs a tool-selection loop (max 5 iterations) using an LLM to select and call the appropriate tool, then streams the response via Server-Sent Events (SSE). Write tools require explicit human approval before execution; the approval card is surfaced in the SSE stream.</p>
+<table class="data">
+<thead><tr><th>Tool</th><th>Category</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>get_cost_summary</code></td><td>read</td><td>MTD and prior-period cloud spend</td></tr>
+<tr><td><code>get_anomalies</code></td><td>read</td><td>Holt-Winters detected spend spikes</td></tr>
+<tr><td><code>get_waste_items</code></td><td>read</td><td>Rightsizing, idle, orphaned resource list</td></tr>
+<tr><td><code>get_forecast</code></td><td>read</td><td>30-day spend projection with confidence band</td></tr>
+<tr><td><code>get_top_services</code></td><td>read</td><td>Top N services by MTD cost</td></tr>
+<tr><td><code>get_commitment_advice</code></td><td>read</td><td>RI/SP recommendations from commitment advisor</td></tr>
+<tr><td><code>get_maturity_score</code></td><td>read</td><td>6-dimension FinOps maturity scorecard</td></tr>
+<tr><td><code>get_budget_status</code></td><td>read</td><td>Budget consumed-% and forecast projection</td></tr>
+<tr><td><code>get_k8s_costs</code></td><td>read</td><td>Kubernetes namespace chargeback</td></tr>
+<tr><td><code>get_unit_economics</code></td><td>read</td><td>Cost-per-unit time series for business metrics</td></tr>
+<tr><td><code>get_policies</code></td><td>read</td><td>Active alert rules and compliance policies</td></tr>
+<tr><td><code>explain_anomaly</code></td><td>read</td><td>AI root-cause explanation for a spend spike</td></tr>
+<tr><td><code>get_genai_costs</code></td><td>read</td><td>GenAI/LLM spend summary with model breakdown</td></tr>
+<tr><td><code>create_budget</code></td><td><strong>write (approval required)</strong></td><td>Provisions a budget via <code>/budgets/{tid}</code></td></tr>
+<tr><td><code>create_alert_rule</code></td><td><strong>write (approval required)</strong></td><td>Provisions an alert rule via <code>/alerts/{tid}/rules</code></td></tr>
+</tbody></table>
+<p><strong>Daily briefing:</strong> <code>GET /api/v1/agent/{tid}/briefing</code> gathers 7 signals in parallel (costs, anomalies, waste, forecast, GenAI, budgets, maturity) and produces a structured morning digest with actionable cards — one per signal category.</p>
+<p><strong>Session management:</strong> History is stored in Cosmos (<code>agent_sessions</code> container, 30-day TTL, max 20 turns per session). Sessions are listed and can be deleted by the user.</p>
 
+<h3>8.6 GenAI Cost Intelligence</h3>
+<p>First-class tracking of LLM and AI API spend. The service maintains a built-in pricing table for 40+ models across 5 providers, normalises model name aliases (e.g. <code>gpt4o</code> → <code>gpt-4o</code>), and computes model comparisons to surface switching savings.</p>
+<table class="data">
+<thead><tr><th>Provider</th><th>Models supported</th><th>Billing types</th></tr></thead>
+<tbody>
+<tr><td>OpenAI</td><td>gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo, o1, o1-mini, text-embedding-3-*</td><td>token_based, per_image (DALL-E)</td></tr>
+<tr><td>Azure OpenAI</td><td>gpt-4o (azure), gpt-35-turbo, text-embedding-ada-002</td><td>token_based</td></tr>
+<tr><td>AWS Bedrock</td><td>claude-3-5-sonnet, claude-3-haiku, llama-3-1, titan-text-*, titan-embed</td><td>token_based</td></tr>
+<tr><td>GCP Vertex AI</td><td>gemini-1.5-pro, gemini-1.5-flash, gemini-1.0-pro, text-bison, text-embedding-gecko</td><td>token_based, per_1m_chars</td></tr>
+<tr><td>Anthropic</td><td>claude-3-5-sonnet, claude-3-5-haiku, claude-3-opus, claude-3-sonnet, claude-3-haiku</td><td>token_based</td></tr>
+</tbody></table>
+<p><strong>GenAISummary fields:</strong> <code>total_cost_usd</code>, <code>total_cost_eur</code>, <code>total_requests</code>, <code>total_tokens</code>, <code>by_provider</code>, <code>by_model</code>, <code>daily_trend</code>, <code>top_model</code>, <code>cost_per_1m_tokens_usd</code>, <code>comparisons</code> (cheapest equivalent model with estimated monthly saving).</p>
+<p><strong>Budget alerts:</strong> <code>POST /genai/{tid}/budgets</code> sets a monthly cap scoped globally or per provider. <code>GET /genai/{tid}/alerts</code> returns which budgets are breached or at warning threshold.</p>
+
+<h3>8.7 Autonomous Execution + Terraform Drift Management</h3>
+<p>CloudLens can take write actions (create budgets, create alert rules) on behalf of users, subject to an explicit per-action human approval gate. Every approved action is executed, then a <strong>Terraform drift record</strong> is written so the infrastructure team knows a resource was created outside of their IaC workflow and can reconcile it.</p>
+<table class="data">
+<thead><tr><th>Resource type</th><th>terraform import path</th></tr></thead>
+<tbody>
+<tr><td><code>aws_budgets_budget</code></td><td><code>aws_budgets_budget.&lt;name&gt; &lt;account_id&gt;:&lt;name&gt;</code></td></tr>
+<tr><td><code>azurerm_consumption_budget_subscription</code></td><td><code>azurerm_consumption_budget_subscription.&lt;name&gt; /subscriptions/…/providers/Microsoft.Consumption/budgets/&lt;name&gt;</code></td></tr>
+<tr><td><code>azurerm_consumption_budget_resource_group</code></td><td><code>azurerm_consumption_budget_resource_group.&lt;name&gt; /subscriptions/…/resourceGroups/&lt;rg&gt;/…</code></td></tr>
+<tr><td><code>azurerm_monitor_metric_alert</code></td><td><code>azurerm_monitor_metric_alert.&lt;name&gt; /subscriptions/…/resourceGroups/&lt;rg&gt;/providers/Microsoft.Insights/metricAlerts/&lt;name&gt;</code></td></tr>
+<tr><td><code>aws_cloudwatch_metric_alarm</code></td><td><code>aws_cloudwatch_metric_alarm.&lt;name&gt; &lt;alarm_name&gt;</code></td></tr>
+<tr><td><code>cloudlens_budget</code></td><td>internal CloudLens budget (no cloud resource)</td></tr>
+</tbody></table>
+<p><strong>Tag convention:</strong> Every autonomous resource receives 7 tags: <code>cloudlens:source</code> (value <code>cloudlens-autonomous</code>), <code>cloudlens:action_id</code>, <code>cloudlens:approval_id</code>, <code>cloudlens:approved_by</code>, <code>cloudlens:tenant_id</code>, <code>cloudlens:resource_type</code>, <code>cloudlens:created_at</code>.</p>
+<p><strong>Drift lifecycle:</strong> <code>pending</code> (created after execution) &rarr; <code>acknowledged</code> (engineer has seen it) &rarr; <code>imported</code> (after running <code>terraform import</code>). A Slack/Teams-compatible webhook fires on creation (best-effort, never blocks).</p>
+<p><strong>Reconciliation workflow:</strong> (1) Cloud resource is created by CloudLens with provenance tags. (2) Drift record written to <code>terraform_drift</code> container with HCL snippet and generated <code>terraform import</code> command. (3) Webhook fires to engineering Slack channel. (4) Engineer runs <code>terraform import</code>, then calls <code>POST /terraform/{tid}/drift/{id}/imported</code> to close the loop.</p>
 <h2 id="deploy">9. Deployment Guide</h2>
 <p class="lead">One script provisions everything and deploys the app. It is idempotent and fail-fast.</p>
 
@@ -1173,7 +1271,7 @@ flowchart TB
 <tbody>
 <tr><td>Container App (API)</td><td>Consumption, min 0 / max 5</td><td>scale-to-zero</td></tr>
 <tr><td>Container App Job (ingest)</td><td>Cron 02:00 UTC</td><td>pay per run</td></tr>
-<tr><td>Cosmos DB</td><td>Serverless, 4 containers</td><td>pay per RU</td></tr>
+<tr><td>Cosmos DB</td><td>Serverless, 8 containers</td><td>pay per RU</td></tr>
 <tr><td>Storage account</td><td>Standard LRS</td><td>reports only</td></tr>
 <tr><td>Key Vault</td><td>Standard, purge protection</td><td>SP creds</td></tr>
 <tr><td>Container Registry</td><td>Basic</td><td>fixed ~€5</td></tr>
@@ -1230,6 +1328,13 @@ const adminHeaders = { "X-API-Key": OPERATOR_KEY };</code></pre>
 <tr><td rowspan="2">insights.html</td><td>Exec summary + insights</td><td><code>GET /insights/{tid}/digest</code></td><td>DIGEST</td></tr>
 <tr><td>Chargeback panel</td><td><code>GET /insights/{tid}/chargeback?strategy=</code></td><td>CHARGEBACK[strategy]</td></tr>
 <tr><td>multicloud.html</td><td>Provider bars, AI/LLM, commitments, allocation</td><td><code>GET /multicloud/{tid}/spend</code>, <code>/allocate</code>, <code>/commitments</code></td><td>SPEND / ALLOC / COMMIT</td></tr>
+<tr><td rowspan="3">agent.html</td><td>Chat interface (SSE stream)</td><td><code>POST /agent/{tid}/chat</code></td><td>SSE event stream</td></tr>
+<tr><td>Daily briefing card</td><td><code>GET /agent/{tid}/briefing</code></td><td>briefing.cards[]</td></tr>
+<tr><td>Approve / reject action cards</td><td><code>POST /agent/{tid}/actions/{id}/approve</code></td><td>action result</td></tr>
+<tr><td rowspan="4">genai.html</td><td>KPI strip + provider breakdown</td><td><code>GET /genai/{tid}/summary</code></td><td>total_cost_usd, by_provider</td></tr>
+<tr><td>Daily spend trend chart</td><td><code>GET /genai/{tid}/trends</code></td><td>daily_trend[]</td></tr>
+<tr><td>Budget alerts</td><td><code>GET /genai/{tid}/alerts</code></td><td>alerts[]</td></tr>
+<tr><td>Top applications</td><td><code>GET /genai/{tid}/apps</code></td><td>top_apps[]</td></tr>
 </tbody></table>
 
 <h3>9.3 Worked example — wiring the explorer drill-down</h3>
@@ -1348,7 +1453,43 @@ audit-readiness aid, not a SOC report.</p>
 <code>pending</code>). Poll <code>GET /api/v1/reports/{tid}</code> until status is <code>ready</code>, then
 download via the 1-hour SAS URL from <code>GET /api/v1/reports/{report_id}/download</code>.</p>
 
-  
+<h3>10.9 Using the AI Agent</h3>
+<p>Open <code>agent.html</code> and type any FinOps question in plain English. The agent selects the appropriate tool, fetches live data, and streams a response token by token. Click <strong>Daily Briefing</strong> to get a morning digest covering all signal categories.</p>
+<p>For <strong>write actions</strong> (creating a budget or alert rule), the agent surfaces an approval card showing the exact parameters before anything is created. Review the card, then click <strong>Approve</strong> (or <strong>Reject</strong>) to control whether the action proceeds. No resource is ever created without that explicit approval step.</p>
+<table class="data">
+<thead><tr><th>Action</th><th>API endpoint</th></tr></thead>
+<tbody>
+<tr><td>Send a chat message</td><td><code>POST /api/v1/agent/{tid}/chat</code></td></tr>
+<tr><td>Get daily briefing</td><td><code>GET /api/v1/agent/{tid}/briefing</code></td></tr>
+<tr><td>Approve write action</td><td><code>POST /api/v1/agent/{tid}/actions/{id}/approve</code></td></tr>
+<tr><td>List sessions</td><td><code>GET /api/v1/agent/{tid}/sessions</code></td></tr>
+</tbody></table>
+
+<h3>10.10 Tracking GenAI / LLM costs</h3>
+<p>Ingest usage records as your application calls LLM APIs — either individually or in batch:</p>
+<pre><code>curl -X POST "$API/api/v1/genai/&lt;tid&gt;/usage" -H "Authorization: Bearer &lt;jwt&gt;" \
+  -H "Content-Type: application/json" -d '{
+    "provider": "openai", "model": "gpt-4o-mini",
+    "input_tokens": 1200, "output_tokens": 340,
+    "application": "support-bot", "timestamp": "2026-06-16T09:00:00Z"
+  }'</code></pre>
+<p>View the dashboard at <code>genai.html</code> or query the summary endpoint. Set a monthly spend cap:</p>
+<pre><code>curl -X POST "$API/api/v1/genai/&lt;tid&gt;/budgets" -H "Authorization: Bearer &lt;jwt&gt;" \
+  -H "Content-Type: application/json" -d '{
+    "name": "Monthly GenAI", "amount_usd": 5000, "period": "monthly"
+  }'</code></pre>
+<p>Check alerts: <code>GET /api/v1/genai/{tid}/alerts</code>. See the full pricing table: <code>GET /api/v1/genai/{tid}/pricing</code>.</p>
+
+<h3>10.11 Autonomous execution and Terraform reconciliation</h3>
+<p>When the AI Agent proposes a write action and you approve it, CloudLens executes the action and immediately writes a Terraform drift record. To keep your IaC truthful, follow these steps:</p>
+<ol class="steps">
+<li>Check pending drift records: <code>GET /api/v1/terraform/{tid}/drift?status=pending</code></li>
+<li>Open a drift record to see the generated HCL snippet and import command: <code>GET /api/v1/terraform/{tid}/drift/{record_id}</code></li>
+<li>Acknowledge it (confirms you've seen it): <code>POST /api/v1/terraform/{tid}/drift/{record_id}/acknowledge</code></li>
+<li>Add the HCL block to your <code>main.tf</code> and run the generated <code>terraform import</code> command.</li>
+<li>Mark the record imported: <code>POST /api/v1/terraform/{tid}/drift/{record_id}/imported</code></li>
+</ol>
+<p>You can also view the tag convention your Terraform resource selectors should match: <code>GET /api/v1/terraform/{tid}/tag-policy</code>. All autonomous resources carry the tag <code>cloudlens:source = cloudlens-autonomous</code> plus 6 additional provenance tags.</p>
 <h2 id="glossary">11. Glossary</h2>
 <table class="data">
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
@@ -1366,8 +1507,16 @@ download via the 1-hour SAS URL from <code>GET /api/v1/reports/{report_id}/downl
 <tr><td>Holt-Winters</td><td>A forecasting method (triple exponential smoothing) that models level, trend, and seasonality — CloudLens uses an additive, weekly-seasonal variant for both spend forecasts and resource-anomaly bands.</td></tr>
 <tr><td>Excess (anomaly)</td><td>Actual cost on the day minus the expected cost — the euro size of the spike. A noise floor (≥€10 and ≥25% above expected) suppresses trivial blips.</td></tr>
 <tr><td>Over-capacity score</td><td>0–100 measure of how over-provisioned a resource is, computed on the binding dimension (the higher of CPU or memory utilization), so a memory-bound box isn't falsely flagged as wasteful.</td></tr>
+<tr><td>Terraform Drift</td><td>A resource that exists in the cloud but is not tracked in Terraform state. In CloudLens, drift records are created whenever the AI Agent creates a resource autonomously, prompting the engineer to run <code>terraform import</code>.</td></tr>
+<tr><td>Autonomous Tag</td><td>One of 7 CloudLens provenance tags applied to every resource created by an autonomous action: <code>cloudlens:source</code>, <code>cloudlens:action_id</code>, <code>cloudlens:approval_id</code>, <code>cloudlens:approved_by</code>, <code>cloudlens:tenant_id</code>, <code>cloudlens:resource_type</code>, <code>cloudlens:created_at</code>.</td></tr>
+<tr><td>HCL Snippet</td><td>A Terraform resource block auto-generated by CloudLens for each autonomously created resource. Copy it into <code>main.tf</code>, then run the accompanying <code>terraform import</code> command to absorb the resource into state.</td></tr>
+<tr><td>terraform import</td><td>A Terraform CLI command that reads an existing cloud resource and maps it to a state record without re-creating it. CloudLens generates the exact import command for each drift record.</td></tr>
+<tr><td>Write Tool</td><td>An AI Agent tool that creates or modifies a cloud resource. In CloudLens only <code>create_budget</code> and <code>create_alert_rule</code> are write tools. All write tools are gated by a human approval step before execution.</td></tr>
+<tr><td>Approval Gate</td><td>The mandatory human confirmation step before any write tool executes. The AI Agent surfaces an approval card in the SSE stream showing exact parameters; the user must explicitly approve or reject it.</td></tr>
+<tr><td>GenAI / LLM Cost Tracking</td><td>First-class monitoring of spend on AI API providers (OpenAI, Azure OpenAI, AWS Bedrock, GCP Vertex AI, Anthropic). Costs are tracked at the model level with per-token pricing and compared across equivalent models to surface switching savings.</td></tr>
+<tr><td>Agent Session</td><td>A conversation thread stored in Cosmos DB with a 30-day TTL. Each session holds up to 20 turn pairs (user message + assistant response). Sessions are scoped to a tenant and can be listed, resumed, or deleted.</td></tr>
 </tbody></table>
-<p class="footer-note">CloudLens — Multi-Cloud FinOps Managed Service · Technical Documentation v2.1 · June 2026 · CONFIDENTIAL</p>
+<p class="footer-note">CloudLens &mdash; Multi-Cloud FinOps Managed Service &middot; Technical Documentation v3.0 &middot; June 2026 &middot; CONFIDENTIAL &middot; 986 tests passing</p>
 
 </main>
 <script>

@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudLens AI — FinOps Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    :root { --sidebar: #0f172a; --surface: #1e293b; --accent: #6366f1; --accent2: #818cf8; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+    .chat-bubble-ai  { background: #1e293b; border-left: 3px solid #6366f1; }
+    .chat-bubble-user{ background: #312e81; }
+    .blink { animation: blink 1s step-start infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .tool-badge { background: #1e3a5f; border: 1px solid #2563eb; }
+    .action-card { background: #1e293b; border: 1px solid #4f46e5; }
+    .severity-critical { border-left-color: #ef4444 !important; }
+    .severity-warning  { border-left-color: #f59e0b !important; }
+    .severity-positive { border-left-color: #22c55e !important; }
+    .severity-info     { border-left-color: #6366f1 !important; }
+    pre code { background: #0f172a; display: block; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+    .prose p { margin-bottom: 0.75rem; } .prose ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 0.75rem; }
+    .prose strong { color: #a5b4fc; } .prose h3 { color: #c7d2fe; font-weight: 600; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+<aside id="sidebar" class="w-64 flex flex-col bg-gray-950 border-r border-gray-800 shrink-0">
+  <div class="p-4 border-b border-gray-800 flex items-center gap-3">
+    <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">CL</div>
+    <div>
+      <div class="text-sm font-semibold text-white">CloudLens AI</div>
+      <div class="text-xs text-gray-500">FinOps Agent</div>
+    </div>
+  </div>
+
+  <div class="p-3">
+    <button onclick="newChat()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      New conversation
+    </button>
+  </div>
+
+  <!-- Briefing button -->
+  <div class="px-3 pb-2">
+    <button onclick="loadBriefing()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm transition-colors">
+      <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+      Daily Briefing
+    </button>
+  </div>
+
+  <!-- Quick prompts -->
+  <div class="px-3 pb-3">
+    <div class="text-xs text-gray-600 uppercase tracking-wider mb-2 px-1">Quick questions</div>
+    <div class="space-y-1" id="quick-prompts"></div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-3">
+    <div class="text-xs text-gray-600 uppercase tracking-wider mb-2 px-1">Recent</div>
+    <div id="session-list" class="space-y-1"></div>
+  </div>
+
+  <!-- Tenant selector -->
+  <div class="p-3 border-t border-gray-800">
+    <label class="text-xs text-gray-500 block mb-1">Tenant ID</label>
+    <input id="tenant-input" type="text" value="demo" placeholder="tenant_id"
+      class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-indigo-500" />
+    <label class="text-xs text-gray-500 block mt-2 mb-1">API Key</label>
+    <input id="api-key-input" type="password" placeholder="X-API-Key"
+      class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-indigo-500" />
+    <div class="text-xs text-gray-600 mt-1">Stored in sessionStorage only</div>
+  </div>
+</aside>
+
+<!-- ── Main area ───────────────────────────────────────────────────────── -->
+<main class="flex-1 flex flex-col min-w-0">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3 border-b border-gray-800 bg-gray-900 shrink-0">
+    <div>
+      <h1 id="chat-title" class="text-base font-semibold text-white">New conversation</h1>
+      <p class="text-xs text-gray-500" id="chat-subtitle">Ask anything about your cloud costs</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="tools-indicator" class="hidden text-xs text-indigo-400 animate-pulse">⚡ Analysing…</span>
+      <button onclick="clearChat()" class="text-xs text-gray-500 hover:text-gray-300 px-2 py-1 rounded hover:bg-gray-800 transition-colors">Clear</button>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  <div id="messages" class="flex-1 overflow-y-auto px-6 py-4 space-y-4"></div>
+
+  <!-- Suggestions strip -->
+  <div id="suggestions-bar" class="px-6 pb-2 flex gap-2 flex-wrap hidden"></div>
+
+  <!-- Input area -->
+  <div class="px-6 pb-6 shrink-0">
+    <div class="flex gap-3 items-end bg-gray-800 border border-gray-700 rounded-2xl px-4 py-3 focus-within:border-indigo-500 transition-colors">
+      <textarea id="msg-input" rows="1" placeholder="Ask about costs, anomalies, waste, forecasts…"
+        class="flex-1 bg-transparent text-sm text-gray-200 placeholder-gray-500 resize-none focus:outline-none max-h-32 leading-relaxed"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button id="send-btn" onclick="sendMessage()" class="shrink-0 w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 flex items-center justify-center transition-colors">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <p class="text-xs text-gray-600 mt-1.5 text-center">CloudLens AI can make mistakes. Verify important numbers before acting.</p>
+  </div>
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let currentSessionId = null;
+let pendingCharts = {};
+let isStreaming = false;
+
+const QUICK_PROMPTS = [
+  { label: "💰 Total spend this month", q: "What is our total cloud spend this month and the top 5 cost drivers?" },
+  { label: "🚨 Any anomalies?", q: "Run the ensemble anomaly detection and show me anything unusual in the last 14 days." },
+  { label: "🗑️ What waste can we cut?", q: "Show me all waste items over €100/month that we could eliminate." },
+  { label: "📈 30-day forecast", q: "Forecast our cloud spend for the next 30 days and tell me if we will exceed any budgets." },
+  { label: "💎 RI/SP opportunities", q: "What commitment opportunities do we have right now and what is the confidence level?" },
+  { label: "📊 FinOps maturity", q: "What is our FinOps maturity score and what are the top 3 things to improve?" },
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+function tenantId()  { return document.getElementById('tenant-input').value.trim() || 'demo'; }
+function apiKey()    { return document.getElementById('api-key-input').value.trim() || sessionStorage.getItem('cl_api_key') || ''; }
+function baseUrl()   { return window.CL_API_URL || ''; }
+
+function headers() {
+  const h = { 'Content-Type': 'application/json' };
+  const k = apiKey();
+  if (k) h['X-API-Key'] = k;
+  return h;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 128) + 'px';
+}
+
+function scrollToBottom() {
+  const m = document.getElementById('messages');
+  m.scrollTop = m.scrollHeight;
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function renderMarkdown(text) {
+  try { return marked.parse(text); } catch { return text.replace(/\n/g, '<br>'); }
+}
+
+function timeAgo(iso) {
+  const d = new Date(iso), now = new Date();
+  const diff = Math.floor((now - d) / 60000);
+  if (diff < 1) return 'just now';
+  if (diff < 60) return `${diff}m ago`;
+  if (diff < 1440) return `${Math.floor(diff/60)}h ago`;
+  return d.toLocaleDateString();
+}
+
+// ── Message rendering ─────────────────────────────────────────────────────
+function appendUserMessage(text) {
+  const div = document.createElement('div');
+  div.className = 'flex justify-end';
+  div.innerHTML = `
+    <div class="chat-bubble-user rounded-2xl rounded-tr-sm px-4 py-3 max-w-xl text-sm text-gray-100 leading-relaxed">
+      ${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    </div>`;
+  document.getElementById('messages').appendChild(div);
+  scrollToBottom();
+}
+
+function appendAIMessage(text, toolsUsed = [], chartData = [], pendingActions = [], suggestions = []) {
+  const id = 'msg-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'flex gap-3';
+  div.id = id;
+
+  let toolBadges = '';
+  if (toolsUsed.length) {
+    toolBadges = `<div class="flex flex-wrap gap-1 mb-3">` +
+      toolsUsed.map(t => `<span class="tool-badge text-xs px-2 py-0.5 rounded-full text-blue-300">${t.replace(/_/g,' ')}</span>`).join('') +
+      `</div>`;
+  }
+
+  let actionCards = '';
+  if (pendingActions.length) {
+    actionCards = pendingActions.map(a => `
+      <div class="action-card rounded-xl p-4 mt-3 border" data-action-id="${a.action_id}">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-xs text-indigo-400 font-medium uppercase mb-1">⚠️ Pending Approval</div>
+            <div class="text-sm text-gray-200 font-medium">${a.description}</div>
+            <div class="text-xs text-gray-500 mt-1">${a.impact}</div>
+          </div>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <button onclick="approveAction('${a.action_id}', this)" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg font-medium transition-colors">✓ Approve</button>
+          <button onclick="dismissAction(this)" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-lg transition-colors">Dismiss</button>
+        </div>
+      </div>`).join('');
+  }
+
+  let chartHtml = '';
+  if (chartData.length) {
+    chartHtml = chartData.map((c, i) => {
+      const cid = `chart-${id}-${i}`;
+      pendingCharts[cid] = c;
+      return `<div class="mt-3 bg-gray-900 rounded-xl p-3"><div class="text-xs text-gray-500 mb-2">${c.label || 'Chart'}</div><canvas id="${cid}" height="180"></canvas></div>`;
+    }).join('');
+  }
+
+  div.innerHTML = `
+    <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 mt-1">AI</div>
+    <div class="flex-1 min-w-0">
+      <div class="chat-bubble-ai rounded-2xl rounded-tl-sm px-4 py-3 max-w-3xl">
+        ${toolBadges}
+        <div class="prose text-sm text-gray-200 leading-relaxed" id="prose-${id}">${renderMarkdown(text)}</div>
+        ${actionCards}
+        ${chartHtml}
+      </div>
+    </div>`;
+  document.getElementById('messages').appendChild(div);
+
+  // Render charts after DOM insertion
+  Object.entries(pendingCharts).forEach(([cid, chart]) => {
+    const el = document.getElementById(cid);
+    if (el) { renderChart(el, chart); delete pendingCharts[cid]; }
+  });
+
+  // Show suggestions
+  if (suggestions.length) showSuggestions(suggestions);
+  scrollToBottom();
+  return id;
+}
+
+function appendStreamingMessage() {
+  const id = 'msg-stream-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'flex gap-3';
+  div.id = id;
+  div.innerHTML = `
+    <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 mt-1">AI</div>
+    <div class="flex-1 min-w-0">
+      <div class="chat-bubble-ai rounded-2xl rounded-tl-sm px-4 py-3 max-w-3xl">
+        <div class="text-sm text-gray-200 leading-relaxed" id="stream-content-${id}">
+          <span class="blink text-indigo-400">▌</span>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('messages').appendChild(div);
+  scrollToBottom();
+  return id;
+}
+
+function updateStreamContent(msgId, text) {
+  const el = document.getElementById(`stream-content-${msgId}`);
+  if (el) {
+    el.innerHTML = renderMarkdown(text) + `<span class="blink text-indigo-400">▌</span>`;
+    scrollToBottom();
+  }
+}
+
+function finaliseStreamMessage(msgId, text, toolsUsed, chartData, pendingActions, suggestions) {
+  const div = document.getElementById(msgId);
+  if (!div) return;
+  div.remove();
+  appendAIMessage(text, toolsUsed, chartData, pendingActions, suggestions);
+}
+
+// ── Typing indicator ──────────────────────────────────────────────────────
+function appendTyping() {
+  const div = document.createElement('div');
+  div.id = 'typing-indicator';
+  div.className = 'flex gap-3';
+  div.innerHTML = `
+    <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">AI</div>
+    <div class="chat-bubble-ai rounded-2xl rounded-tl-sm px-4 py-3">
+      <div class="flex items-center gap-1.5 h-5">
+        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay:0ms"></span>
+        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay:150ms"></span>
+        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay:300ms"></span>
+      </div>
+    </div>`;
+  document.getElementById('messages').appendChild(div);
+  scrollToBottom();
+}
+
+function removeTyping() { document.getElementById('typing-indicator')?.remove(); }
+
+// ── Charts ────────────────────────────────────────────────────────────────
+function renderChart(canvas, chartDef) {
+  const data = chartDef.data || [];
+  const labels = data.map(d => d.name || d.day || d.service || '?');
+  const values = data.map(d => d.eur || d.value || d.cost_eur || 0);
+  const colours = ['#6366f1','#8b5cf6','#a78bfa','#c4b5fd','#ddd6fe','#e0e7ff','#818cf8','#4f46e5'];
+  new Chart(canvas.getContext('2d'), {
+    type: chartDef.type === 'line' ? 'line' : 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: chartDef.label || 'Cost (€)',
+        data: values,
+        backgroundColor: chartDef.type === 'line' ? 'rgba(99,102,241,0.15)' : colours,
+        borderColor: chartDef.type === 'line' ? '#6366f1' : 'transparent',
+        borderWidth: chartDef.type === 'line' ? 2 : 0,
+        fill: chartDef.type === 'line',
+        tension: 0.4,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `€${ctx.raw.toLocaleString('en-EU', {minimumFractionDigits:2})}` } } },
+      scales: {
+        x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font: { size: 10 } } },
+        y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font: { size: 10 }, callback: v => `€${(v/1000).toFixed(0)}k` } }
+      }
+    }
+  });
+}
+
+// ── Suggestions ───────────────────────────────────────────────────────────
+function showSuggestions(suggestions) {
+  const bar = document.getElementById('suggestions-bar');
+  bar.innerHTML = suggestions.map(s => `
+    <button onclick="sendQuick('${s.replace(/'/g,"\\'")}')"
+      class="text-xs px-3 py-1.5 rounded-full bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-indigo-500 text-gray-300 hover:text-white transition-colors truncate max-w-xs">
+      ${s}
+    </button>`).join('');
+  bar.classList.remove('hidden');
+}
+
+function sendQuick(text) {
+  document.getElementById('msg-input').value = text;
+  sendMessage();
+}
+
+// ── Send message ──────────────────────────────────────────────────────────
+async function sendMessage() {
+  if (isStreaming) return;
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('suggestions-bar').classList.add('hidden');
+  isStreaming = true;
+
+  appendUserMessage(text);
+
+  // Update title on first message
+  if (!currentSessionId) {
+    document.getElementById('chat-title').textContent = text.slice(0, 55) + (text.length > 55 ? '…' : '');
+    document.getElementById('chat-subtitle').textContent = 'Analysing your data…';
+  }
+
+  const useStream = true; // change to false for non-streaming
+  if (useStream) {
+    await sendStreamMessage(text);
+  } else {
+    await sendSyncMessage(text);
+  }
+
+  document.getElementById('send-btn').disabled = false;
+  isStreaming = false;
+}
+
+async function sendSyncMessage(text) {
+  appendTyping();
+  try {
+    const resp = await fetch(`${baseUrl()}/api/v1/agent/${tenantId()}/chat`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ message: text, session_id: currentSessionId }),
+    });
+    removeTyping();
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      appendAIMessage(`⚠️ Error ${resp.status}: ${err.detail?.message || resp.statusText}`);
+      return;
+    }
+    const data = await resp.json();
+    currentSessionId = data.session_id;
+    appendAIMessage(data.reply, data.tools_used, data.chart_data, data.pending_actions, data.suggestions);
+    refreshSessionList();
+  } catch (e) {
+    removeTyping();
+    appendAIMessage(`⚠️ Network error: ${e.message}`);
+  }
+}
+
+async function sendStreamMessage(text) {
+  const streamMsgId = appendStreamingMessage();
+  let accumulated = '';
+  let finalData = null;
+
+  document.getElementById('tools-indicator').classList.remove('hidden');
+
+  try {
+    const resp = await fetch(`${baseUrl()}/api/v1/agent/${tenantId()}/stream`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ message: text, session_id: currentSessionId }),
+    });
+
+    if (!resp.ok) {
+      document.getElementById('tools-indicator').classList.add('hidden');
+      finaliseStreamMessage(streamMsgId, `⚠️ Error ${resp.status}`, [], [], [], []);
+      return;
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      for (const line of chunk.split('\n')) {
+        if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
+        try {
+          const event = JSON.parse(line.slice(6));
+          if (event.type === 'token') {
+            accumulated += event.content;
+            updateStreamContent(streamMsgId, accumulated);
+          } else if (event.type === 'tool_start') {
+            const names = (event.tools || []).map(t => t.replace(/_/g,' ')).join(', ');
+            document.getElementById('chat-subtitle').textContent = `⚡ Running: ${names}`;
+          } else if (event.type === 'tool_done') {
+            document.getElementById('chat-subtitle').textContent = 'Generating response…';
+          } else if (event.type === 'done') {
+            finalData = event;
+            if (event.session_id) currentSessionId = event.session_id;
+          }
+        } catch {}
+      }
+    }
+  } catch (e) {
+    accumulated = accumulated || `⚠️ Stream error: ${e.message}`;
+  }
+
+  document.getElementById('tools-indicator').classList.add('hidden');
+  document.getElementById('chat-subtitle').textContent = 'Ask anything about your cloud costs';
+
+  finaliseStreamMessage(
+    streamMsgId, accumulated,
+    [], // tools_used extracted from stream events
+    finalData?.chart_data || [],
+    finalData?.pending_actions || [],
+    finalData?.suggestions || [],
+  );
+
+  refreshSessionList();
+}
+
+// ── Action approval ───────────────────────────────────────────────────────
+async function approveAction(actionId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Approving…';
+  try {
+    const resp = await fetch(`${baseUrl()}/api/v1/agent/${tenantId()}/approve/${actionId}`, {
+      method: 'POST',
+      headers: headers(),
+    });
+    const data = await resp.json();
+    const card = btn.closest('[data-action-id]');
+    if (data.status === 'executed') {
+      card.innerHTML = `<div class="text-xs text-green-400 font-medium">✓ Action executed successfully</div><div class="text-xs text-gray-500 mt-1">${JSON.stringify(data.result || {}, null, 2)}</div>`;
+    } else {
+      btn.textContent = 'Retry';
+      btn.disabled = false;
+      const err = card.querySelector('.error-msg') || document.createElement('div');
+      err.className = 'error-msg text-xs text-red-400 mt-1';
+      err.textContent = data.error || 'Execution failed';
+      card.appendChild(err);
+    }
+  } catch (e) {
+    btn.textContent = 'Error';
+  }
+}
+
+function dismissAction(btn) {
+  btn.closest('[data-action-id]').remove();
+}
+
+// ── Briefing ──────────────────────────────────────────────────────────────
+async function loadBriefing() {
+  newChat();
+  document.getElementById('chat-title').textContent = 'Daily FinOps Briefing';
+  document.getElementById('chat-subtitle').textContent = 'Generating…';
+  appendTyping();
+  try {
+    const resp = await fetch(`${baseUrl()}/api/v1/agent/${tenantId()}/briefing`, { headers: headers() });
+    removeTyping();
+    if (!resp.ok) { appendAIMessage('⚠️ Could not load briefing.'); return; }
+    const data = await resp.json();
+
+    // Render cards first
+    let cardHtml = '';
+    if (data.cards.length) {
+      cardHtml = `<div class="grid grid-cols-2 gap-3 mt-3">` +
+        data.cards.map(c => `
+          <div class="chat-bubble-ai severity-${c.severity} rounded-xl p-3 border-l-4">
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-1">${c.category}</div>
+            <div class="text-sm font-semibold text-white">${c.title}</div>
+            <div class="text-xl font-bold text-indigo-300 my-1">${c.metric}</div>
+            <div class="text-xs text-gray-400 leading-relaxed">${c.body}</div>
+          </div>`).join('') +
+        `</div>`;
+    }
+
+    const topAction = `\n\n---\n**Today's top action:** ${data.top_action}`;
+    const msg = document.createElement('div');
+    msg.className = 'flex gap-3';
+    msg.innerHTML = `
+      <div class="w-7 h-7 rounded-full bg-yellow-500 flex items-center justify-center text-white text-xs font-bold shrink-0 mt-1">☀️</div>
+      <div class="flex-1">
+        <div class="chat-bubble-ai rounded-2xl rounded-tl-sm px-4 py-3 max-w-4xl">
+          <div class="prose text-sm text-gray-200 leading-relaxed">${renderMarkdown(data.narrative + topAction)}</div>
+          ${cardHtml}
+        </div>
+      </div>`;
+    document.getElementById('messages').appendChild(msg);
+    scrollToBottom();
+    document.getElementById('chat-subtitle').textContent = `Generated by ${data.generated_by}`;
+  } catch (e) {
+    removeTyping();
+    appendAIMessage(`⚠️ Briefing error: ${e.message}`);
+  }
+}
+
+// ── Session management ────────────────────────────────────────────────────
+async function refreshSessionList() {
+  try {
+    const resp = await fetch(`${baseUrl()}/api/v1/agent/${tenantId()}/history`, { headers: headers() });
+    if (!resp.ok) return;
+    const sessions = await resp.json();
+    const list = document.getElementById('session-list');
+    list.innerHTML = sessions.slice(0, 20).map(s => `
+      <button onclick="loadSession('${s.session_id}')"
+        class="w-full text-left px-3 py-2 rounded-lg text-xs text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors truncate ${s.session_id === currentSessionId ? 'bg-gray-800 text-gray-200' : ''}">
+        ${s.title || 'Untitled'}
+        <div class="text-gray-600 text-xs">${timeAgo(s.updated_at)}</div>
+      </button>`).join('');
+  } catch {}
+}
+
+async function loadSession(sessionId) {
+  currentSessionId = sessionId;
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('suggestions-bar').classList.add('hidden');
+  appendTyping();
+  try {
+    const resp = await fetch(`${baseUrl()}/api/v1/agent/${tenantId()}/history/${sessionId}`, { headers: headers() });
+    removeTyping();
+    if (!resp.ok) return;
+    const data = await resp.json();
+    document.getElementById('chat-title').textContent = data.title || 'Conversation';
+    data.turns.forEach(t => {
+      if (t.role === 'user') appendUserMessage(t.content);
+      else if (t.role === 'assistant') appendAIMessage(t.content, t.tool_names_used || [], t.chart_data || [], t.pending_actions || [], t.suggestions || []);
+    });
+  } catch (e) {
+    removeTyping();
+  }
+  refreshSessionList();
+}
+
+function newChat() {
+  currentSessionId = null;
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('suggestions-bar').classList.add('hidden');
+  document.getElementById('chat-title').textContent = 'New conversation';
+  document.getElementById('chat-subtitle').textContent = 'Ask anything about your cloud costs';
+  showWelcome();
+}
+
+function clearChat() {
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('suggestions-bar').classList.add('hidden');
+  showWelcome();
+}
+
+// ── Welcome screen ────────────────────────────────────────────────────────
+function showWelcome() {
+  const msg = document.createElement('div');
+  msg.className = 'flex flex-col items-center justify-center py-12 text-center';
+  msg.innerHTML = `
+    <div class="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold text-2xl mb-4">CL</div>
+    <h2 class="text-xl font-semibold text-white mb-2">CloudLens AI</h2>
+    <p class="text-sm text-gray-500 max-w-sm mb-6">Your FinOps agent. Ask about costs, anomalies, waste, forecasts, commitments, or governance — in plain English.</p>
+    <div class="grid grid-cols-2 gap-2 w-full max-w-lg">
+      ${QUICK_PROMPTS.map(p => `
+        <button onclick="sendQuick('${p.q.replace(/'/g,"\\'")}')\"
+          class="text-left px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-sm text-gray-300 hover:text-white transition-colors">
+          ${p.label}
+        </button>`).join('')}
+    </div>`;
+  document.getElementById('messages').appendChild(msg);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+function init() {
+  // Quick prompts in sidebar
+  const qp = document.getElementById('quick-prompts');
+  QUICK_PROMPTS.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'w-full text-left px-2 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-800 hover:text-gray-300 transition-colors truncate';
+    btn.textContent = p.label;
+    btn.onclick = () => sendQuick(p.q);
+    qp.appendChild(btn);
+  });
+
+  // Persist API key in sessionStorage
+  const keyInput = document.getElementById('api-key-input');
+  const saved = sessionStorage.getItem('cl_api_key');
+  if (saved) keyInput.value = saved;
+  keyInput.addEventListener('input', () => sessionStorage.setItem('cl_api_key', keyInput.value));
+
+  // Load session list
+  refreshSessionList();
+  showWelcome();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

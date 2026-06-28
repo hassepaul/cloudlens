@@ -292,6 +292,11 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
       <a href="#maturity"><span class="icon">◬</span> Maturity Score <span class="tag new">NEW</span></a>
       <a href="#nl-query"><span class="icon">✦</span> Ask CloudLens <span class="tag ai">AI</span></a>
 
+      <span class="section">AI Platform</span>
+      <a href="#genai-costs"><span class="icon">◈</span> GenAI Costs <span class="tag new">NEW</span></a>
+      <a href="#ai-agent"><span class="icon">✦</span> AI Agent <span class="tag ai">AI</span></a>
+      <a href="#autonomous-exec"><span class="icon">⚡</span> Autonomous Exec <span class="tag new">NEW</span></a>
+
       <span class="section">Pages</span>
       <a href="index.html" target="_blank"><span class="icon">⊞</span> Explorer ↗</a>
       <a href="insights.html" target="_blank"><span class="icon">◈</span> Insights ↗</a>
@@ -301,10 +306,12 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
       <a href="compliance_admin.html" target="_blank"><span class="icon">⊡</span> Compliance ↗</a>
       <a href="commitment_advisor.html" target="_blank"><span class="icon">◈</span> Commitments ↗</a>
       <a href="maturity.html" target="_blank"><span class="icon">◬</span> Maturity ↗</a>
+      <a href="agent.html" target="_blank"><span class="icon">✦</span> AI Agent ↗</a>
+      <a href="genai.html" target="_blank"><span class="icon">◎</span> GenAI Costs ↗</a>
     </div>
   </nav>
   <div class="footer">
-    <p>CloudLens v2.1<br><strong>309+ tests passing</strong><br>FastAPI · Cosmos DB · Azure</p>
+    <p>CloudLens v3.0<br><strong>986+ tests passing</strong><br>FastAPI · Cosmos DB · Azure</p>
   </div>
 </aside>
 
@@ -333,7 +340,7 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
         <div class="hero-kpi"><div class="v" style="color:var(--green)">€14,200</div><div class="l">Recoverable savings identified</div></div>
         <div class="hero-kpi"><div class="v" style="color:var(--amber)">€45,800</div><div class="l">MTD cloud spend</div></div>
         <div class="hero-kpi"><div class="v" style="color:var(--purple)">3</div><div class="l">Anomalies detected this week</div></div>
-        <div class="hero-kpi"><div class="v">309</div><div class="l">Tests passing (100%)</div></div>
+        <div class="hero-kpi"><div class="v">986</div><div class="l">Tests passing (100%)</div></div>
       </div>
     </div>
   </section>
@@ -361,10 +368,10 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
           <div class="s">Python 3.12<br>async/await<br>Azure Container Apps</div>
         </div>
         <div class="arch-arrow">→</div>
-        <div class="arch-box">
+        <div class="arch-box" style="border-color:var(--tealDim)">
           <div class="icon">🗄</div>
           <div class="t">Cosmos DB</div>
-          <div class="s">Serverless<br>4 containers<br>RBAC auth</div>
+          <div class="s">Serverless<br>8 containers<br>RBAC auth</div>
         </div>
         <div class="arch-arrow">→</div>
         <div class="arch-box">
@@ -1047,20 +1054,283 @@ POST /api/v1/ingest/t-acme/hourly
   <div class="divider"></div>
 
   <!-- ═══════════════════════════════════════════════
+       GENAI COST INTELLIGENCE
+       ═══════════════════════════════════════════ -->
+  <section id="genai-costs">
+    <div class="section-header">
+      <div class="eyebrow">AI Platform · F36</div>
+      <h2>GenAI Cost Intelligence <span class="tag new">NEW</span></h2>
+      <p>
+        First-class tracking for LLM and AI API spend across <strong>5 providers</strong> and <strong>40+ models</strong>:
+        OpenAI, Azure OpenAI, AWS Bedrock, GCP Vertex AI, and Anthropic. Per-model pricing tables (token-based,
+        per_image, per_minute), model comparisons with estimated savings, and provider-level budget alerts.
+      </p>
+      <a href="genai.html" target="_blank" class="launch">Open GenAI Dashboard ↗</a>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi purple"><div class="l">MTD GenAI spend</div><div class="v">$4,820</div><div class="s">across 3 providers</div></div>
+      <div class="kpi amber"><div class="l">Total requests</div><div class="v">284k</div><div class="s">last 30 days</div></div>
+      <div class="kpi green"><div class="l">Model savings</div><div class="v">$1,460</div><div class="s">gpt-4o → gpt-4o-mini</div></div>
+      <div class="kpi teal"><div class="l">Top model</div><div class="v" style="font-size:15px">gpt-4o</div><div class="s">62% of total tokens</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>◈ Provider spend breakdown</h3>
+        <div class="bar-chart">
+          <div class="bc-row"><div class="lbl" style="color:var(--teal)">OpenAI</div><div class="track"><i style="width:74%;background:var(--teal)"></i></div><div class="val">$3,572</div></div>
+          <div class="bc-row"><div class="lbl" style="color:#0078d4">Azure OpenAI</div><div class="track"><i style="width:31%;background:#0078d4"></i></div><div class="val">$1,130</div></div>
+          <div class="bc-row"><div class="lbl" style="color:#ff9900">AWS Bedrock</div><div class="track"><i style="width:12%;background:#ff9900"></i></div><div class="val">$<br>118</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>◈ Model cost comparison</h3>
+        <div class="row-list">
+          <div class="data-row" style="border-left:3px solid var(--amber)">
+            <div class="nm"><div class="t">gpt-4o</div><div class="s">$5.00 input / $15.00 output per 1M tokens</div></div>
+            <div class="amt" style="color:var(--amber)">$3,572/mo</div>
+          </div>
+          <div class="data-row" style="border-left:3px solid var(--green)">
+            <div class="nm"><div class="t">gpt-4o-mini → switch</div><div class="s">$0.15 input / $0.60 output per 1M tokens</div></div>
+            <div class="amt" style="color:var(--green)">−$1,460/mo</div>
+          </div>
+          <div class="data-row" style="border-left:3px solid var(--teal)">
+            <div class="nm"><div class="t">claude-3-5-haiku</div><div class="s">$0.80 input / $4.00 output per 1M tokens</div></div>
+            <div class="amt" style="color:var(--teal)">$118/mo</div>
+          </div>
+        </div>
+        <div class="note" style="margin-top:8px">Pricing table covers 40+ models. CloudLens normalises model names across provider aliases.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>⏱ GenAI API endpoints</h3>
+      <div class="chain">
+        <span class="step">POST /api/v1/genai/{tid}/usage</span><span class="arrow">→</span>
+        <span class="step">ingest single record</span>
+      </div>
+      <div class="chain" style="margin-top:6px">
+        <span class="step">GET /api/v1/genai/{tid}/summary</span><span class="arrow">→</span>
+        <span class="step">total_cost_usd/eur · by_provider · by_model · daily_trend · comparisons</span>
+      </div>
+      <div class="chain" style="margin-top:6px">
+        <span class="step">GET /api/v1/genai/{tid}/pricing</span><span class="arrow">→</span>
+        <span class="step">full 40+ model pricing table</span>
+      </div>
+      <div class="chain" style="margin-top:6px">
+        <span class="step">POST /api/v1/genai/{tid}/budgets</span><span class="arrow">→</span>
+        <span class="step">set monthly spend cap per provider or global</span>
+      </div>
+    </div>
+    <div class="interactive">
+      <div class="label">Interactive — ingest a GenAI usage record</div>
+      <div class="form-inline">
+        <div><label>Provider</label>
+          <select id="genai-provider">
+            <option value="openai">openai</option>
+            <option value="azure_openai">azure_openai</option>
+            <option value="aws_bedrock">aws_bedrock</option>
+          </select>
+        </div>
+        <div><label>Model</label><input id="genai-model" value="gpt-4o-mini" style="width:130px"/></div>
+        <div><label>Input tokens</label><input id="genai-in" type="number" value="1200" style="width:80px"/></div>
+        <div><label>Output tokens</label><input id="genai-out" type="number" value="340" style="width:80px"/></div>
+        <button class="btn-sm" onclick="demoGenAIIngest()">Ingest ↗</button>
+      </div>
+      <div class="output" id="genai-out-box" style="display:none"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       AI AGENT (CONVERSATIONAL)
+       ═══════════════════════════════════════════ -->
+  <section id="ai-agent">
+    <div class="section-header">
+      <div class="eyebrow">AI Platform · F35</div>
+      <h2>AI Agent — Conversational FinOps <span class="tag ai">AI</span></h2>
+      <p>
+        A fully agentic chat interface with <strong>15 tools</strong> covering every CloudLens capability.
+        The agent reasons across spend, anomalies, waste, forecasts, Kubernetes, GenAI costs, commitments,
+        and maturity — and surfaces a proactive <strong>daily briefing</strong> every morning. Write-actions
+        (create budget, create alert rule) require explicit per-action approval before execution.
+      </p>
+      <a href="agent.html" target="_blank" class="launch" style="border-color:var(--purple);color:var(--purple);background:var(--purpleDim)">Open AI Agent ↗</a>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi purple"><div class="l">Tools available</div><div class="v">15</div><div class="s">read + write (gated)</div></div>
+      <div class="kpi teal"><div class="l">Streaming</div><div class="v">SSE</div><div class="s">token-by-token response</div></div>
+      <div class="kpi amber"><div class="l">Write tools</div><div class="v">2</div><div class="s">create_budget, create_alert_rule</div></div>
+      <div class="kpi"><div class="l">Session TTL</div><div class="v">30 days</div><div class="s">Cosmos-backed history</div></div>
+    </div>
+    <div class="grid2">
+      <div class="ai-card">
+        <h3>✦ Tool registry (15 tools)</h3>
+        <div class="row-list" style="font-size:11.5px">
+          <div class="data-row"><div class="nm"><div class="t">get_cost_summary</div><div class="s">MTD and prior period spend</div></div><span class="badge teal">read</span></div>
+          <div class="data-row"><div class="nm"><div class="t">get_anomalies</div><div class="s">Holt-Winters detected spikes</div></div><span class="badge teal">read</span></div>
+          <div class="data-row"><div class="nm"><div class="t">get_waste_items</div><div class="s">rightsizing, idle, orphaned</div></div><span class="badge teal">read</span></div>
+          <div class="data-row"><div class="nm"><div class="t">get_forecast</div><div class="s">30-day spend projection</div></div><span class="badge teal">read</span></div>
+          <div class="data-row"><div class="nm"><div class="t">get_genai_costs</div><div class="s">LLM spend + model breakdown</div></div><span class="badge teal">read</span></div>
+          <div class="data-row"><div class="nm"><div class="t">get_k8s_costs</div><div class="s">Kubernetes namespace chargeback</div></div><span class="badge teal">read</span></div>
+          <div class="data-row"><div class="nm"><div class="t">get_maturity_score</div><div class="s">6-dimension FinOps scorecard</div></div><span class="badge teal">read</span></div>
+          <div class="data-row"><div class="nm"><div class="t">create_budget</div><div class="s">provision monthly spend cap</div></div><span class="badge high">approval required</span></div>
+          <div class="data-row"><div class="nm"><div class="t">create_alert_rule</div><div class="s">provision threshold alert</div></div><span class="badge high">approval required</span></div>
+        </div>
+        <div class="note" style="margin-top:8px">Write tools surface a confirmation card with full parameters before any API call is made.</div>
+      </div>
+      <div class="card">
+        <h3>⏱ Chat API</h3>
+        <div class="output" style="max-height:160px">
+POST /api/v1/agent/t-acme/chat
+{
+  <span class="key">"message"</span>: <span class="str">"What were our top 3 GenAI costs last month, and should I set a budget?"</span>
+}
+
+<span style="color:var(--teal)">HTTP 200 — text/event-stream (SSE)</span>
+data: {"type":"thinking","text":"Fetching GenAI summary..."}
+data: {"type":"tool_result","tool":"get_genai_costs","result":{...}}
+data: {"type":"token","text":"Your top 3 GenAI costs were gpt-4o at $3,572..."}
+data: {"type":"approval_request","action":"create_budget","params":{"name":"GenAI Monthly","amount_usd":4000}}
+data: {"type":"done"}
+        </div>
+        <div class="chain" style="margin-top:12px">
+          <span class="step">user message</span><span class="arrow">→</span>
+          <span class="step">tool selection</span><span class="arrow">→</span>
+          <span class="step">data fetch</span><span class="arrow">→</span>
+          <span class="step">SSE tokens</span><span class="arrow">→</span>
+          <span class="step">approval card (write)</span>
+        </div>
+        <div class="note" style="margin-top:8px">Endpoint: <code>POST /api/v1/agent/{tid}/chat</code> · Approve: <code>POST /api/v1/agent/{tid}/actions/{id}/approve</code></div>
+      </div>
+    </div>
+    <div class="ai-card">
+      <h3>✦ Daily briefing — morning digest</h3>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span class="conf-badge">7 signals gathered in parallel</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">GET /api/v1/agent/{tid}/briefing</span>
+      </div>
+      <div class="ai-result-box" style="font-size:12.5px">
+        <strong>☀ Good morning — FinOps Daily Briefing</strong><br><br>
+        Your <b>MTD cloud spend is €45,800</b>, 8.2% above last month's pace. Two anomalies detected this week — a VM batch job spike on Jun 8 (+€1,240 excess, z=4.2σ) and an Azure OpenAI spike on Jun 15 (+€690). <b>€14,200 in waste</b> is recoverable; 8 resources are under 30% utilization.<br><br>
+        <b>GenAI:</b> $4,820 MTD across 3 providers. Switching gpt-4o workloads to gpt-4o-mini on non-critical apps could save <b>~$1,460/month</b>.<br><br>
+        <b>Top action:</b> Review the VM batch job in rg-staging and consider setting a GenAI budget of $5,000/month.
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       AUTONOMOUS EXECUTION + TERRAFORM DRIFT
+       ═══════════════════════════════════════════ -->
+  <section id="autonomous-exec">
+    <div class="section-header">
+      <div class="eyebrow">AI Platform · F37</div>
+      <h2>Autonomous Execution + Terraform Drift <span class="tag new">NEW</span></h2>
+      <p>
+        CloudLens can <strong>create budgets and alert rules autonomously</strong> once a human approves the action.
+        Every resource created autonomously is tagged with CloudLens provenance metadata and a corresponding
+        <strong>Terraform HCL snippet is generated</strong> — so the infrastructure team can run
+        <code>terraform import</code> to absorb the resource into state and keep the IaC truthful.
+      </p>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi teal"><div class="l">Approval gates</div><div class="v">100%</div><div class="s">no silent writes ever</div></div>
+      <div class="kpi amber"><div class="l">Tag keys applied</div><div class="v">7</div><div class="s">per created resource</div></div>
+      <div class="kpi purple"><div class="l">Supported resources</div><div class="v">6</div><div class="s">budget + alert types</div></div>
+      <div class="kpi"><div class="l">Webhook</div><div class="v">Slack / Teams</div><div class="s">on each drift record</div></div>
+    </div>
+    <div class="card">
+      <h3>⚡ Autonomous execution workflow</h3>
+      <div class="chain" style="font-size:12px">
+        <span class="step" style="border-color:var(--purple);color:var(--purple)">AI proposes action</span>
+        <span class="arrow">→</span>
+        <span class="step" style="border-color:var(--amber);color:var(--amber)">Human reviews card</span>
+        <span class="arrow">→</span>
+        <span class="step" style="border-color:var(--teal);color:var(--teal)">POST /approve</span>
+        <span class="arrow">→</span>
+        <span class="step">Write tool executes</span>
+        <span class="arrow">→</span>
+        <span class="step" style="border-color:var(--amber);color:var(--amber)">Drift record created</span>
+        <span class="arrow">→</span>
+        <span class="step">Webhook fired</span>
+        <span class="arrow">→</span>
+        <span class="step" style="border-color:var(--green);color:var(--green)">Engineer runs terraform import</span>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>🏷 Resource tag convention</h3>
+        <div class="output" style="max-height:180px">
+<span class="key">"cloudlens:source"</span>: <span class="str">"cloudlens-autonomous"</span>
+<span class="key">"cloudlens:action_id"</span>: <span class="str">"act-abc123"</span>
+<span class="key">"cloudlens:approval_id"</span>: <span class="str">"apr-xyz789"</span>
+<span class="key">"cloudlens:approved_by"</span>: <span class="str">"alice@acme.com"</span>
+<span class="key">"cloudlens:tenant_id"</span>: <span class="str">"t-acme"</span>
+<span class="key">"cloudlens:resource_type"</span>: <span class="str">"azure_budget"</span>
+<span class="key">"cloudlens:created_at"</span>: <span class="str">"2026-06-16T09:12:00Z"</span>
+        </div>
+        <div class="note" style="margin-top:8px">Every autonomous resource carries 7 tags for full provenance. Tag policy endpoint: <code>GET /api/v1/terraform/{tid}/tag-policy</code></div>
+      </div>
+      <div class="card">
+        <h3>🔧 Generated HCL + import command</h3>
+        <div class="output" style="max-height:180px">
+<span style="color:var(--txt3)"># Terraform resource block (auto-generated)</span>
+<span class="str">resource</span> <span class="key">"azurerm_consumption_budget_subscription"</span> <span class="str">"cloudlens_auto_budget_GenAI_Monthly"</span> {
+  name             = <span class="str">"GenAI Monthly"</span>
+  subscription_id  = <span class="str">"/subscriptions/..."</span>
+  amount           = <span class="num">4000</span>
+  time_grain       = <span class="str">"Monthly"</span>
+}
+
+<span style="color:var(--txt3)"># Run this to absorb into state:</span>
+$ terraform import \
+  azurerm_consumption_budget_subscription.cloudlens_auto_budget_GenAI_Monthly \
+  "/subscriptions/.../providers/Microsoft.Consumption/budgets/GenAI%20Monthly"
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>⏱ Drift management API</h3>
+      <div class="chain">
+        <span class="step">GET /api/v1/terraform/{tid}/drift/summary</span><span class="arrow">→</span>
+        <span class="step">total · by_status · by_resource_type</span>
+      </div>
+      <div class="chain" style="margin-top:6px">
+        <span class="step">GET /api/v1/terraform/{tid}/drift</span><span class="arrow">→</span>
+        <span class="step">list all pending drift records</span>
+      </div>
+      <div class="chain" style="margin-top:6px">
+        <span class="step">POST /api/v1/terraform/{tid}/drift/{id}/acknowledge</span><span class="arrow">→</span>
+        <span class="step">engineer marks it imported</span>
+      </div>
+    </div>
+    <div class="interactive">
+      <div class="label">Interactive — view drift summary</div>
+      <div class="form-inline">
+        <button class="btn-sm" onclick="demoDriftSummary()">GET drift/summary →</button>
+      </div>
+      <div class="output" id="drift-out" style="display:none"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
        SUMMARY / CTA
        ═══════════════════════════════════════════ -->
   <section id="summary">
     <div class="section-header">
       <div class="eyebrow">Wrap-up</div>
       <h2>Everything ships, everything tests</h2>
-      <p>All 13 features are fully implemented, E2E tested, and wired into the frontend. The backend has 309+ passing tests across every endpoint and service.</p>
+      <p>All 17 features are fully implemented, E2E tested, and wired into the frontend. The backend has 986+ passing tests across every endpoint and service.</p>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-      <div class="kpi green"><div class="l">Tests</div><div class="v">309+</div><div class="s">100% pass rate</div></div>
-      <div class="kpi teal"><div class="l">API endpoints</div><div class="v">50+</div><div class="s">versioned /api/v1/…</div></div>
-      <div class="kpi purple"><div class="l">Frontend pages</div><div class="v">13</div><div class="s">fully linked, dark theme</div></div>
-      <div class="kpi"><div class="l">New features</div><div class="v">4</div><div class="s">intelligence layer</div></div>
-      <div class="kpi amber"><div class="l">Lines of code</div><div class="v">~10,000</div><div class="s">Python + HTML/JS</div></div>
+      <div class="kpi green"><div class="l">Tests</div><div class="v">986+</div><div class="s">100% pass rate</div></div>
+      <div class="kpi teal"><div class="l">API endpoints</div><div class="v">70+</div><div class="s">versioned /api/v1/…</div></div>
+      <div class="kpi purple"><div class="l">Frontend pages</div><div class="v">17</div><div class="s">fully linked, dark theme</div></div>
+      <div class="kpi"><div class="l">New features</div><div class="v">7</div><div class="s">intelligence + AI platform</div></div>
+      <div class="kpi amber"><div class="l">Lines of code</div><div class="v">~16,000</div><div class="s">Python + HTML/JS</div></div>
     </div>
     <div class="card" style="margin-top:4px">
       <h3>🗂 All pages</h3>
@@ -1077,6 +1347,8 @@ POST /api/v1/ingest/t-acme/hourly
         <a href="maturity.html" target="_blank" class="launch">◬ Maturity Score</a>
         <a href="context_mapper.html" target="_blank" class="launch">⊛ Context Mapping</a>
         <a href="nl_query.html" target="_blank" class="launch">✦ Ask AI</a>
+        <a href="agent.html" target="_blank" class="launch" style="border-color:var(--purple);color:var(--purple);background:var(--purpleDim)">✦ AI Agent <span class="tag ai">NEW</span></a>
+        <a href="genai.html" target="_blank" class="launch" style="border-color:var(--purple);color:var(--purple);background:var(--purpleDim)">◎ GenAI Costs <span class="tag ai">NEW</span></a>
       </div>
     </div>
   </section>
@@ -1265,6 +1537,45 @@ function demoMaturityScore(){
     { <span class="key">"dimension"</span>: <span class="str">"waste_ratio"</span>, <span class="key">"score"</span>: <span class="num">76.0</span>, <span class="key">"percentile"</span>: <span class="num">71</span> },
     { <span class="key">"dimension"</span>: <span class="str">"commitment_coverage"</span>, <span class="key">"score"</span>: <span class="num">42.0</span>, <span class="key">"percentile"</span>: <span class="num">38</span> }
   ]
+}`;
+}
+
+/* ── GenAI ingest demo ────────────────────────────────────────────────────── */
+function demoGenAIIngest(){
+  const provider=document.getElementById('genai-provider').value||'openai';
+  const model=document.getElementById('genai-model').value||'gpt-4o-mini';
+  const inputTok=parseInt(document.getElementById('genai-in').value)||1200;
+  const outputTok=parseInt(document.getElementById('genai-out').value)||340;
+  const pricing={'gpt-4o-mini':{input:0.15,output:0.60},'gpt-4o':{input:5.00,output:15.00},'claude-3-5-haiku':{input:0.80,output:4.00}};
+  const p=pricing[model]||{input:0.15,output:0.60};
+  const cost=((inputTok/1e6)*p.input+(outputTok/1e6)*p.output).toFixed(6);
+  const usageId='u-'+Math.random().toString(36).slice(2,10);
+  const out=document.getElementById('genai-out-box');
+  out.style.display='block';
+  out.innerHTML=`<span style="color:var(--teal)">POST /api/v1/genai/t-acme/usage → 201 Created</span>
+{
+  <span class="key">"id"</span>: <span class="str">"${usageId}"</span>,
+  <span class="key">"provider"</span>: <span class="str">"${provider}"</span>,
+  <span class="key">"model"</span>: <span class="str">"${model}"</span>,
+  <span class="key">"input_tokens"</span>: <span class="num">${inputTok}</span>,
+  <span class="key">"output_tokens"</span>: <span class="num">${outputTok}</span>,
+  <span class="key">"cost_usd"</span>: <span class="num">${cost}</span>,
+  <span class="key">"billing_type"</span>: <span class="str">"token_based"</span>
+}`;
+}
+
+/* ── Drift summary demo ───────────────────────────────────────────────────── */
+function demoDriftSummary(){
+  const out=document.getElementById('drift-out');
+  out.style.display='block';
+  out.innerHTML=`<span style="color:var(--teal)">GET /api/v1/terraform/t-acme/drift/summary → 200 OK</span>
+{
+  <span class="key">"tenant_id"</span>: <span class="str">"t-acme"</span>,
+  <span class="key">"total"</span>: <span class="num">3</span>,
+  <span class="key">"by_status"</span>: { <span class="key">"pending"</span>: <span class="num">2</span>, <span class="key">"acknowledged"</span>: <span class="num">1</span>, <span class="key">"imported"</span>: <span class="num">0</span> },
+  <span class="key">"by_resource_type"</span>: { <span class="key">"azurerm_consumption_budget_subscription"</span>: <span class="num">2</span>, <span class="key">"azurerm_monitor_metric_alert"</span>: <span class="num">1</span> },
+  <span class="key">"oldest_pending_age_days"</span>: <span class="num">4</span>,
+  <span class="key">"tag_policy"</span>: { <span class="key">"source_tag"</span>: <span class="str">"cloudlens:source"</span>, <span class="key">"source_value"</span>: <span class="str">"cloudlens-autonomous"</span>, <span class="key">"required_tags"</span>: [<span class="str">"cloudlens:action_id"</span>, <span class="str">"cloudlens:approved_by"</span>] }
 }`;
 }
 </script>
