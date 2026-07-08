@@ -123,8 +123,8 @@ async def agent_stream_endpoint(tenant_id: str, body: ChatRequest) -> StreamingR
             async for chunk in chat_stream(tenant_id, body.message, body.session_id):
                 yield f"data: {json.dumps(chunk)}\n\n"
         except Exception as exc:
-            log.error("agent.stream_error", tenant_id=tenant_id, error=str(exc))
-            yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
+            log.error("agent.stream_error", tenant_id=tenant_id, error=str(exc), exc_info=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': 'An internal error occurred. Please try again.'})}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(

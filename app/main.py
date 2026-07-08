@@ -50,6 +50,9 @@ from app.routers.bots import router as bots_router
 from app.routers.agent import router as agent_router
 from app.routers.genai_cost import router as genai_cost_router
 from app.routers.terraform_sync import router as terraform_sync_router
+from app.routers.sustainability import router as sustainability_router
+from app.routers.saml import router as saml_router
+from app.routers.scim import router as scim_router
 from app.services import cosmos, blob, keyvault
 
 log = get_logger(__name__)
@@ -121,8 +124,8 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=allowed_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PATCH", "DELETE"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+        allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Request-ID"],
     )
 
     # ── Request ID + timing middleware ──────────────────────────────────────
@@ -173,6 +176,9 @@ def create_app() -> FastAPI:
     app.include_router(agent_router)
     app.include_router(genai_cost_router)
     app.include_router(terraform_sync_router)
+    app.include_router(sustainability_router)
+    app.include_router(saml_router)
+    app.include_router(scim_router)
 
     return app
 

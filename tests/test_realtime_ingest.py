@@ -49,7 +49,7 @@ class TestComputeLagMinutes:
 
     def test_naive_timestamp_treated_as_utc(self):
         now = datetime.now(timezone.utc)
-        naive = (datetime.utcnow() - timedelta(minutes=15)).isoformat()
+        naive = (datetime.now(timezone.utc) - timedelta(minutes=15)).replace(tzinfo=None).isoformat()
         lag = _compute_lag_minutes(naive, now)
         assert lag is not None
         assert 14 <= lag <= 16

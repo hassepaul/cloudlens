@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Commitment Auto-Purchase</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1000px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+.keybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+select,input{background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;padding:8px 11px;font-family:var(--body);outline:none}
+input[type=checkbox]{width:auto}
+.keybar input,.keybar select{font-family:var(--mono);font-size:12px;padding:6px 10px}
+select:focus,input:focus{border-color:var(--teal)}
+.lock{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:7px;background:var(--amberDim);color:var(--amber)}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--greenDim);color:var(--green)}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px;margin-bottom:16px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.card .cap{font-size:12px;color:var(--txt3);margin-bottom:15px}
+.state{font-family:var(--mono);font-size:9.5px;padding:2px 9px;border-radius:6px}
+.state.on{background:var(--greenDim);color:var(--green)}.state.off{background:var(--panel2);color:var(--txt3)}
+.state.warn{background:var(--amberDim);color:var(--amber)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.f label{display:block;font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.f input,.f select{width:100%}
+.full{grid-column:1/-1}
+.chk{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txt2);font-family:var(--mono)}
+.types{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px}
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.btn{background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);font-family:var(--mono);font-size:12px;padding:8px 15px;border-radius:8px;cursor:pointer}
+.btn:hover{background:#1a5c50;color:#eafffb}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--txt2)}
+.btn.exec{background:var(--greenDim);border-color:var(--green);color:var(--green)}
+.btn.exec:hover{background:#12482e;color:#d7ffe9}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:7px 9px;border-bottom:1px solid var(--line)}
+td{padding:8px 9px;border-bottom:1px solid var(--lineSoft)}
+tr:last-child td{border-bottom:0}
+.badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:5px}
+.badge.purchased{background:var(--greenDim);color:var(--green)}.badge.dry_run{background:var(--blueDim);color:var(--blue)}
+.badge.failed{background:var(--redDim);color:var(--red)}.badge.skipped{background:var(--panel2);color:var(--txt3)}
+.msg{font-size:12px;font-family:var(--mono);margin-top:10px}
+.ok{color:var(--teal)}.err{color:var(--red)}.note{font-size:12px;color:var(--txt3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="commitment_advisor.html" class="snav-link">◈ Advisor</a>
+  <a href="commitment_purchaser.html" class="snav-link active">◷ Auto-purchase</a>
+  <a href="escalation.html" class="snav-link">⇗ Escalation</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
+</nav>
+  <h2 class="sr-only">CloudLens commitment auto-purchase: safety settings, dry-run execution, and purchase history</h2>
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · Commitment Auto-Purchase</h1>
+    <div class="keybar">
+      <select id="tenant-sel" onchange="loadAll()">
+        <option value="t-acme">t-acme (Acme Corp)</option>
+        <option value="t-1">t-1 (Demo)</option>
+      </select>
+      <input id="api-key-input" type="password" placeholder="X-API-Key (operator)"/>
+      <button class="btn ghost" style="font-size:11px;padding:6px 12px" onclick="loadAll()">↻ Load</button>
+      <span class="lock">🔒 API-key required</span>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="card">
+    <h2>⚙ Safety settings <span class="state off" id="s-eff">inactive</span></h2>
+    <div class="cap">Guardrails for automated commitment purchasing (GET/PUT /api/v1/commitment-purchaser/{t}/settings). Effective only when both this and the global switch are on.</div>
+    <div class="grid">
+      <div class="f chk"><label style="margin:0">Enabled (tenant)</label><input type="checkbox" id="st-enabled"/></div>
+      <div class="f chk"><label style="margin:0">Dry-run (recommended)</label><input type="checkbox" id="st-dry" checked/></div>
+      <div class="f"><label>Max single purchase (€)</label><input id="st-single" type="number" value="5000"/></div>
+      <div class="f"><label>Max monthly budget (€)</label><input id="st-monthly" type="number" value="20000"/></div>
+      <div class="f"><label>Min confidence (0–1)</label><input id="st-conf" type="number" step="0.05" min="0" max="1" value="0.70"/></div>
+      <div class="f full"><label>Allowed commitment types</label>
+        <div class="types">
+          <label class="chk"><input type="checkbox" class="ct" value="savings-plan-1yr"/> SP 1yr</label>
+          <label class="chk"><input type="checkbox" class="ct" value="savings-plan-3yr"/> SP 3yr</label>
+          <label class="chk"><input type="checkbox" class="ct" value="1yr-ri"/> RI 1yr</label>
+          <label class="chk"><input type="checkbox" class="ct" value="3yr-ri"/> RI 3yr</label>
+        </div>
+      </div>
+      <div class="f full"><label>Allowed services (comma, blank = all)</label><input id="st-services" placeholder="Compute, Database"/></div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="saveSettings()">Save settings</button>
+      <span class="note" id="global-note"></span>
+    </div>
+    <div class="msg" id="set-msg"></div>
+  </div>
+
+  <!-- EXECUTE -->
+  <div class="card">
+    <h2>▶ Run purchaser</h2>
+    <div class="cap">Evaluates recommendations and executes within the guardrails (POST /api/v1/commitment-purchaser/{t}/execute). Blocked with 403 unless both safety gates are open.</div>
+    <div class="grid">
+      <div class="f"><label>Lookback days (14–365)</label><input id="ex-look" type="number" value="90"/></div>
+      <div class="f"><label>FX rate EUR→USD</label><input id="ex-fx" type="number" step="0.01" value="1.08"/></div>
+    </div>
+    <div class="actions"><button class="btn exec" onclick="execute()">Run purchaser →</button></div>
+    <div class="msg" id="ex-msg"></div>
+    <div id="ex-report" style="margin-top:12px"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card">
+    <h2>↻ Purchase history</h2>
+    <div class="cap">Recent purchase records (GET /api/v1/commitment-purchaser/{t}/history).</div>
+    <div style="overflow-x:auto">
+      <table><thead><tr><th>When</th><th>Type</th><th>Service</th><th>Hourly (USD)</th><th>Saving/mo</th><th>Status</th></tr></thead>
+        <tbody id="hist-rows"><tr><td colspan="6" class="note">Load with an API key.</td></tr></tbody></table>
+    </div>
+    <div class="msg" id="hist-msg"></div>
+  </div>
+</div>
+
+<script>
+const API='';
+const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
+function tid(){return document.getElementById('tenant-sel').value;}
+function apiKey(){return document.getElementById('api-key-input').value.trim()||sessionStorage.getItem('cl_api_key')||'';}
+function hdrs(json){const h=json?{'Content-Type':'application/json'}:{};const k=apiKey();if(k){h['X-API-Key']=k;sessionStorage.setItem('cl_api_key',k);}return h;}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function errText(r){try{const e=await r.json();return (e.detail&&(e.detail.message||e.detail))||('HTTP '+r.status);}catch(_){return 'HTTP '+r.status;}}
+const gid=id=>document.getElementById(id);
+
+async function loadSettings(){
+  const msg=gid('set-msg');msg.textContent='';
+  try{
+    const r=await fetch(`${API}/api/v1/commitment-purchaser/${tid()}/settings`,{headers:hdrs()});
+    if(!r.ok)throw new Error(await errText(r));
+    const s=await r.json();
+    gid('st-enabled').checked=!!s.enabled;
+    gid('st-dry').checked=s.dry_run!==false;
+    gid('st-single').value=s.max_single_purchase_eur;
+    gid('st-monthly').value=s.max_monthly_budget_eur;
+    gid('st-conf').value=s.min_confidence_score;
+    gid('st-services').value=(s.allowed_services||[]).join(', ');
+    const types=new Set(s.allowed_commitment_types||[]);
+    document.querySelectorAll('.ct').forEach(c=>c.checked=types.has(c.value));
+    const eff=gid('s-eff');
+    eff.className='state '+(s.effective_enabled?'on':(s.enabled?'warn':'off'));
+    eff.textContent=s.effective_enabled?'active':(s.enabled?'blocked by global switch':'inactive');
+    gid('global-note').textContent=s.global_auto_purchase_enabled?'Global auto-purchase: ON':'Global auto-purchase: OFF (operator gate closed)';
+  }catch(e){msg.className='msg err';msg.textContent='Failed to load settings: '+e.message+' — enter a valid operator X-API-Key.';}
+}
+
+async function saveSettings(){
+  const msg=gid('set-msg');msg.className='msg';msg.textContent='';
+  const body={
+    enabled:gid('st-enabled').checked,
+    dry_run:gid('st-dry').checked,
+    max_single_purchase_eur:+gid('st-single').value,
+    max_monthly_budget_eur:+gid('st-monthly').value,
+    min_confidence_score:+gid('st-conf').value,
+    allowed_commitment_types:[...document.querySelectorAll('.ct:checked')].map(c=>c.value),
+    allowed_services:gid('st-services').value.split(',').map(s=>s.trim()).filter(Boolean),
+  };
+  try{
+    const r=await fetch(`${API}/api/v1/commitment-purchaser/${tid()}/settings`,{method:'PUT',headers:hdrs(true),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error(await errText(r));
+    msg.className='msg ok';msg.textContent='Settings saved.';loadSettings();
+  }catch(e){msg.className='msg err';msg.textContent='Save failed: '+e.message;}
+}
+
+function recRows(list){
+  return (list||[]).map(p=>`<tr>
+    <td><span class="badge ${esc(p.status)}">${esc(p.status)}</span></td>
+    <td>${esc(p.commitment_type)}</td><td>${esc(p.service)}</td>
+    <td>$${(p.hourly_commitment_usd||0).toFixed(2)}</td>
+    <td>${EUR(p.monthly_saving_eur||0)}</td>
+    <td style="color:var(--txt3)">${esc(p.error||p.skip_reason||'conf '+Math.round((p.confidence_score||0)*100)+'%')}</td>
+  </tr>`).join('');
+}
+
+async function execute(){
+  const msg=gid('ex-msg');msg.className='msg';msg.textContent='Running…';
+  gid('ex-report').innerHTML='';
+  const body={lookback_days:+gid('ex-look').value||90,fx_rate_eur_to_usd:+gid('ex-fx').value||1.08};
+  try{
+    const r=await fetch(`${API}/api/v1/commitment-purchaser/${tid()}/execute`,{method:'POST',headers:hdrs(true),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error(await errText(r));
+    const d=await r.json();
+    msg.className='msg ok';msg.textContent=`${d.dry_run?'Dry-run':'Live run'} complete — committed ${EUR(d.total_committed_eur||0)}. ${(d.purchased||[]).length} purchased · ${(d.skipped||[]).length} skipped · ${(d.failed||[]).length} failed.`;
+    const all=[...(d.purchased||[]),...(d.skipped||[]),...(d.failed||[])];
+    gid('ex-report').innerHTML=all.length?`<div style="overflow-x:auto"><table><thead><tr><th>Status</th><th>Type</th><th>Service</th><th>Hourly (USD)</th><th>Saving/mo</th><th>Detail</th></tr></thead><tbody>${recRows(all)}</tbody></table></div>`
+      +((d.notes||[]).length?`<div class="note" style="margin-top:8px">${esc((d.notes||[]).join(' '))}</div>`:'')
+      :'<div class="note">No candidate commitments in this window.</div>';
+    loadHistory();
+  }catch(e){msg.className='msg err';msg.textContent='Execute failed: '+e.message;}
+}
+
+async function loadHistory(){
+  const tb=gid('hist-rows');
+  try{
+    const r=await fetch(`${API}/api/v1/commitment-purchaser/${tid()}/history?limit=50`,{headers:hdrs()});
+    if(!r.ok)throw new Error(await errText(r));
+    const d=await r.json();
+    const recs=d.records||[];
+    if(!recs.length){tb.innerHTML='<tr><td colspan="6" class="note">No purchase history yet.</td></tr>';return;}
+    tb.innerHTML=recs.map(p=>{
+      const when=p.purchased_at?new Date(p.purchased_at).toLocaleString():'';
+      return `<tr>
+        <td style="font-size:11px;color:var(--txt2)">${when}</td>
+        <td>${esc(p.commitment_type)}</td><td>${esc(p.service)}</td>
+        <td>$${(p.hourly_commitment_usd||0).toFixed(2)}</td>
+        <td>${EUR(p.monthly_saving_eur||0)}</td>
+        <td><span class="badge ${esc(p.status)}">${esc(p.status)}</span></td>
+      </tr>`;
+    }).join('');
+  }catch(e){tb.innerHTML=`<tr><td colspan="6" class="err" style="font-family:var(--mono);font-size:12px">Failed: ${esc(e.message)}</td></tr>`;}
+}
+
+function loadAll(){loadSettings();loadHistory();}
+(function(){const k=sessionStorage.getItem('cl_api_key');if(k){gid('api-key-input').value=k;loadAll();}})();
+</script>
+</body>
+</html>

@@ -135,13 +135,18 @@
   <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
   <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
   <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
   <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+  <a href="sustainability.html" class="snav-link">🌱 CO₂</a>
 </nav><div class="wrap">
   <h2 class="sr-only">CloudLens business insights console — anomaly detection, chargeback, budgets, and executive insights</h2>
 
   <div class="head">
     <h1><span class="dot"></span> CloudLens · Business Insights</h1>
-    <span class="tenant">Acme Manufacturing SpA · enterprise</span>
+    <select id="tenant-sel" onchange="loadAll()" class="tenant" style="cursor:pointer;background:var(--bg2)">
+      <option value="t-acme">t-acme (Acme Corp)</option>
+      <option value="t-1">t-1 (Demo)</option>
+    </select>
   </div>
 
   <!-- EXECUTIVE SUMMARY -->
@@ -216,52 +221,14 @@
 
 <script>
 const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+const API='';
+function tid(){return document.getElementById('tenant-sel').value;}
 
-/* mock data shaped to: GET /insights/{t}/digest, /insights/{t}/chargeback, /budgets/{t}/{b}/status */
-const DIGEST={
-  efficiency_score:78,
-  monthly_spend_eur:48200, monthly_recoverable_eur:9120,
-  headline_summary:"Acme Manufacturing spent €48,200 this period with an efficiency score of 78/100. €9,120 (19%) is recoverable. Top priority: €9,120/month is recoverable (€109,440/year) across 14 findings; the single biggest is vm-stage-erp-01 at €2,465/mo.",
-  headline_summary_it:"Acme Manufacturing ha speso €48.200 nel periodo con un punteggio di efficienza di 78/100. €9.120 (19%) sono recuperabili. Priorità principale: vm-stage-erp-01 a €2.465/mese.",
-  insights:[
-    {rank:1,category:"waste",severity:"critical",impact_eur:9120,headline:"€9,120/month is recoverable (€109,440/year) across 14 findings; the single biggest is vm-stage-erp-01 at €2,465/mo.",action:"Action the 3 critical items first to recover €4,200/mo within a week."},
-    {rank:2,category:"anomaly",severity:"high",impact_eur:1240,headline:"Unexpected spend spike of €1,240 on 2026-06-08, driven by Virtual Machines — 4.2σ above the seasonal forecast.",action:"Investigate rg-staging; if new steady-state, update the budget — else it's fresh waste."},
-    {rank:3,category:"budget",severity:"high",impact_eur:1800,headline:"Budget 'Engineering' (€11,000/mo) is at 92% consumed and is projected to hit 113% by month-end.",action:"Reallocate budget or accelerate remediation in this scope."},
-    {rank:4,category:"forecast",severity:"medium",impact_eur:4600,headline:"Spend is trending up 10% — month-end projected at €52,800.",action:"Validate the increase is intended capacity growth, not drift."},
-    {rank:5,category:"allocation",severity:"info",impact_eur:18900,headline:"Engineering accounts for 39% of spend (€18,900/mo) — the largest cost-center.",action:"Focus optimization and budget governance on this cost-center first."},
-  ]
-};
+let DIGEST={efficiency_score:0,monthly_spend_eur:0,monthly_recoverable_eur:0,headline_summary:'Loading…',headline_summary_it:'',insights:[]};
 
-const CHARGEBACK={
-  proportional:{coverage:80,untagged:9640,note:"€9,640 untagged spend distributed proportionally to each cost-center's tagged share.",
-    groups:[
-      {name:"engineering",direct:15200,shared:3700,total:18900,pct:39,rc:142,budget:11000,status:"breach"},
-      {name:"data-platform",direct:9800,shared:2385,total:12185,pct:25,rc:88},
-      {name:"manufacturing-iot",direct:7100,shared:1728,total:8828,pct:18,rc:64,budget:9000,status:"warning"},
-      {name:"marketing",direct:3760,shared:915,total:4675,pct:10,rc:31},
-    ]},
-  even:{coverage:80,untagged:9640,note:"€9,640 untagged spend split evenly across 4 cost-centers.",
-    groups:[
-      {name:"engineering",direct:15200,shared:2410,total:17610,pct:37,rc:142,budget:11000,status:"breach"},
-      {name:"data-platform",direct:9800,shared:2410,total:12210,pct:25,rc:88},
-      {name:"manufacturing-iot",direct:7100,shared:2410,total:9510,pct:20,rc:64,budget:9000,status:"breach"},
-      {name:"marketing",direct:3760,shared:2410,total:6170,pct:13,rc:31},
-    ]},
-  showback:{coverage:80,untagged:9640,note:"Showback mode: untagged spend shown separately, not charged back.",
-    groups:[
-      {name:"engineering",direct:15200,shared:0,total:15200,pct:32,rc:142,budget:11000,status:"breach"},
-      {name:"data-platform",direct:9800,shared:0,total:9800,pct:20,rc:88},
-      {name:"manufacturing-iot",direct:7100,shared:0,total:7100,pct:15,rc:64,budget:9000,status:"ok"},
-      {name:"marketing",direct:3760,shared:0,total:3760,pct:8,rc:31},
-      {name:"Unallocated",direct:9640,shared:0,total:9640,pct:20,rc:0},
-    ]},
-};
-
-const BUDGETS=[
-  {name:"Engineering",scope:"cost_center=engineering",amount:11000,spend:10120,pct:92,proj:113,status:"projected_breach"},
-  {name:"Manufacturing IoT",scope:"cost_center=manufacturing-iot",amount:9000,spend:6400,pct:71,proj:88,status:"warning"},
-  {name:"Tenant total",scope:"tenant",amount:50000,spend:31200,pct:62,proj:97,status:"ok"},
-];
+let CB={coverage:0,untagged:0,note:'',groups:[]};
+let BUDGETS=[];
 
 function scoreColor(s){return s>=75?'var(--teal)':s>=50?'var(--amber)':'var(--red)';}
 function budColor(p){return p>=100?'var(--red)':p>=85?'var(--amber)':'var(--teal)';}
@@ -277,11 +244,11 @@ function renderDigest(){
   document.getElementById('summary-it').textContent=DIGEST.headline_summary_it;
 
   document.getElementById('insights').innerHTML=DIGEST.insights.map(i=>`
-    <div class="ins sev-${i.severity}">
+    <div class="ins sev-${esc(i.severity)}">
       <div class="rk">${i.rank}</div>
       <div class="c">
-        <div class="hl">${i.headline}<span class="cat">${i.category}</span></div>
-        <div class="ac">${i.action}</div>
+        <div class="hl">${esc(i.headline)}<span class="cat">${esc(i.category)}</span></div>
+        <div class="ac">${esc(i.action)}</div>
       </div>
       <div class="imp">${EUR(i.impact_eur)}</div>
     </div>`).join('');
@@ -289,15 +256,15 @@ function renderDigest(){
 
 let STRATEGY='proportional';
 function renderChargeback(){
-  const d=CHARGEBACK[STRATEGY];
+  const d=CB;
   document.getElementById('coverage').textContent=`${d.coverage}% tagging coverage · ${EUR(d.untagged)} untagged`;
   document.getElementById('cb-note').textContent=d.note;
-  const max=Math.max(...d.groups.map(g=>g.total));
+  const max=Math.max(...d.groups.map(g=>g.total),1);
   document.getElementById('groups').innerHTML=d.groups.map(g=>{
     const dw=g.total>0?(g.direct/max*100):0, sw=g.total>0?(g.shared/max*100):0;
-    const bud=g.budget?`<span class="bstat ${g.status}">${g.status}</span>`:'';
+    const bud=g.budget?`<span class="bstat ${esc(g.status)}">${esc(g.status)}</span>`:'';
     return `<div class="grp">
-      <div class="top"><div class="nm">${g.name} ${bud}</div><div class="amt">${EUR(g.total)}<span style="font-size:11px;color:var(--txt3);font-weight:400;"> · ${g.pct}%</span></div></div>
+      <div class="top"><div class="nm">${esc(g.name)} ${bud}</div><div class="amt">${EUR(g.total)}<span style="font-size:11px;color:var(--txt3);font-weight:400;"> · ${g.pct}%</span></div></div>
       <div class="bar"><div class="direct" style="width:${dw}%"></div><div class="shared" style="width:${sw}%"></div></div>
       <div class="meta"><span>direct ${EUR(g.direct)}${g.shared?' + shared '+EUR(g.shared):''}</span><span>${g.rc?g.rc+' resources':''}${g.budget?' · budget '+EUR(g.budget):''}</span></div>
     </div>`;
@@ -308,7 +275,7 @@ function renderBudgets(){
   document.getElementById('budgets').innerHTML=BUDGETS.map(b=>{
     const col=budColor(b.proj);
     return `<div class="bud">
-      <div class="ti"><b>${b.name}</b><span>${b.scope}</span></div>
+      <div class="ti"><b>${esc(b.name)}</b><span>${esc(b.scope)}</span></div>
       <div class="gauge">
         <div class="tr">
           <i style="width:${Math.min(100,b.pct)}%;background:${budColor(b.pct)}"></i>
@@ -324,10 +291,39 @@ function renderBudgets(){
 document.getElementById('strategy').addEventListener('click',e=>{
   if(e.target.tagName!=='BUTTON')return;
   document.querySelectorAll('#strategy button').forEach(b=>b.classList.remove('on'));
-  e.target.classList.add('on'); STRATEGY=e.target.dataset.s; renderChargeback();
+  e.target.classList.add('on'); STRATEGY=e.target.dataset.s; loadChargeback();
 });
 
-renderDigest(); renderChargeback(); renderBudgets();
+async function loadDigest(){
+  try{const r=await fetch(`${API}/api/v1/insights/${tid()}/digest`);if(!r.ok)throw new Error('HTTP '+r.status);DIGEST=await r.json();}
+  catch(e){document.getElementById('summary').textContent='Failed to load digest: '+e.message;return;}
+  renderDigest();
+}
+async function loadChargeback(){
+  try{
+    const r=await fetch(`${API}/api/v1/insights/${tid()}/chargeback?strategy=${STRATEGY}&days=30`);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    CB={coverage:Math.round(j.tagging_coverage_pct||0),untagged:j.untagged_spend_eur||0,note:(j.notes||[]).join(' '),
+      groups:(j.groups||[]).map(g=>({name:g.name,direct:g.direct_eur,shared:g.allocated_shared_eur,total:g.total_eur,
+        pct:Math.round(g.pct_of_total||0),rc:g.resource_count,budget:g.budget_eur,status:g.budget_status}))};
+  }catch(e){CB={coverage:0,untagged:0,note:'Failed to load chargeback: '+e.message,groups:[]};}
+  renderChargeback();
+}
+async function loadBudgets(){
+  try{
+    const r0=await fetch(`${API}/api/v1/budgets/${tid()}`);
+    if(!r0.ok)throw new Error('HTTP '+r0.status);
+    const list=await r0.json();
+    const st=await Promise.all((list||[]).map(b=>fetch(`${API}/api/v1/budgets/${tid()}/${b.id}/status`).then(r=>r.ok?r.json():null).catch(()=>null)));
+    BUDGETS=(list||[]).map((b,i)=>{const s=st[i]||{};return {name:b.name,scope:b.scope_dimension?`${b.scope_dimension}=${b.scope_value}`:'tenant',
+      amount:b.amount_eur,spend:s.spend_to_date_eur||0,pct:Math.round(s.consumed_pct||0),
+      proj:Math.round((s.projected_consumed_pct!=null?s.projected_consumed_pct:s.consumed_pct)||0),status:s.status||'ok'};});
+  }catch(e){BUDGETS=[];}
+  renderBudgets();
+}
+function loadAll(){loadDigest();loadChargeback();loadBudgets();loadAnomalies();}
+loadAll();
 
 /* ── Active nav ── */
 document.querySelectorAll('.snav-link').forEach(a=>{if(location.pathname.endsWith(a.getAttribute('href')))a.classList.add('active');});
@@ -337,33 +333,33 @@ document.querySelectorAll('.snav-link').forEach(a=>{if(location.pathname.endsWit
    Calls POST /api/v1/insights/{tenant_id}/explain
    Falls back to rule-based explanation when LLM not configured.
    ═══════════════════════════════════════════════════════════ */
-const TENANT='t-acme';
-const API_BASE='';  // set to 'https://your-api.azurecontainerapps.io' in production
+const API_BASE='';  // same origin
 
-/* Anomalies shaped to match the /insights/{t}/anomalies API response */
-const AI_ANOMALIES=[
-  {day:'2026-06-08',actual_eur:3420,expected_eur:2180,excess_eur:1240,z_score:4.2,
-   direction:'spike',severity:'high',
-   drivers:[
-     {dimension:'service',name:'Virtual Machines',delta_eur:890,share_pct:72,baseline_eur:1100,anomaly_day_eur:1990},
-     {dimension:'resource_group',name:'rg-staging',delta_eur:350,share_pct:28,baseline_eur:420,anomaly_day_eur:770},
-   ],trailing_7d_avg_eur:2220},
-  {day:'2026-06-15',actual_eur:2890,expected_eur:2200,excess_eur:690,z_score:2.6,
-   direction:'spike',severity:'medium',
-   drivers:[
-     {dimension:'service',name:'Azure OpenAI',delta_eur:690,share_pct:100,baseline_eur:80,anomaly_day_eur:770},
-   ],trailing_7d_avg_eur:2210},
-];
+let AI_ANOMALIES=[];
+async function loadAnomalies(){
+  try{
+    const r=await fetch(`${API}/api/v1/insights/${tid()}/anomalies?scan_last_days=14`);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    AI_ANOMALIES=(j.anomalies||[]).map(a=>({day:a.day,actual_eur:a.actual_eur,expected_eur:a.expected_eur,excess_eur:a.excess_eur,
+      z_score:a.z_score,direction:a.direction||'spike',severity:a.severity||'medium',
+      drivers:(a.drivers||[]).map(d=>({dimension:d.dimension,name:d.name,delta_eur:d.delta_eur,
+        share_pct:Math.round(d.share_of_spike||0)})),
+      trailing_7d_avg_eur:a.expected_eur}));
+  }catch(e){AI_ANOMALIES=[];}
+  renderAIPanel();
+}
 
 let activeAI=null;
 
 function renderAIPanel(){
+  if(!AI_ANOMALIES.length){document.getElementById('ai-anoms').innerHTML='<div class="note">No anomalies detected in the scan window.</div>';return;}
   document.getElementById('ai-anoms').innerHTML=AI_ANOMALIES.map((a,i)=>`
     <div class="ai-anom-row" onclick="runExplain(${i})">
-      <span style="font-family:var(--mono);font-size:11px;color:var(--txt3);min-width:80px">${a.day}</span>
-      <span style="font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:5px;background:${a.severity==='high'?'var(--redDim)':'var(--amberDim)'};color:${a.severity==='high'?'var(--red)':'var(--amber)'}">${a.severity.toUpperCase()}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--txt3);min-width:80px">${esc(a.day)}</span>
+      <span style="font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:5px;background:${a.severity==='high'?'var(--redDim)':'var(--amberDim)'};color:${a.severity==='high'?'var(--red)':'var(--amber)'}">${esc(a.severity).toUpperCase()}</span>
       <span style="flex:1;font-size:13px">${a.direction==='spike'?'↑':'↓'} €${Math.round(a.excess_eur).toLocaleString()} excess · z=${a.z_score}σ</span>
-      <span style="font-size:12px;color:var(--txt3)">${a.drivers[0]?.name||'—'}</span>
+      <span style="font-size:12px;color:var(--txt3)">${esc(a.drivers[0]?.name)||'—'}</span>
       <button class="ai-explain-btn" onclick="event.stopPropagation();runExplain(${i})">Explain ✦</button>
     </div>`).join('');
 }
@@ -378,7 +374,7 @@ async function runExplain(idx){
 
   let data;
   try{
-    const resp=await fetch(`${API_BASE}/api/v1/insights/${TENANT}/explain`,{
+    const resp=await fetch(`${API_BASE}/api/v1/insights/${tid()}/explain`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -417,15 +413,15 @@ function renderExplanation(data){
   const isLLM=data.generated_by&&!data.generated_by.startsWith('rule_based');
   r.innerHTML=`
     <div class="ai-meta">
-      <span class="conf-badge ${data.confidence}">${data.confidence} confidence</span>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">via ${data.generated_by||'rule_based'}${data.cached?' · cached':''}</span>
-      ${data.note?`<span style="font-size:10px;color:var(--amber)">ⓘ ${data.note}</span>`:''}
+      <span class="conf-badge ${esc(data.confidence)}">${esc(data.confidence)} confidence</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">via ${esc(data.generated_by||'rule_based')}${data.cached?' · cached':''}</span>
+      ${data.note?`<span style="font-size:10px;color:var(--amber)">ⓘ ${esc(data.note)}</span>`:''}
     </div>
-    <div class="ai-result expl">${data.explanation}</div>
+    <div class="ai-result expl">${esc(data.explanation)}</div>
     ${data.factors?.length?`
     <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);margin-bottom:8px;font-family:var(--mono)">Contributing factors</div>
-    <ul class="factors">${data.factors.map(f=>`<li>${f}</li>`).join('')}</ul>`:''}
-    <div class="ai-action">→ ${data.action_recommendation}</div>`;
+    <ul class="factors">${data.factors.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>`:''}
+    <div class="ai-action">→ ${esc(data.action_recommendation)}</div>`;
   r.classList.add('visible');
 }
 

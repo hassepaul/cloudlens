@@ -45,6 +45,15 @@ class AuditAction(str, Enum):
     REPORT_GENERATED = "report_generated"
     REPORT_DOWNLOADED = "report_downloaded"
     EVIDENCE_EXPORTED = "evidence_exported"
+    # identity / SSO / SCIM
+    SSO_LOGIN = "sso_login"
+    SSO_LOGIN_FAILED = "sso_login_failed"
+    SAML_CONFIG_UPDATED = "saml_config_updated"
+    SCIM_TOKEN_ROTATED = "scim_token_rotated"
+    SCIM_USER_CREATED = "scim_user_created"
+    SCIM_USER_UPDATED = "scim_user_updated"
+    SCIM_USER_DEACTIVATED = "scim_user_deactivated"
+    SCIM_USER_DELETED = "scim_user_deleted"
 
 
 class AuditRecord(BaseModel):

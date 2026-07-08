@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Terraform Drift</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--purpleDim:#2e2548;--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1040px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--purple);box-shadow:0 0 10px var(--purple)}
+.keybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+select,input{background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:6px 10px;outline:none}
+select:focus,input:focus{border-color:var(--teal)}
+.lock{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:7px;background:var(--amberDim);color:var(--amber)}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--purpleDim);color:var(--purple)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:11px;padding:14px 16px}
+.kpi .l{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px}
+.kpi .v{font-family:var(--mono);font-size:23px;font-weight:600}
+.kpi.amber .v{color:var(--amber)}.kpi.blue .v{color:var(--blue)}.kpi.green .v{color:var(--green)}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px}
+.bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.reconciled{font-family:var(--mono);font-size:11px;padding:4px 12px;border-radius:7px}
+.reconciled.ok{background:var(--greenDim);color:var(--green)}.reconciled.no{background:var(--amberDim);color:var(--amber)}
+.rec{border:1px solid var(--lineSoft);border-radius:11px;padding:14px 16px;margin-bottom:12px;background:var(--bg2)}
+.rec .top{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.rec .c{flex:1;min-width:0}
+.rec .t{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rtype{font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:5px;background:var(--panel2);color:var(--txt2)}
+.rec .meta{font-size:11px;color:var(--txt3);font-family:var(--mono);margin-top:5px;display:flex;gap:12px;flex-wrap:wrap}
+.st{font-family:var(--mono);font-size:9.5px;padding:2px 9px;border-radius:6px;white-space:nowrap}
+.st.pending{background:var(--amberDim);color:var(--amber)}
+.st.acknowledged{background:var(--blueDim);color:var(--blue)}
+.st.imported{background:var(--greenDim);color:var(--green)}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.btn{background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);font-family:var(--mono);font-size:11px;padding:6px 11px;border-radius:7px;cursor:pointer}
+.btn:hover{background:#1a5c50;color:#eafffb}
+.btn.sm{font-size:10px;padding:4px 9px}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--txt2)}
+.btn.ghost:hover{border-color:var(--teal);color:var(--teal)}
+.btn.danger{background:var(--redDim);border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:#5a1a28;color:#ffd7de}
+.hcl{display:none;margin-top:12px}
+.hcl.open{display:block}
+.hcl .lbl{font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 4px}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:11px 13px;font-family:var(--mono);font-size:11.5px;color:var(--teal);overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.copy{float:right;font-family:var(--mono);font-size:9.5px;color:var(--txt3);border:1px solid var(--line);border-radius:5px;padding:2px 7px;cursor:pointer;background:transparent}
+.copy:hover{color:var(--teal);border-color:var(--teal)}
+.msg{font-size:12px;font-family:var(--mono);margin-top:10px}
+.ok{color:var(--teal)}.err{color:var(--red)}.note{font-size:12px;color:var(--txt3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+  <a href="drift.html" class="snav-link active">⟳ TF Drift</a>
+  <a href="agent.html" class="snav-link">✦ AI Agent</a>
+  <a href="policies.html" class="snav-link">⚖ Policies</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
+</nav>
+  <h2 class="sr-only">CloudLens Terraform drift reconciliation: resources created by autonomous actions, with HCL snippets and import commands</h2>
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · Terraform Drift</h1>
+    <div class="keybar">
+      <select id="tenant-sel" onchange="load()">
+        <option value="t-acme">t-acme (Acme Corp)</option>
+        <option value="t-1">t-1 (Demo)</option>
+      </select>
+      <select id="status-sel" onchange="load()">
+        <option value="">All statuses</option>
+        <option value="pending" selected>Pending</option>
+        <option value="acknowledged">Acknowledged</option>
+        <option value="imported">Imported</option>
+      </select>
+      <input id="api-key-input" type="password" placeholder="X-API-Key (operator)"/>
+      <button class="btn ghost" onclick="load()">↻ Load</button>
+      <span class="lock">🔒 API-key required</span>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi amber"><div class="l">Pending</div><div class="v" id="k-pending">—</div></div>
+    <div class="kpi blue"><div class="l">Acknowledged</div><div class="v" id="k-ack">—</div></div>
+    <div class="kpi green"><div class="l">Imported</div><div class="v" id="k-imported">—</div></div>
+    <div class="kpi"><div class="l">Total</div><div class="v" id="k-total">—</div><div class="s" id="k-reconciled" style="margin-top:6px"></div></div>
+  </div>
+
+  <div class="card">
+    <div class="bar">
+      <span class="note">Resources created by autonomous CloudLens actions that are not yet in Terraform state. Update your <code>.tf</code>, run the import, then mark reconciled.</span>
+    </div>
+    <div id="records"><div class="note">Enter an operator API key and click Load.</div></div>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<script>
+const API='';
+function tid(){return document.getElementById('tenant-sel').value;}
+function apiKey(){return document.getElementById('api-key-input').value.trim()||sessionStorage.getItem('cl_api_key')||'';}
+function hdrs(json){const h=json?{'Content-Type':'application/json'}:{};const k=apiKey();if(k){h['X-API-Key']=k;sessionStorage.setItem('cl_api_key',k);}return h;}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function errText(r){try{const e=await r.json();return (e.detail&&(e.detail.message||e.detail))||('HTTP '+r.status);}catch(_){return 'HTTP '+r.status;}}
+const gid=id=>document.getElementById(id);
+
+async function load(){
+  const el=gid('records');el.innerHTML='<div class="note">Loading…</div>';gid('msg').textContent='';
+  const st=gid('status-sel').value;
+  try{
+    const [summary,records]=await Promise.all([
+      fetch(`${API}/api/v1/terraform/${tid()}/drift/summary`,{headers:hdrs()}).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}),
+      fetch(`${API}/api/v1/terraform/${tid()}/drift${st?`?status=${st}`:''}`,{headers:hdrs()}).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}),
+    ]);
+    gid('k-pending').textContent=summary.pending;
+    gid('k-ack').textContent=summary.acknowledged;
+    gid('k-imported').textContent=summary.imported;
+    gid('k-total').textContent=summary.total;
+    const rec=gid('k-reconciled');
+    rec.className='reconciled '+(summary.all_reconciled?'ok':'no');
+    rec.textContent=summary.all_reconciled?'✓ all reconciled':'⚠ drift open';
+    if(!records.length){el.innerHTML='<div class="note">No drift records for this filter. 🎉</div>';return;}
+    el.innerHTML=records.map(r=>{
+      const when=r.created_at?new Date(r.created_at).toLocaleString():'';
+      const canAck=r.status==='pending';
+      const canImport=r.status==='pending'||r.status==='acknowledged';
+      return `<div class="rec">
+        <div class="top">
+          <div class="c">
+            <div class="t">${esc(r.resource_name||r.resource_id)} <span class="rtype">${esc(r.resource_type)}</span></div>
+            <div class="meta"><span>${esc(r.provider)} · ${esc(r.region||'—')}</span><span>via ${esc(r.tool_name)}</span><span>approved by ${esc(r.approved_by||'—')}</span><span>${when}</span></div>
+          </div>
+          <span class="st ${esc(r.status)}">${esc(r.status)}</span>
+        </div>
+        <div class="actions">
+          <button class="btn ghost sm" onclick="toggleHcl('${esc(r.id)}')">▤ HCL &amp; import</button>
+          ${canAck?`<button class="btn sm" onclick="markAck('${esc(r.id)}')">acknowledge</button>`:''}
+          ${canImport?`<button class="btn sm" onclick="markImported('${esc(r.id)}')">mark imported</button>`:''}
+          <button class="btn danger sm" onclick="dismiss('${esc(r.id)}','${esc(r.resource_name||r.resource_id)}')">dismiss</button>
+        </div>
+        <div class="hcl" id="hcl-${esc(r.id)}">
+          <div class="lbl">HCL snippet <button class="copy" onclick="copyPre(this)">copy</button></div>
+          <pre>${esc(r.hcl_snippet||'—')}</pre>
+          <div class="lbl">terraform import <button class="copy" onclick="copyPre(this)">copy</button></div>
+          <pre>${esc(r.import_cmd||'—')}</pre>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML=`<div class="err" style="font-family:var(--mono);font-size:12px">Failed to load drift: ${esc(e.message)} — check the operator API key.</div>`;}
+}
+
+function toggleHcl(id){const el=gid('hcl-'+id);if(el)el.classList.toggle('open');}
+function copyPre(btn){const pre=btn.closest('.lbl')&&btn.closest('.lbl').nextElementSibling;if(pre)navigator.clipboard&&navigator.clipboard.writeText(pre.textContent);const o=btn.textContent;btn.textContent='copied';setTimeout(()=>btn.textContent=o,1200);}
+
+async function _post(id,path,okMsg){
+  const msg=gid('msg');msg.className='msg';
+  const by=prompt('Your name (for the audit trail):','operator');
+  if(by===null)return;
+  try{
+    const r=await fetch(`${API}/api/v1/terraform/${tid()}/drift/${id}/${path}`,{method:'POST',headers:hdrs(true),body:JSON.stringify({acknowledged_by:by||'operator'})});
+    if(!r.ok)throw new Error(await errText(r));
+    msg.className='msg ok';msg.textContent=okMsg;load();
+  }catch(e){msg.className='msg err';msg.textContent='Failed: '+e.message;}
+}
+function markAck(id){_post(id,'acknowledge','Marked acknowledged.');}
+function markImported(id){_post(id,'imported','Marked imported.');}
+
+async function dismiss(id,name){
+  if(!confirm('Dismiss drift record for "'+name+'"? Only do this if the resource was destroyed or the record is invalid.'))return;
+  const msg=gid('msg');msg.className='msg';
+  try{
+    const r=await fetch(`${API}/api/v1/terraform/${tid()}/drift/${id}`,{method:'DELETE',headers:hdrs()});
+    if(!r.ok&&r.status!==204)throw new Error(await errText(r));
+    msg.className='msg ok';msg.textContent='Dismissed.';load();
+  }catch(e){msg.className='msg err';msg.textContent='Dismiss failed: '+e.message;}
+}
+
+(function(){const k=sessionStorage.getItem('cl_api_key');if(k){gid('api-key-input').value=k;load();}})();
+</script>
+</body>
+</html>

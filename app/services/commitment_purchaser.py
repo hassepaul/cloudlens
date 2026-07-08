@@ -2,8 +2,11 @@
 CloudLens Commitment Purchaser
 ==============================
 
-Automated execution of AWS Reserved Instance (RI) and Savings Plan (SP)
-purchases identified by the Commitment Advisor.
+Automated execution of commitment purchases identified by the Commitment
+Advisor across **AWS, Azure and GCP**:
+  - AWS   — Reserved Instances (RI) + Savings Plans (SP)
+  - Azure — Compute Savings Plans (azure-mgmt-billingbenefits)
+  - GCP   — Committed Use Discounts / CUDs (google-cloud-compute)
 
 SAFETY GATES — two independent locks, both must be open to execute:
   1. Global kill switch: Settings.commitment_auto_purchase_enabled (env var
@@ -18,23 +21,25 @@ Even when both gates are open, execution is blocked when:
     ``max_monthly_budget_eur``.
   - ``dry_run`` is ``true`` on the tenant settings (default ``true``) — in
     dry-run mode the service logs exactly what *would* be purchased but makes
-    no API calls to AWS.
+    no mutating cloud API calls.
 
-AWS IAM requirements
---------------------
-The STS cross-account role (same ARN as the ingest role) must carry these
-additional IAM permissions for live purchases:
+Per-cloud provider SDK calls are synchronous and run in asyncio thread-pool
+executors so they never block the event loop. Azure/GCP purchasing SDKs are
+optional dependencies — if a live purchase is attempted without them installed
+the run produces a ``failed`` record with a clear message (never crashes).
 
-  savingsplans:CreateSavingsPlan
-  savingsplans:DescribeSavingsPlansOfferings
-  ec2:PurchaseReservedInstancesOffering
-  ec2:DescribeReservedInstancesOfferings
+Key Vault credential secrets (one per cloud, per tenant):
+  ``aws-creds-<tenant_id>``    JSON: role_arn, external_id, region
+  ``azure-creds-<tenant_id>``  JSON: tenant_id, client_id, client_secret,
+                               subscription_id, billing_scope
+  ``gcp-creds-<tenant_id>``    JSON: project_id, region, service_account (key dict)
 
-All boto3 calls are synchronous and run in asyncio thread-pool executors so
-they never block the event loop.
-
-Key Vault secret (reuses existing ingest secret):
-  ``aws-creds-<tenant_id>``  →  JSON with role_arn, external_id, region
+Required provider permissions for LIVE purchases:
+  AWS   — savingsplans:CreateSavingsPlan, ec2:PurchaseReservedInstancesOffering
+          (+ the matching Describe* offerings actions)
+  Azure — Microsoft.BillingBenefits/savingsPlanOrderAliases/write on the
+          billing scope
+  GCP   — compute.commitments.create on the project
 """
 from __future__ import annotations
 
@@ -57,8 +62,23 @@ log = get_logger(__name__)
 _CONTAINER_SETTINGS = "commitment_purchase_settings"
 _CONTAINER_PURCHASES = "commitment_purchases"
 
-# Only Savings Plans and RIs make sense to auto-purchase for AWS.
-_PURCHASABLE_TYPES = {"savings-plan-1yr", "savings-plan-3yr", "1yr-ri", "3yr-ri"}
+# Only Savings Plans / RIs / CUDs make sense to auto-purchase. Purchasable
+# commitment types are cloud-specific (they map to different provider APIs).
+_PURCHASABLE_BY_CLOUD: dict[str, set[str]] = {
+    "aws":   {"savings-plan-1yr", "savings-plan-3yr", "1yr-ri", "3yr-ri"},
+    "azure": {"savings-plan-1yr", "savings-plan-3yr"},
+    "gcp":   {"committed-use-1yr", "committed-use-3yr"},
+}
+_SUPPORTED_CLOUDS = set(_PURCHASABLE_BY_CLOUD)
+# Union of all purchasable types (used by the settings validator).
+_PURCHASABLE_TYPES = set().union(*_PURCHASABLE_BY_CLOUD.values())
+
+# Per-cloud Key Vault credential secret name templates.
+_CLOUD_CREDS_SECRET = {
+    "aws":   "aws-creds-{tenant_id}",
+    "azure": "azure-creds-{tenant_id}",
+    "gcp":   "gcp-creds-{tenant_id}",
+}
 
 # Safety floor: refuse to auto-purchase if the advisor confidence is below this
 # (overridable per-tenant via min_confidence_score).
@@ -67,6 +87,9 @@ _DEFAULT_MIN_CONFIDENCE = 0.70
 # SP plan type strings → boto3 term lengths
 _SP_TERM = {"savings-plan-1yr": "ONE_YEAR", "savings-plan-3yr": "THREE_YEAR"}
 _RI_TERM = {"1yr-ri": "31536000", "3yr-ri": "94608000"}   # duration in seconds
+# Azure savings-plan term (ISO 8601 duration) and GCP CUD plan enums.
+_AZURE_TERM = {"savings-plan-1yr": "P1Y", "savings-plan-3yr": "P3Y"}
+_GCP_PLAN = {"committed-use-1yr": "TWELVE_MONTH", "committed-use-3yr": "THIRTY_SIX_MONTH"}
 
 
 class CommitmentAutoDisabledError(Exception):
@@ -199,7 +222,7 @@ async def save_purchase_settings(settings: PurchaseSettings) -> PurchaseSettings
     """Upsert per-tenant auto-purchase settings."""
     settings.updated_at = datetime.now(timezone.utc).isoformat()
     doc = settings.to_cosmos()
-    await cosmos.upsert_item(_CONTAINER_SETTINGS, doc, partition_key=settings.tenant_id)
+    await cosmos.upsert_item(_CONTAINER_SETTINGS, doc)
     return settings
 
 
@@ -355,19 +378,20 @@ def _purchase_ri_sync(
 
 # ── Core purchase dispatcher ─────────────────────────────────────────────────
 
-async def _execute_advisory_purchase(
+async def _execute_aws_purchase(
     advisory: dict,
     tenant_id: str,
-    role_arn: str,
-    external_id: str,
-    region: str,
+    creds: dict,
     dry_run: bool,
     fx_rate_eur_to_usd: float = 1.08,
 ) -> PurchaseRecord:
     """
-    Execute a single advisory purchase (SP or RI).
+    Execute a single AWS advisory purchase (SP or RI).
     Returns a PurchaseRecord regardless of success/failure.
     """
+    role_arn = creds["role_arn"]
+    external_id = creds.get("external_id", "")
+    region = creds.get("region", "us-east-1")
     commitment_type = advisory["recommended_type"]
     service = advisory["service"]
     monthly_eur = float(advisory["on_demand_monthly_eur"])
@@ -469,6 +493,171 @@ def _infer_instance_type(service: str) -> str:
     return "m5.large"   # broadest EC2 general-purpose default
 
 
+# ── Common sizing helper ─────────────────────────────────────────────────────
+
+def _sizing(advisory: dict, fx_rate_eur_to_usd: float, default_saving_pct: float):
+    """Shared commitment-sizing math used by every cloud executor."""
+    monthly_eur = float(advisory["on_demand_monthly_eur"])
+    hourly_usd = round((monthly_eur / 30 / 24) * fx_rate_eur_to_usd, 5)
+    saving_pct = float(advisory.get("saving_pct", default_saving_pct))
+    monthly_saving = round(monthly_eur * saving_pct, 2)
+    return monthly_eur, hourly_usd, monthly_saving
+
+
+def _record(tenant_id, advisory, cloud, hourly_usd, monthly_saving, dry_run,
+            status, commitment_id=None, error=None, skip_reason=None) -> PurchaseRecord:
+    return PurchaseRecord(
+        id=uuid.uuid4().hex, tenant_id=tenant_id,
+        purchased_at=datetime.now(timezone.utc).isoformat(),
+        cloud=cloud, commitment_type=advisory.get("recommended_type", ""),
+        service=advisory.get("service", ""), hourly_commitment_usd=hourly_usd,
+        monthly_saving_eur=(monthly_saving if status in ("purchased", "dry_run") else 0.0),
+        term_months=int(advisory.get("commitment_horizon_months", 12)),
+        dry_run=dry_run, status=status, aws_commitment_id=commitment_id,
+        error=error, skip_reason=skip_reason,
+        confidence_score=float(advisory.get("confidence_score", 0.0)),
+    )
+
+
+# ── Azure Compute Savings Plan purchase ──────────────────────────────────────
+
+async def _execute_azure_purchase(
+    advisory: dict, tenant_id: str, creds: dict, dry_run: bool,
+    fx_rate_eur_to_usd: float = 1.08,
+) -> PurchaseRecord:
+    """Purchase an Azure Compute Savings Plan via azure-mgmt-billingbenefits."""
+    commitment_type = advisory["recommended_type"]
+    _, hourly_usd, monthly_saving = _sizing(advisory, fx_rate_eur_to_usd, 0.35)
+    term = _AZURE_TERM.get(commitment_type)
+
+    if term is None:
+        return _record(tenant_id, advisory, "azure", hourly_usd, 0.0, dry_run,
+                       "skipped", skip_reason=f"Azure commitment type '{commitment_type}' not purchasable")
+    if dry_run:
+        return _record(tenant_id, advisory, "azure", hourly_usd, monthly_saving, dry_run,
+                       "dry_run", commitment_id=f"dry-run-azure-sp-{uuid.uuid4().hex[:8]}")
+
+    billing_scope = creds.get("billing_scope") or creds.get("billing_scope_id")
+    if not billing_scope:
+        return _record(tenant_id, advisory, "azure", hourly_usd, 0.0, dry_run,
+                       "failed", error="Azure billing_scope missing in credentials")
+
+    def _do_azure() -> str:
+        from azure.identity import ClientSecretCredential
+        from azure.mgmt.billingbenefits import BillingBenefitsRP
+        cred = ClientSecretCredential(
+            tenant_id=creds["tenant_id"], client_id=creds["client_id"],
+            client_secret=creds["client_secret"],
+        )
+        client = BillingBenefitsRP(cred)
+        alias_name = f"cloudlens-{uuid.uuid4().hex[:12]}"
+        body = {
+            "sku": {"name": "Compute_Savings_Plan"},
+            "properties": {
+                "billingScopeId": billing_scope,
+                "term": term,                 # "P1Y" | "P3Y"
+                "billingPlan": "P1M",
+                "appliedScopeType": "Shared",
+                "commitment": {"grain": "Hourly", "currencyCode": "USD", "amount": hourly_usd},
+            },
+        }
+        poller = client.savings_plan_order_alias.begin_create(
+            savings_plan_order_alias_name=alias_name, body=body)
+        result = poller.result()
+        return (getattr(result, "savings_plan_order_id", None)
+                or getattr(result, "id", None) or alias_name)
+
+    try:
+        loop = asyncio.get_running_loop()
+        cid = await loop.run_in_executor(None, _do_azure)
+        log.info("commitment.purchased", tenant_id=tenant_id, cloud="azure",
+                 service=advisory.get("service"), type=commitment_type, id=cid)
+        return _record(tenant_id, advisory, "azure", hourly_usd, monthly_saving, dry_run,
+                       "purchased", commitment_id=cid)
+    except Exception as exc:
+        log.error("commitment.purchase_failed", tenant_id=tenant_id, cloud="azure",
+                  service=advisory.get("service"), error=str(exc))
+        return _record(tenant_id, advisory, "azure", hourly_usd, 0.0, dry_run,
+                       "failed", error=str(exc))
+
+
+# ── GCP Committed Use Discount purchase ──────────────────────────────────────
+
+async def _execute_gcp_purchase(
+    advisory: dict, tenant_id: str, creds: dict, dry_run: bool,
+    fx_rate_eur_to_usd: float = 1.08,
+) -> PurchaseRecord:
+    """Purchase a GCP Committed Use Discount (CUD) via google-cloud-compute."""
+    commitment_type = advisory["recommended_type"]
+    monthly_eur, hourly_usd, monthly_saving = _sizing(advisory, fx_rate_eur_to_usd, 0.37)
+    plan = _GCP_PLAN.get(commitment_type)
+
+    if plan is None:
+        return _record(tenant_id, advisory, "gcp", hourly_usd, 0.0, dry_run,
+                       "skipped", skip_reason=f"GCP commitment type '{commitment_type}' not purchasable")
+    if dry_run:
+        return _record(tenant_id, advisory, "gcp", hourly_usd, monthly_saving, dry_run,
+                       "dry_run", commitment_id=f"dry-run-gcp-cud-{uuid.uuid4().hex[:8]}")
+
+    project = creds.get("project_id")
+    region = creds.get("region")
+    if not project or not region:
+        return _record(tenant_id, advisory, "gcp", hourly_usd, 0.0, dry_run,
+                       "failed", error="GCP project_id/region missing in credentials")
+
+    def _do_gcp() -> str:
+        from google.oauth2 import service_account
+        from google.cloud import compute_v1
+        sa = creds.get("service_account") or creds
+        credentials = service_account.Credentials.from_service_account_info(sa)
+        client = compute_v1.RegionCommitmentsClient(credentials=credentials)
+        name = f"cloudlens-{uuid.uuid4().hex[:12]}"
+        # Rough resource sizing from monthly spend (heuristic: ~€20/vCPU/mo,
+        # 4 GB RAM per vCPU). CUDs commit to vCPU + memory amounts.
+        vcpus = max(1, int(monthly_eur / 20))
+        memory_mb = vcpus * 4 * 1024
+        commitment = compute_v1.Commitment(
+            name=name, plan=plan, type_="GENERAL_PURPOSE",
+            resources=[
+                compute_v1.ResourceCommitment(type_="VCPU", amount=vcpus),
+                compute_v1.ResourceCommitment(type_="MEMORY", amount=memory_mb),
+            ],
+        )
+        op = client.insert(project=project, region=region, commitment_resource=commitment)
+        op.result()
+        return name
+
+    try:
+        loop = asyncio.get_running_loop()
+        cid = await loop.run_in_executor(None, _do_gcp)
+        log.info("commitment.purchased", tenant_id=tenant_id, cloud="gcp",
+                 service=advisory.get("service"), type=commitment_type, id=cid)
+        return _record(tenant_id, advisory, "gcp", hourly_usd, monthly_saving, dry_run,
+                       "purchased", commitment_id=cid)
+    except Exception as exc:
+        log.error("commitment.purchase_failed", tenant_id=tenant_id, cloud="gcp",
+                  service=advisory.get("service"), error=str(exc))
+        return _record(tenant_id, advisory, "gcp", hourly_usd, 0.0, dry_run,
+                       "failed", error=str(exc))
+
+
+# ── Cloud dispatcher ─────────────────────────────────────────────────────────
+
+async def _execute_advisory_purchase(
+    advisory: dict, tenant_id: str, cloud: str, creds: dict, dry_run: bool,
+    fx_rate_eur_to_usd: float = 1.08,
+) -> PurchaseRecord:
+    """Route an advisory to the correct per-cloud purchase executor."""
+    if cloud == "aws":
+        return await _execute_aws_purchase(advisory, tenant_id, creds, dry_run, fx_rate_eur_to_usd)
+    if cloud == "azure":
+        return await _execute_azure_purchase(advisory, tenant_id, creds, dry_run, fx_rate_eur_to_usd)
+    if cloud == "gcp":
+        return await _execute_gcp_purchase(advisory, tenant_id, creds, dry_run, fx_rate_eur_to_usd)
+    return _record(tenant_id, advisory, cloud, 0.0, 0.0, dry_run,
+                   "skipped", skip_reason=f"Cloud '{cloud}' not supported")
+
+
 # ── Main entry point ─────────────────────────────────────────────────────────
 
 async def run_purchase(
@@ -508,33 +697,50 @@ async def run_purchase(
         )
 
     # Load AWS credentials from Key Vault (same secret as ingest path)
-    creds_json = await _keyvault.get_secret(f"aws-creds-{tenant_id}")
-    aws_cfg = json.loads(creds_json)
-    role_arn = aws_cfg["role_arn"]
-    external_id = aws_cfg.get("external_id", "")
-    region = aws_cfg.get("region", "us-east-1")
-
     now_utc = datetime.now(timezone.utc).isoformat()
     dry_run = tenant_settings.dry_run
     run = PurchaseRun(tenant_id=tenant_id, run_at=now_utc, dry_run=dry_run)
 
     if dry_run:
-        run.notes.append("DRY RUN — no actual AWS API calls will be made.")
+        run.notes.append("DRY RUN — no mutating cloud API calls will be made.")
+
+    # Per-cloud credentials are loaded lazily (only for clouds we actually need)
+    # and cached. A missing/broken secret skips that cloud's advisories rather
+    # than failing the whole run.
+    _creds_cache: dict[str, Optional[dict]] = {}
+
+    async def _creds_for(cloud: str) -> Optional[dict]:
+        if cloud in _creds_cache:
+            return _creds_cache[cloud]
+        secret_name = _CLOUD_CREDS_SECRET.get(cloud, "").format(tenant_id=tenant_id)
+        try:
+            raw = await _keyvault.get_secret(secret_name)
+            _creds_cache[cloud] = json.loads(raw)
+        except Exception as exc:
+            log.warning("commitment.creds_unavailable", cloud=cloud, error=str(exc))
+            _creds_cache[cloud] = None
+        return _creds_cache[cloud]
 
     # Check monthly budget already consumed
     month_spent = await _month_spend_eur(tenant_id)
 
-    allowed_types = set(tenant_settings.allowed_commitment_types) or _PURCHASABLE_TYPES
-    allowed_services = set(tenant_settings.allowed_services)  # empty = all
+    tenant_type_filter = set(tenant_settings.allowed_commitment_types)  # empty = all
+    allowed_services = set(tenant_settings.allowed_services)            # empty = all
 
     for adv in advisories:
         cloud = adv.get("cloud", "").lower()
-        if cloud != "aws":
-            _skip(run, adv, "non-aws", "Only AWS commitments are auto-purchasable")
+        if cloud not in _SUPPORTED_CLOUDS:
+            _skip(run, adv, "cloud_unsupported",
+                  f"Cloud '{cloud or 'unknown'}' is not supported for auto-purchase (aws, azure, gcp)")
             continue
 
         ctype = adv.get("recommended_type", "")
-        if ctype not in allowed_types:
+        if ctype not in _PURCHASABLE_BY_CLOUD[cloud]:
+            _skip(run, adv, "type_not_purchasable",
+                  f"Commitment type '{ctype}' is not auto-purchasable on {cloud}")
+            continue
+
+        if tenant_type_filter and ctype not in tenant_type_filter:
             _skip(run, adv, "type_not_allowed",
                   f"Commitment type '{ctype}' not in allowed_commitment_types")
             continue
@@ -571,8 +777,14 @@ async def run_purchase(
                   f"Monthly budget €{tenant_settings.max_monthly_budget_eur:.0f} would be exceeded")
             continue
 
+        creds = await _creds_for(cloud)
+        if creds is None:
+            _skip(run, adv, "creds_unavailable",
+                  f"{cloud} credentials not configured in Key Vault")
+            continue
+
         rec = await _execute_advisory_purchase(
-            adv, tenant_id, role_arn, external_id, region, dry_run, fx_rate_eur_to_usd
+            adv, tenant_id, cloud, creds, dry_run, fx_rate_eur_to_usd
         )
 
         if rec.status in ("purchased", "dry_run"):
@@ -586,9 +798,7 @@ async def run_purchase(
 
         # Persist every record (including dry-run) for audit trail
         try:
-            await cosmos.upsert_item(
-                _CONTAINER_PURCHASES, rec.to_cosmos(), partition_key=tenant_id
-            )
+            await cosmos.upsert_item(_CONTAINER_PURCHASES, rec.to_cosmos())
         except CosmosError as exc:
             log.warning("commitment.audit_write_failed", error=str(exc))
 

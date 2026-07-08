@@ -98,12 +98,18 @@ color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1
   <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
   <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
   <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
   <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+  <a href="sustainability.html" class="snav-link">🌱 CO₂</a>
 </nav>
   <h2 class="sr-only">CloudLens multi-cloud cost dashboard with AI spend, commitments, allocation, and EU language switcher</h2>
   <div class="head">
     <h1><span class="dot"></span> CloudLens · <span id="t-multicloud">Multi-Cloud</span></h1>
     <div class="controls">
+      <select id="tenant-sel" onchange="loadAll()" style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:6px 10px;outline:none">
+        <option value="t-acme">t-acme (Acme Corp)</option>
+        <option value="t-1">t-1 (Demo)</option>
+      </select>
       <div class="lang">
         <span style="font-size:12px;color:var(--txt3)">🌐</span>
         <select id="lang" onchange="setLang(this.value)">
@@ -132,12 +138,12 @@ color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1
   <div class="grid2">
     <div class="card">
       <h2>☁ <span id="t-byprov">By cloud provider</span></h2>
-      <div class="cap">FOCUS-normalized spend across all connected clouds.</div>
+      <div class="cap">FOCUS-normalized spend across all connected clouds — including AI/LLM providers.</div>
       <div id="providers"></div>
     </div>
     <div class="card">
       <h2>✦ <span id="t-ai">AI / LLM spend</span></h2>
-      <div class="cap">Bedrock, OpenAI &amp; Anthropic — tracked as first-class spend.</div>
+      <div class="cap">OpenAI, Anthropic, Bedrock &amp; Vertex — metered per token and normalized into FOCUS, so it shows here alongside cloud spend.</div>
       <div class="ai-total" id="ai-total">—</div>
       <div style="font-size:11px;color:var(--txt3);margin-bottom:12px" id="ai-pct">—</div>
       <div id="ai-services"></div>
@@ -167,47 +173,14 @@ color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1
 
 <script>
 const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
-const PROV_META={
-  'Amazon Web Services':{ic:'AWS',c:'var(--aws)'},
-  'Microsoft Azure':{ic:'AZ',c:'var(--azure)'},
-  'Google Cloud':{ic:'GCP',c:'var(--gcp)'},
-  'Alibaba Cloud':{ic:'ALI',c:'var(--alibaba)'},
-  'Oracle Cloud Infrastructure':{ic:'OCI',c:'var(--oci)'},
-  'Anthropic':{ic:'A',c:'var(--ai)'},'OpenAI':{ic:'AI',c:'var(--ai)'},
-};
-
-/* mock data shaped to: GET /multicloud/{t}/spend, /commitments, POST /allocate, GET /labels */
-/* enabled_clouds / locked_clouds come from the spend API response */
-const DATA={
-  total:48200,
-  enabled_clouds:['azure','aws','gcp','alibaba','oci'],
-  locked_clouds:[],
-  is_multicloud:true,
-  providers:[
-    {provider:'Microsoft Azure',spend_eur:19400,pct:40.2},
-    {provider:'Amazon Web Services',spend_eur:15800,pct:32.8},
-    {provider:'Google Cloud',spend_eur:7600,pct:15.8},
-    {provider:'Alibaba Cloud',spend_eur:3200,pct:6.6},
-    {provider:'Oracle Cloud Infrastructure',spend_eur:2200,pct:4.6},
-  ],
-  ai:{total:3240,pct:6.7,by_service:[
-    {service:'Azure OpenAI · gpt-4o',amt:1480},
-    {service:'Amazon Bedrock · Claude 3',amt:960},
-    {service:'Google Vertex AI · Gemini',amt:800},
-  ]},
-  commit:{coverage:61,util:84,idle:640,opportunity:2840,recs:[
-    {provider:'Amazon Web Services',type:'Savings Plan',save:1620},
-    {provider:'Microsoft Azure',type:'Reserved VM',save:820},
-    {provider:'Google Cloud',type:'CUD',save:400},
-  ],note:'Expanding Savings Plan coverage on AWS and converting spot-eligible Azure VMs to Reserved would save ~€2,840/mo.'},
-  alloc:{allocated_pct:98,coverage_before:71,groups:[
-    {name:'engineering',direct:14200,shared:2100,total:16300,pct:33.8,rules:{tag:9800,tag_map:4400}},
-    {name:'data-platform',direct:11600,shared:1800,total:13400,pct:27.8,rules:{account:11600}},
-    {name:'product',direct:8900,shared:1400,total:10300,pct:21.4,rules:{tag:8900}},
-    {name:'shared-services',direct:5200,shared:900,total:6100,pct:12.6,rules:{tag:5200}},
-    {name:'unallocated',direct:2100,shared:0,total:2100,pct:4.4,rules:{tag:2100}},
-  ]},
-};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+const API='';
+function tid(){return document.getElementById('tenant-sel').value;}
+function hdrs(){return {'X-API-Key':'demo-key'};}
+let DATA={total:0,enabled_clouds:['azure'],locked_clouds:[],is_multicloud:false,providers:[],
+  ai:{total:0,pct:0,by_service:[]},
+  commit:{coverage:0,util:0,idle:0,opportunity:0,recs:[],note:''},
+  alloc:{allocated_pct:0,coverage_before:0,groups:[]}};
 
 /* Provider display map — key = FOCUS ProviderName / internal cloud key */
 const PROV_META={
@@ -269,7 +242,7 @@ function render(){
       <div class="icon">🔒</div>
       <div class="body">
         <div class="h">Multi-Cloud Add-on Available</div>
-        <div class="s">Unlock cross-cloud visibility for <strong>${names}</strong>. Enable an additional cloud to see unified spend, allocation, and commitment analysis across all your providers.</div>
+        <div class="s">Unlock cross-cloud visibility for <strong>${esc(names)}</strong>. Enable an additional cloud to see unified spend, allocation, and commitment analysis across all your providers.</div>
       </div>
       <button class="cta" onclick="alert('Contact CloudLens support to activate your multi-cloud add-on.')">Unlock add-on →</button>
     </div>`;
@@ -291,7 +264,7 @@ function render(){
   const enabledRows=DATA.providers.map(p=>{
     const m=PROV_META[p.provider]||{ic:'?',c:'var(--txt3)'};
     return `<div class="prov"><div class="top">
-      <div class="nm"><span class="ic" style="background:${m.c}">${m.ic}</span>${p.provider}
+      <div class="nm"><span class="ic" style="background:${m.c}">${m.ic}</span>${esc(p.provider)}
         <span class="unlock-pill">✓ active</span></div>
       <div class="amt">${EUR(p.spend_eur)} <span style="font-size:11px;color:var(--txt3)">${p.pct}%</span></div></div>
       <div class="bar"><i style="width:${p.spend_eur/max*100}%;background:${m.c}"></i></div></div>`;
@@ -303,7 +276,7 @@ function render(){
     return `<div class="prov locked" title="Add-on not enabled">
       <div class="top">
         <div class="nm"><span class="ic" style="background:${m.c};filter:grayscale(1);opacity:.5">${m.ic}</span>
-          ${ADDON_LABELS[k]||pname}
+          ${esc(ADDON_LABELS[k]||pname)}
           <span class="lock-pill">🔒 add-on</span></div>
         <div class="amt" style="color:var(--txt3)">— <span style="font-size:11px">locked</span></div></div>
       <div class="bar"><i style="width:0%"></i></div></div>`;
@@ -314,28 +287,56 @@ function render(){
   document.getElementById('ai-pct').textContent=DATA.ai.pct+'% of total cloud spend';
   const aiColors=['var(--purple)','var(--aws)','#10a37f'];
   document.getElementById('ai-services').innerHTML=DATA.ai.by_service.map((s,i)=>
-    `<div class="ai-row"><span class="dot2" style="background:${aiColors[i%3]}"></span><span class="nm">${s.service}</span><span class="amt">${EUR(s.amt)}</span></div>`).join('');
+    `<div class="ai-row"><span class="dot2" style="background:${aiColors[i%3]}"></span><span class="nm">${esc(s.service)}</span><span class="amt">${EUR(s.amt)}</span></div>`).join('');
 
   document.getElementById('cm-cov').textContent=DATA.commit.coverage+'%';
   document.getElementById('cm-util').textContent=DATA.commit.util+'%';
   document.getElementById('cm-idle').textContent=EUR(DATA.commit.idle);
   document.getElementById('cm-recs').innerHTML=DATA.commit.recs.map(r=>{
     const m=PROV_META[r.provider]||{ic:'?',c:'var(--txt3)'};
-    return `<div class="cm-rec"><div style="display:flex;align-items:center;gap:8px"><span class="ic" style="width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-family:var(--mono);font-size:9px;font-weight:700;color:#0b0f14;background:${m.c}">${m.ic}</span>${r.type}</div><div class="save">+${EUR(r.save)}/mo</div></div>`;
+    return `<div class="cm-rec"><div style="display:flex;align-items:center;gap:8px"><span class="ic" style="width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-family:var(--mono);font-size:9px;font-weight:700;color:#0b0f14;background:${m.c}">${m.ic}</span>${esc(r.type)}</div><div class="save">+${EUR(r.save)}/mo</div></div>`;
   }).join('');
   document.getElementById('cm-note').textContent=DATA.commit.note;
 
   const amax=Math.max(...DATA.alloc.groups.map(g=>g.total),1);
   document.getElementById('allocation').innerHTML=DATA.alloc.groups.map(g=>{
     const dw=g.direct/amax*100, sw=g.shared/amax*100;
-    const rules=Object.entries(g.rules).map(([k,v])=>`${k}:${EUR(v)}`).join(' · ');
-    return `<div class="alloc"><div class="top"><span class="nm">${g.name}</span><span class="amt">${EUR(g.total)} <span style="font-size:11px;color:var(--txt3)">${g.pct}%</span></span></div>
+    const rules=Object.entries(g.rules).map(([k,v])=>`${esc(k)}:${EUR(v)}`).join(' · ');
+    return `<div class="alloc"><div class="top"><span class="nm">${esc(g.name)}</span><span class="amt">${EUR(g.total)} <span style="font-size:11px;color:var(--txt3)">${g.pct}%</span></span></div>
       <div class="bar"><div class="d" style="width:${dw}%"></div><div class="s" style="width:${sw}%"></div></div>
       <div class="rules">${rules}${g.shared?' · +shared '+EUR(g.shared):''}</div></div>`;
   }).join('');
   document.getElementById('alloc-note').textContent=`${DATA.alloc.coverage_before}% allocated by direct rules → ${DATA.alloc.allocated_pct}% after proportional shared-cost split. Zero unallocated.`;
 }
-applyLabels(); render();
+async function loadAll(){
+  const t=tid();
+  try{
+    const [spend,commit,alloc]=await Promise.all([
+      fetch(`${API}/api/v1/multicloud/${t}/spend?days=30&lang=${LANG}`,{headers:hdrs()}).then(r=>r.json()),
+      fetch(`${API}/api/v1/multicloud/${t}/commitments?days=30`,{headers:hdrs()}).then(r=>r.json()),
+      fetch(`${API}/api/v1/multicloud/${t}/allocate?days=30`,{method:'POST',headers:{...hdrs(),'Content-Type':'application/json'},body:JSON.stringify({dimension:'cost_center',shared_strategy:'proportional',rules:[]})}).then(r=>r.json()),
+    ]);
+    DATA.total=spend.total_spend_eur||0;
+    DATA.enabled_clouds=spend.enabled_clouds||['azure'];
+    DATA.locked_clouds=spend.locked_clouds||[];
+    DATA.is_multicloud=spend.is_multicloud;
+    DATA.providers=(spend.providers||[]).map(p=>({provider:p.provider,spend_eur:p.spend_eur,pct:p.pct}));
+    const ai=spend.ai_llm||{};
+    DATA.ai={total:ai.total_eur||0,pct:ai.pct_of_spend||0,
+      by_service:(ai.by_service||[]).map(s=>({service:s.service,amt:s.spend_eur}))};
+    DATA.commit={coverage:Math.round(commit.blended_coverage_pct||0),util:Math.round(commit.blended_utilization_pct||0),
+      idle:commit.total_idle_commitment_eur||0,opportunity:commit.monthly_opportunity_eur||0,
+      recs:(commit.recommendations||[]).map(r=>({provider:r.provider,type:(r.commitment_type||'commitment')+(r.service?' · '+r.service:''),save:r.estimated_monthly_saving_eur||0})),
+      note:(commit.notes||[]).join(' ')};
+    DATA.alloc={allocated_pct:Math.round(alloc.allocated_pct||0),coverage_before:Math.round(alloc.coverage_before_shared_pct||0),
+      groups:(alloc.groups||[]).map(g=>({name:g.name,direct:g.direct_eur,shared:g.shared_eur,total:g.total_eur,pct:g.pct_of_total,rules:g.rule_breakdown||{}}))};
+  }catch(e){
+    document.getElementById('providers').innerHTML='<div class="note" style="color:var(--red)">Failed to load multi-cloud data: '+esc(e.message)+'</div>';
+  }
+  applyLabels();
+  render();
+}
+loadAll();
 </script>
 </body>
 </html>

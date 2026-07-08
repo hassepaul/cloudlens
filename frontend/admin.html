@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Operator Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--purple:#a78bfa;--purpleDim:#2e2548;
+--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1000px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.lock{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:7px;background:var(--amberDim);color:var(--amber)}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--amberDim);color:var(--amber)}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px;margin-bottom:16px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card .cap{font-size:12px;color:var(--txt3);margin-bottom:15px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:720px){.grid2,.grid3{grid-template-columns:1fr}}
+.field{margin-bottom:12px}
+.field label{display:block;font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;color:var(--txt);font-size:13px;padding:9px 12px;font-family:var(--body);outline:none;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--teal)}
+.btn{background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);font-family:var(--mono);font-size:12px;padding:9px 16px;border-radius:9px;cursor:pointer}
+.btn:hover{background:#1a5c50;color:#eafffb}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--txt2)}
+.btn.ghost:hover{border-color:var(--teal);color:var(--teal);background:transparent}
+.btn.sm{font-size:10.5px;padding:5px 10px;border-radius:7px}
+.btn.danger{background:var(--redDim);border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:#5a1a28;color:#ffd7de}
+.note{font-size:12px;margin-top:12px;line-height:1.6;word-break:break-word}
+.keybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.keybar input{width:200px}
+.invite-out{background:var(--bg2);border:1px solid var(--tealDim);border-radius:10px;padding:14px 16px;margin-top:14px;display:none}
+.invite-out.show{display:block}
+.invite-out .row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.invite-out .lbl{font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;min-width:80px}
+.invite-out code{font-family:var(--mono);font-size:12px;color:var(--teal);background:var(--panel);padding:4px 8px;border-radius:6px;word-break:break-all}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid var(--lineSoft);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;font-family:var(--mono);font-size:9.5px;padding:2px 8px;border-radius:6px;background:var(--panel2);color:var(--txt2)}
+.pill.on{background:var(--greenDim);color:var(--green)}
+.pill.off{background:var(--redDim);color:var(--red)}
+.pill.plan{background:var(--blueDim);color:var(--blue)}
+.cloud-chip{display:inline-block;font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:5px;background:var(--tealDim);color:var(--teal);margin-right:3px}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.status-msg{font-size:12px;font-family:var(--mono);margin-top:8px}
+.ok{color:var(--teal)}.err{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights + AI</a>
+  <a href="waste.html" class="snav-link">🗑 Waste</a>
+  <a href="reports.html" class="snav-link">▤ Reports</a>
+  <a href="policies.html" class="snav-link">⚖ Policies</a>
+  <a href="hierarchy.html" class="snav-link">⊞ Hierarchy</a>
+  <a href="escalation.html" class="snav-link">⇗ Escalation</a>
+  <a href="commitment_purchaser.html" class="snav-link">◷ Auto-purchase</a>
+  <a href="drift.html" class="snav-link">⟳ TF Drift</a>
+  <a href="onboarding.html" class="snav-link">➕ Onboarding</a>
+  <a href="admin.html" class="snav-link active">⚙ Admin</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+</nav>
+  <h2 class="sr-only">CloudLens operator admin: generate onboarding invites, list and manage tenants, enable clouds, and trigger ingestion</h2>
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · Operator Admin</h1>
+    <div class="keybar">
+      <input id="api-key-input" type="password" placeholder="X-API-Key (operator)"/>
+      <button class="btn ghost sm" onclick="loadTenants()">↻ Reload</button>
+      <span class="lock">🔒 API-key required</span>
+    </div>
+  </div>
+
+  <!-- INVITE GENERATION -->
+  <div class="card">
+    <h2>✉ Generate onboarding invite</h2>
+    <div class="cap">Creates a signed invite link (POST /api/v1/onboarding/invite). Send the URL to the new customer — it drops them straight into the self-service wizard.</div>
+    <div class="grid3">
+      <div class="field"><label>Email</label><input id="inv-email" type="email" placeholder="finops@customer.com"/></div>
+      <div class="field"><label>Plan tier</label><select id="inv-plan">
+        <option value="starter">Starter</option>
+        <option value="growth" selected>Growth</option>
+        <option value="enterprise">Enterprise</option>
+      </select></div>
+      <div class="field"><label>Notes (optional)</label><input id="inv-notes" placeholder="internal note"/></div>
+    </div>
+    <button class="btn" onclick="createInvite()">Generate invite →</button>
+    <div class="invite-out" id="invite-out">
+      <div class="row"><span class="lbl">Wizard URL</span><code id="inv-url"></code><button class="btn ghost sm" onclick="copyUrl()">copy</button></div>
+      <div class="row"><span class="lbl">Token</span><code id="inv-token"></code></div>
+      <div class="row"><span class="lbl">Expires in</span><span id="inv-exp" style="font-size:12px;color:var(--txt2)"></span></div>
+    </div>
+    <div class="status-msg" id="inv-msg"></div>
+  </div>
+
+  <!-- TENANTS -->
+  <div class="card">
+    <h2>▤ Tenants</h2>
+    <div class="cap">All provisioned tenants (GET /api/v1/tenants). Enable clouds, trigger an ingest, or deactivate.</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Tenant</th><th>Plan</th><th>Clouds</th><th>Status</th><th>Last ingest</th><th>Actions</th></tr></thead>
+        <tbody id="tenant-rows"><tr><td colspan="6" style="color:var(--txt3)">Enter an API key and click Reload.</td></tr></tbody>
+      </table>
+    </div>
+    <div class="status-msg" id="tenant-msg"></div>
+  </div>
+
+  <!-- CREATE TENANT -->
+  <div class="card">
+    <h2>➕ Provision a tenant manually</h2>
+    <div class="cap">Direct provisioning (POST /api/v1/tenants) — for operators onboarding a customer on their behalf. Service-principal credentials are stored in Key Vault by the backend.</div>
+    <div class="grid2">
+      <div class="field"><label>Tenant name</label><input id="t-name" placeholder="Acme Corp"/></div>
+      <div class="field"><label>Alert email</label><input id="t-email" type="email" placeholder="alerts@acme.com"/></div>
+      <div class="field"><label>Plan tier</label><select id="t-plan">
+        <option value="starter">Starter</option>
+        <option value="growth" selected>Growth</option>
+        <option value="enterprise">Enterprise</option>
+      </select></div>
+      <div class="field"><label>Preferred currency</label><select id="t-cur">
+        <option value="EUR" selected>EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="CHF">CHF</option>
+      </select></div>
+      <div class="field" style="grid-column:1/-1"><label>Azure subscription IDs (comma-separated)</label><input id="t-subs" placeholder="00000000-0000-0000-0000-000000000000, ..."/></div>
+      <div class="field"><label>SP client ID</label><input id="t-cid" placeholder="app registration client id"/></div>
+      <div class="field"><label>SP tenant ID</label><input id="t-tid" placeholder="azure ad tenant id"/></div>
+      <div class="field" style="grid-column:1/-1"><label>SP client secret</label><input id="t-secret" type="password" placeholder="stored in Key Vault"/></div>
+    </div>
+    <button class="btn" onclick="createTenant()">Provision tenant →</button>
+    <div class="status-msg" id="create-msg"></div>
+  </div>
+</div>
+
+<script>
+const API='';
+function apiKey(){return document.getElementById('api-key-input').value.trim()||sessionStorage.getItem('cl_api_key')||'';}
+function hdrs(json){const h=json?{'Content-Type':'application/json'}:{};const k=apiKey();if(k){h['X-API-Key']=k;sessionStorage.setItem('cl_api_key',k);}return h;}
+const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function errText(r){try{const e=await r.json();return (e.detail&&(e.detail.message||e.detail))||('HTTP '+r.status);}catch(_){return 'HTTP '+r.status;}}
+
+/* ── Invite generation ─────────────────────────────────────── */
+async function createInvite(){
+  const msg=document.getElementById('inv-msg');
+  const out=document.getElementById('invite-out');
+  const body={email:document.getElementById('inv-email').value.trim(),
+    plan_tier:document.getElementById('inv-plan').value,
+    notes:document.getElementById('inv-notes').value.trim()};
+  msg.textContent='';msg.className='status-msg';
+  if(!body.email){msg.textContent='Email is required.';msg.className='status-msg err';return;}
+  try{
+    const r=await fetch(`${API}/api/v1/onboarding/invite`,{method:'POST',headers:hdrs(true),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error(await errText(r));
+    const d=await r.json();
+    const url=location.origin+(d.wizard_url||('/onboarding.html?invite='+d.token));
+    document.getElementById('inv-url').textContent=url;
+    document.getElementById('inv-token').textContent=d.token;
+    document.getElementById('inv-exp').textContent=(d.expires_in_hours||168)+' hours';
+    out.classList.add('show');
+    msg.textContent='Invite created for '+d.email+'.';msg.className='status-msg ok';
+  }catch(e){out.classList.remove('show');msg.textContent='Failed: '+e.message;msg.className='status-msg err';}
+}
+function copyUrl(){const u=document.getElementById('inv-url').textContent;navigator.clipboard?.writeText(u);}
+
+/* ── Tenant list ───────────────────────────────────────────── */
+async function loadTenants(){
+  const tb=document.getElementById('tenant-rows');
+  const msg=document.getElementById('tenant-msg');msg.textContent='';
+  tb.innerHTML='<tr><td colspan="6" style="color:var(--txt3)">Loading…</td></tr>';
+  try{
+    const r=await fetch(`${API}/api/v1/tenants/`,{headers:hdrs()});
+    if(!r.ok)throw new Error(await errText(r));
+    const tenants=await r.json();
+    if(!tenants.length){tb.innerHTML='<tr><td colspan="6" style="color:var(--txt3)">No tenants yet.</td></tr>';return;}
+    tb.innerHTML=tenants.map(t=>{
+      const clouds=(t.enabled_clouds||[]).map(c=>`<span class="cloud-chip">${esc(c)}</span>`).join('')||'<span class="pill">none</span>';
+      const last=t.last_ingested_at?new Date(t.last_ingested_at).toLocaleString():'never';
+      const active=t.active?'<span class="pill on">active</span>':'<span class="pill off">inactive</span>';
+      const id=esc(t.id);
+      return `<tr>
+        <td><div style="font-weight:600">${esc(t.tenant_name)}</div><div style="font-size:10.5px;color:var(--txt3);font-family:var(--mono)">${id}</div></td>
+        <td><span class="pill plan">${esc(t.plan_tier)}</span></td>
+        <td>${clouds}</td>
+        <td>${active}</td>
+        <td style="font-size:11px;color:var(--txt2)">${last}</td>
+        <td><div class="actions">
+          <button class="btn ghost sm" onclick="ingest('${id}')">ingest</button>
+          <button class="btn ghost sm" onclick="lag('${id}')">lag</button>
+          <button class="btn danger sm" onclick="deactivate('${id}','${esc(t.tenant_name)}')">deactivate</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }catch(e){tb.innerHTML=`<tr><td colspan="6" class="err" style="font-family:var(--mono);font-size:12px">Failed to load tenants: ${esc(e.message)} — check the API key.</td></tr>`;}
+}
+async function ingest(id){
+  const msg=document.getElementById('tenant-msg');
+  try{
+    const r=await fetch(`${API}/api/v1/ingest/${id}`,{method:'POST',headers:hdrs()});
+    if(!r.ok)throw new Error(await errText(r));
+    msg.textContent='Ingest triggered for '+id+' (202 accepted).';msg.className='status-msg ok';
+  }catch(e){msg.textContent='Ingest failed: '+e.message;msg.className='status-msg err';}
+}
+async function lag(id){
+  const msg=document.getElementById('tenant-msg');
+  try{
+    const r=await fetch(`${API}/api/v1/ingest/${id}/lag`,{headers:hdrs()});
+    if(!r.ok)throw new Error(await errText(r));
+    const d=await r.json();
+    msg.textContent='Ingest lag for '+id+': '+JSON.stringify(d);msg.className='status-msg ok';
+  }catch(e){msg.textContent='Lag check failed: '+e.message;msg.className='status-msg err';}
+}
+async function deactivate(id,name){
+  if(!confirm('Deactivate tenant "'+name+'"? This soft-deletes (active=false).'))return;
+  const msg=document.getElementById('tenant-msg');
+  try{
+    const r=await fetch(`${API}/api/v1/tenants/${id}`,{method:'DELETE',headers:hdrs()});
+    if(!r.ok&&r.status!==204)throw new Error(await errText(r));
+    msg.textContent='Tenant '+name+' deactivated.';msg.className='status-msg ok';
+    loadTenants();
+  }catch(e){msg.textContent='Deactivate failed: '+e.message;msg.className='status-msg err';}
+}
+
+/* ── Create tenant ─────────────────────────────────────────── */
+async function createTenant(){
+  const msg=document.getElementById('create-msg');msg.textContent='';msg.className='status-msg';
+  const subs=document.getElementById('t-subs').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const body={
+    tenant_name:document.getElementById('t-name').value.trim(),
+    subscription_ids:subs,
+    plan_tier:document.getElementById('t-plan').value,
+    alert_email:document.getElementById('t-email').value.trim(),
+    preferred_currency:document.getElementById('t-cur').value,
+    active:true,
+    enabled_clouds:['azure'],
+    sp_client_id:document.getElementById('t-cid').value.trim(),
+    sp_client_secret:document.getElementById('t-secret').value,
+    sp_tenant_id:document.getElementById('t-tid').value.trim(),
+  };
+  if(!body.tenant_name){msg.textContent='Tenant name is required.';msg.className='status-msg err';return;}
+  try{
+    const r=await fetch(`${API}/api/v1/tenants/`,{method:'POST',headers:hdrs(true),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error(await errText(r));
+    const t=await r.json();
+    msg.textContent='Provisioned "'+t.tenant_name+'" ('+t.id+').';msg.className='status-msg ok';
+    document.getElementById('t-name').value='';document.getElementById('t-secret').value='';
+    loadTenants();
+  }catch(e){msg.textContent='Provision failed: '+e.message;msg.className='status-msg err';}
+}
+
+/* restore key if present, then load */
+(function(){
+  const saved=sessionStorage.getItem('cl_api_key');
+  if(saved){document.getElementById('api-key-input').value=saved;loadTenants();}
+})();
+</script>
+</body>
+</html>

@@ -541,6 +541,8 @@ async function loadBriefing() {
 }
 
 // ── Session management ────────────────────────────────────────────────────
+function esch(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
 async function refreshSessionList() {
   try {
     const resp = await fetch(`${baseUrl()}/api/v1/agent/${tenantId()}/history`, { headers: headers() });
@@ -548,11 +550,30 @@ async function refreshSessionList() {
     const sessions = await resp.json();
     const list = document.getElementById('session-list');
     list.innerHTML = sessions.slice(0, 20).map(s => `
-      <button onclick="loadSession('${s.session_id}')"
-        class="w-full text-left px-3 py-2 rounded-lg text-xs text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors truncate ${s.session_id === currentSessionId ? 'bg-gray-800 text-gray-200' : ''}">
-        ${s.title || 'Untitled'}
-        <div class="text-gray-600 text-xs">${timeAgo(s.updated_at)}</div>
-      </button>`).join('');
+      <div class="flex items-center gap-1">
+        <button onclick="loadSession('${s.session_id}')"
+          class="flex-1 min-w-0 text-left px-3 py-2 rounded-lg text-xs text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors truncate ${s.session_id === currentSessionId ? 'bg-gray-800 text-gray-200' : ''}">
+          ${esch(s.title || 'Untitled')}
+          <div class="text-gray-600 text-xs">${timeAgo(s.updated_at)}</div>
+        </button>
+        <button onclick="deleteSession('${s.session_id}', event)" title="Delete conversation"
+          class="px-2 py-2 rounded-lg text-xs text-gray-600 hover:text-red-400 hover:bg-gray-800">✕</button>
+      </div>`).join('');
+  } catch {}
+}
+
+async function deleteSession(sessionId, ev) {
+  if (ev) ev.stopPropagation();
+  if (!confirm('Delete this conversation?')) return;
+  try {
+    const resp = await fetch(`${baseUrl()}/api/v1/agent/${tenantId()}/history/${sessionId}`, { method: 'DELETE', headers: headers() });
+    if (!resp.ok && resp.status !== 204) return;
+    if (currentSessionId === sessionId) {
+      currentSessionId = null;
+      document.getElementById('messages').innerHTML = '';
+      const ct = document.getElementById('chat-title'); if (ct) ct.textContent = 'New conversation';
+    }
+    refreshSessionList();
   } catch {}
 }
 

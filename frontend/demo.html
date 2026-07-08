@@ -288,6 +288,7 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
 
       <span class="section">Intelligence</span>
       <a href="#commitment-advisor"><span class="icon">◈</span> Commitment Advisor <span class="tag new">NEW</span></a>
+      <a href="#commitment-purchaser"><span class="icon">◷</span> Auto-Purchase <span class="tag new">NEW</span></a>
       <a href="#context-mapping"><span class="icon">⊛</span> Context Mapping <span class="tag new">NEW</span></a>
       <a href="#maturity"><span class="icon">◬</span> Maturity Score <span class="tag new">NEW</span></a>
       <a href="#nl-query"><span class="icon">✦</span> Ask CloudLens <span class="tag ai">AI</span></a>
@@ -296,6 +297,18 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
       <a href="#genai-costs"><span class="icon">◈</span> GenAI Costs <span class="tag new">NEW</span></a>
       <a href="#ai-agent"><span class="icon">✦</span> AI Agent <span class="tag ai">AI</span></a>
       <a href="#autonomous-exec"><span class="icon">⚡</span> Autonomous Exec <span class="tag new">NEW</span></a>
+
+      <span class="section">New Sections</span>
+      <a href="#sustainability"><span class="icon">🌱</span> Sustainability <span class="tag new">NEW</span></a>
+      <a href="#cicd"><span class="icon">⧖</span> CI/CD Gate <span class="tag new">NEW</span></a>
+      <a href="#onboarding-demo"><span class="icon">⊕</span> Onboarding <span class="tag new">NEW</span></a>
+      <a href="#security"><span class="icon">🔒</span> Security <span class="tag new">NEW</span></a>
+
+      <span class="section">FinOps Operations</span>
+      <a href="#governance"><span class="icon">⚖</span> Governance &amp; Ops <span class="tag new">NEW</span></a>
+
+      <span class="section">Enterprise</span>
+      <a href="#enterprise"><span class="icon">🔐</span> SSO · SCIM · Scale <span class="tag new">NEW</span></a>
 
       <span class="section">Pages</span>
       <a href="index.html" target="_blank"><span class="icon">⊞</span> Explorer ↗</a>
@@ -308,10 +321,23 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
       <a href="maturity.html" target="_blank"><span class="icon">◬</span> Maturity ↗</a>
       <a href="agent.html" target="_blank"><span class="icon">✦</span> AI Agent ↗</a>
       <a href="genai.html" target="_blank"><span class="icon">◎</span> GenAI Costs ↗</a>
+      <a href="sustainability.html" target="_blank"><span class="icon">🌱</span> CO₂ ↗</a>
+      <a href="cicd_costs.html" target="_blank"><span class="icon">⧖</span> CI/CD Costs ↗</a>
+      <a href="onboarding.html" target="_blank"><span class="icon">⊕</span> Onboarding ↗</a>
+      <a href="forecast.html" target="_blank"><span class="icon">∿</span> Forecast ↗</a>
+      <a href="multicloud.html" target="_blank"><span class="icon">⊕</span> Multi-cloud ↗</a>
+      <a href="waste.html" target="_blank"><span class="icon">🗑</span> Waste ↗</a>
+      <a href="reports.html" target="_blank"><span class="icon">▤</span> Reports ↗</a>
+      <a href="policies.html" target="_blank"><span class="icon">⚖</span> Policies ↗</a>
+      <a href="hierarchy.html" target="_blank"><span class="icon">⊞</span> Hierarchy ↗</a>
+      <a href="escalation.html" target="_blank"><span class="icon">⇗</span> Escalation ↗</a>
+      <a href="commitment_purchaser.html" target="_blank"><span class="icon">◷</span> Auto-Purchase ↗</a>
+      <a href="drift.html" target="_blank"><span class="icon">⟳</span> TF Drift ↗</a>
+      <a href="admin.html" target="_blank"><span class="icon">⚙</span> Operator Admin ↗</a>
     </div>
   </nav>
   <div class="footer">
-    <p>CloudLens v3.0<br><strong>986+ tests passing</strong><br>FastAPI · Cosmos DB · Azure</p>
+    <p>CloudLens v3.4<br><strong>1,055+ tests passing</strong><br>FastAPI · Cosmos DB · Azure</p>
   </div>
 </aside>
 
@@ -323,24 +349,27 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
        ═══════════════════════════════════════════ -->
   <section id="hero">
     <div class="hero">
-      <div class="tag">CloudLens · Executive Demo · June 2026</div>
-      <h1>Multi-cloud cost intelligence<br>that <span>actually ships</span></h1>
+      <div class="tag">CloudLens · Executive Demo · July 2026</div>
+      <h1>FOCUS-native cost intelligence<br>for <span>every cloud — and every token</span></h1>
       <p>
-        CloudLens is a multi-tenant FinOps platform built on FastAPI and Azure Cosmos DB.
-        It gives engineering and finance teams a single pane of glass across Azure, AWS, GCP,
-        and Kubernetes — with AI-powered root-cause analysis, near-realtime ingestion,
-        and unit economics down to the cost per API call.
+        CloudLens normalizes Azure, AWS, GCP, and Kubernetes — <strong>and your GenAI/LLM spend</strong> —
+        into a single FinOps <strong>FOCUS</strong> schema, so allocation, chargeback, forecasting, and
+        anomaly detection work identically across all of them. GenAI is <strong>first-class</strong>: every
+        OpenAI, Anthropic, Bedrock, and Vertex AI token flows into the same explorer, budgets, and unit
+        economics as the rest of your bill — not a bolt-on dashboard.
       </p>
       <div class="hero-actions">
         <a href="index.html" target="_blank" class="btn-primary">Open Explorer ↗</a>
-        <a href="#ai-analyst" class="btn-ghost">See AI Analyst →</a>
+        <a href="genai.html" target="_blank" class="btn-ghost" style="border-color:var(--purple);color:var(--purple)">🤖 GenAI Costs →</a>
+        <a href="multicloud.html" target="_blank" class="btn-ghost">⊕ Multi-cloud →</a>
       </div>
       <div class="hero-kpis">
-        <div class="hero-kpi"><div class="v">€0.031</div><div class="l">Cost per active user/day</div></div>
+        <div class="hero-kpi"><div class="v">5+</div><div class="l">Clouds + GenAI in one FOCUS schema</div></div>
+        <div class="hero-kpi"><div class="v" style="color:var(--purple)">€3,240</div><div class="l">GenAI/LLM spend tracked (MTD)</div></div>
         <div class="hero-kpi"><div class="v" style="color:var(--green)">€14,200</div><div class="l">Recoverable savings identified</div></div>
         <div class="hero-kpi"><div class="v" style="color:var(--amber)">€45,800</div><div class="l">MTD cloud spend</div></div>
         <div class="hero-kpi"><div class="v" style="color:var(--purple)">3</div><div class="l">Anomalies detected this week</div></div>
-        <div class="hero-kpi"><div class="v">986</div><div class="l">Tests passing (100%)</div></div>
+        <div class="hero-kpi"><div class="v">27</div><div class="l">Frontend pages shipped</div></div>
       </div>
     </div>
   </section>
@@ -359,7 +388,7 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
         <div class="arch-box">
           <div class="icon">🌐</div>
           <div class="t">Frontend</div>
-          <div class="s">Pure HTML/CSS/JS<br>9 pages, dark theme<br>no framework</div>
+          <div class="s">Pure HTML/CSS/JS<br>20 pages, dark theme<br>no framework</div>
         </div>
         <div class="arch-arrow">→</div>
         <div class="arch-box" style="border-color:var(--tealDim)">
@@ -477,7 +506,7 @@ section{padding-top:16px;margin-bottom:56px;scroll-margin-top:24px}
     <div class="section-header">
       <div class="eyebrow">Feature 3 of 9</div>
       <h2>Forecasting</h2>
-      <p>Holt-Winters triple exponential smoothing produces a 30-day spend forecast with confidence bands. Budget alerts fire when the forecast exceeds the set threshold.</p>
+      <p>Holt-Winters triple exponential smoothing with <strong>weekly + annual (month-of-year) seasonality</strong> produces a daily spend forecast and a long-range 12-month outlook — both backtested (MAPE) with confidence bands. A dual-trajectory “cost of inaction” model and budget-breach date prediction round it out.</p>
       <a href="forecast.html" target="_blank" class="launch">Open Forecast ↗</a>
     </div>
     <div class="card">
@@ -1064,6 +1093,8 @@ POST /api/v1/ingest/t-acme/hourly
         First-class tracking for LLM and AI API spend across <strong>5 providers</strong> and <strong>40+ models</strong>:
         OpenAI, Azure OpenAI, AWS Bedrock, GCP Vertex AI, and Anthropic. Per-model pricing tables (token-based,
         per_image, per_minute), model comparisons with estimated savings, and provider-level budget alerts.
+        Every metered token is <strong>normalized into the same FOCUS schema as cloud spend</strong>, so GenAI
+        flows through the unified explorer, allocation, chargeback and forecast — not a siloed dashboard.
       </p>
       <a href="genai.html" target="_blank" class="launch">Open GenAI Dashboard ↗</a>
     </div>
@@ -1233,6 +1264,7 @@ data: {"type":"done"}
         <strong>Terraform HCL snippet is generated</strong> — so the infrastructure team can run
         <code>terraform import</code> to absorb the resource into state and keep the IaC truthful.
       </p>
+      <a href="drift.html" target="_blank" class="launch">Open Drift Console ↗</a>
     </div>
     <div class="kpi-grid">
       <div class="kpi teal"><div class="l">Approval gates</div><div class="v">100%</div><div class="s">no silent writes ever</div></div>
@@ -1316,6 +1348,123 @@ $ terraform import \
 
   <div class="divider"></div>
 
+  <!-- ════════════════════════════
+       COMMITMENT AUTO-PURCHASE
+       ════════════════════ -->
+  <section id="commitment-purchaser">
+    <div class="section-header">
+      <div class="eyebrow">Intelligence · Automation</div>
+      <h2>Commitment Auto-Purchase <span class="tag new">NEW</span></h2>
+      <p>
+        Beyond advising, CloudLens can <strong>execute</strong> Reserved Instance / Savings Plan / CUD purchases
+        across <strong>AWS, Azure and GCP</strong> — behind two independent safety gates (global kill-switch +
+        per-tenant enable), a confidence floor, single- and monthly-spend caps, and a <strong>dry-run default</strong>.
+        ProsperOps-class automation, bundled in and multi-cloud.
+      </p>
+      <a href="commitment_purchaser.html" target="_blank" class="launch">Open Auto-Purchase ↗</a>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi teal"><div class="l">Clouds</div><div class="v" style="font-size:15px">AWS·Azure·GCP</div><div class="s">SP · RI · CUD</div></div>
+      <div class="kpi amber"><div class="l">Safety gates</div><div class="v">2 + caps</div><div class="s">dry-run by default</div></div>
+      <div class="kpi green"><div class="l">Confidence floor</div><div class="v">0.70</div><div class="s">skips uncertain buys</div></div>
+      <div class="kpi purple"><div class="l">Audit trail</div><div class="v" style="font-size:15px">every run</div><div class="s">purchased·skipped·failed</div></div>
+    </div>
+    <div class="card">
+      <h3>◷ Guarded execution flow</h3>
+      <div class="chain" style="font-size:12px">
+        <span class="step">Advisor recommends</span><span class="arrow">→</span>
+        <span class="step" style="border-color:var(--amber);color:var(--amber)">Global switch ON</span><span class="arrow">→</span>
+        <span class="step" style="border-color:var(--amber);color:var(--amber)">Tenant enabled</span><span class="arrow">→</span>
+        <span class="step">Confidence ≥ 0.70</span><span class="arrow">→</span>
+        <span class="step">Within caps</span><span class="arrow">→</span>
+        <span class="step" style="border-color:var(--teal);color:var(--teal)">Provider SDK purchase</span><span class="arrow">→</span>
+        <span class="step" style="border-color:var(--green);color:var(--green)">Recorded</span>
+      </div>
+      <div class="note" style="margin-top:8px">Any closed gate returns a clear 403 — it never silently succeeds. Azure via <code>azure-mgmt-billingbenefits</code>, GCP via <code>google-cloud-compute</code>.</div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ════════════════════════════
+       GOVERNANCE &amp; FINOPS OPS
+       ════════════════════ -->
+  <section id="governance">
+    <div class="section-header">
+      <div class="eyebrow">FinOps Operations</div>
+      <h2>Governance &amp; day-to-day FinOps <span class="tag new">NEW</span></h2>
+      <p>
+        The operational backbone every FinOps team needs — all live-wired, all in one FOCUS-native platform:
+        a 12-rule waste engine, scoped budgets &amp; multi-channel alerts, policy guardrails, an org cost
+        hierarchy, scheduled reports, and incident escalation.
+      </p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>🗑 Waste engine</h3>
+        <div class="note">Idle VMs, orphaned disks/IPs, old snapshots, cold-storage, expired certs and more — each with a monthly saving and one-click resolve.</div>
+        <a href="waste.html" target="_blank" class="launch" style="margin-top:10px">Open Waste ↗</a>
+      </div>
+      <div class="card">
+        <h3>⚖ Policy guardrails</h3>
+        <div class="note">Condition→action rules (spend threshold, anomaly, idle, missing-tag, region allow-list) with on-demand evaluation and violation tracking.</div>
+        <a href="policies.html" target="_blank" class="launch" style="margin-top:10px">Open Policies ↗</a>
+      </div>
+      <div class="card">
+        <h3>⊞ Cost hierarchy</h3>
+        <div class="note">Roll spend up an org tree (division → team → project) with per-node budgets and status — tag-matched across every cloud.</div>
+        <a href="hierarchy.html" target="_blank" class="launch" style="margin-top:10px">Open Hierarchy ↗</a>
+      </div>
+      <div class="card">
+        <h3>🔔 Alerts &amp; escalation</h3>
+        <div class="note">Alert rules + event log, delivered to PagerDuty / Jira / Azure DevOps / Teams with a test button per channel.</div>
+        <a href="escalation.html" target="_blank" class="launch" style="margin-top:10px">Open Escalation ↗</a>
+      </div>
+    </div>
+    <div class="card">
+      <h3>▤ Reports</h3>
+      <div class="note">Generate period cost &amp; waste reports (async, downloadable) — evidence packs finance can act on.</div>
+      <a href="reports.html" target="_blank" class="launch" style="margin-top:10px">Open Reports ↗</a>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ════════════════════════════
+       ENTERPRISE — SSO / SCIM / SCALE
+       ════════════════════ -->
+  <section id="enterprise">
+    <div class="section-header">
+      <div class="eyebrow">Enterprise-ready</div>
+      <h2>SSO · SCIM · scale · operator admin <span class="tag new">NEW</span></h2>
+      <p>
+        The table-stakes that clear enterprise procurement: <strong>SAML 2.0 SSO</strong>, <strong>SCIM 2.0</strong>
+        automated user provisioning/deprovisioning, <strong>Redis-backed global rate limiting</strong> (correct
+        across every replica), and a full <strong>operator admin console</strong> for tenant onboarding, invites and
+        cloud management — on top of the tamper-evident SOC 2 audit trail.
+      </p>
+      <a href="admin.html" target="_blank" class="launch">Open Operator Admin ↗</a>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi teal"><div class="l">SSO</div><div class="v">SAML 2.0</div><div class="s">per-tenant IdP</div></div>
+      <div class="kpi purple"><div class="l">Provisioning</div><div class="v">SCIM 2.0</div><div class="s">Okta · Entra ID</div></div>
+      <div class="kpi amber"><div class="l">Rate limiting</div><div class="v" style="font-size:15px">global</div><div class="s">Redis atomic bucket</div></div>
+      <div class="kpi green"><div class="l">Audit log</div><div class="v" style="font-size:15px">hash-chained</div><div class="s">SOC 2 evidence</div></div>
+    </div>
+    <div class="card">
+      <h3>🔐 Identity &amp; access lifecycle</h3>
+      <div class="chain" style="font-size:12px">
+        <span class="step">IdP (Okta / Entra)</span><span class="arrow">→</span>
+        <span class="step" style="border-color:var(--teal);color:var(--teal)">SAML ACS → session</span><span class="arrow">→</span>
+        <span class="step">SCIM provisions users</span><span class="arrow">→</span>
+        <span class="step" style="border-color:var(--amber);color:var(--amber)">deactivate = instant offboard</span>
+      </div>
+      <div class="note" style="margin-top:8px">Endpoints: <code>/api/v1/auth/saml/{t}/…</code> · <code>/api/v1/scim/{t}/v2/Users</code></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
   <!-- ═══════════════════════════════════════════════
        SUMMARY / CTA
        ═══════════════════════════════════════════ -->
@@ -1323,14 +1472,14 @@ $ terraform import \
     <div class="section-header">
       <div class="eyebrow">Wrap-up</div>
       <h2>Everything ships, everything tests</h2>
-      <p>All 17 features are fully implemented, E2E tested, and wired into the frontend. The backend has 986+ passing tests across every endpoint and service.</p>
+      <p>Every feature is fully implemented, end-to-end tested, and <strong>live-wired</strong> into the frontend — no mock pages. The backend has 1,055+ passing tests across every endpoint and service.</p>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-      <div class="kpi green"><div class="l">Tests</div><div class="v">986+</div><div class="s">100% pass rate</div></div>
-      <div class="kpi teal"><div class="l">API endpoints</div><div class="v">70+</div><div class="s">versioned /api/v1/…</div></div>
-      <div class="kpi purple"><div class="l">Frontend pages</div><div class="v">17</div><div class="s">fully linked, dark theme</div></div>
-      <div class="kpi"><div class="l">New features</div><div class="v">7</div><div class="s">intelligence + AI platform</div></div>
-      <div class="kpi amber"><div class="l">Lines of code</div><div class="v">~16,000</div><div class="s">Python + HTML/JS</div></div>
+      <div class="kpi green"><div class="l">Tests</div><div class="v">1,055+</div><div class="s">100% pass rate</div></div>
+      <div class="kpi teal"><div class="l">API endpoints</div><div class="v">130+</div><div class="s">across 36 routers</div></div>
+      <div class="kpi purple"><div class="l">Frontend pages</div><div class="v">28</div><div class="s">all live-wired</div></div>
+      <div class="kpi"><div class="l">Clouds + GenAI</div><div class="v">5+</div><div class="s">one FOCUS schema</div></div>
+      <div class="kpi amber"><div class="l">Enterprise</div><div class="v" style="font-size:15px">SSO·SCIM</div><div class="s">+ global rate limit</div></div>
     </div>
     <div class="card" style="margin-top:4px">
       <h3>🗂 All pages</h3>
@@ -1349,6 +1498,16 @@ $ terraform import \
         <a href="nl_query.html" target="_blank" class="launch">✦ Ask AI</a>
         <a href="agent.html" target="_blank" class="launch" style="border-color:var(--purple);color:var(--purple);background:var(--purpleDim)">✦ AI Agent <span class="tag ai">NEW</span></a>
         <a href="genai.html" target="_blank" class="launch" style="border-color:var(--purple);color:var(--purple);background:var(--purpleDim)">◎ GenAI Costs <span class="tag ai">NEW</span></a>
+        <a href="forecast.html" target="_blank" class="launch">∿ Forecast</a>
+        <a href="waste.html" target="_blank" class="launch">🗑 Waste</a>
+        <a href="reports.html" target="_blank" class="launch">▤ Reports</a>
+        <a href="policies.html" target="_blank" class="launch">⚖ Policies</a>
+        <a href="hierarchy.html" target="_blank" class="launch">⊞ Hierarchy</a>
+        <a href="escalation.html" target="_blank" class="launch">⇗ Escalation</a>
+        <a href="commitment_purchaser.html" target="_blank" class="launch">◷ Auto-Purchase</a>
+        <a href="drift.html" target="_blank" class="launch">⟳ TF Drift</a>
+        <a href="onboarding.html" target="_blank" class="launch">⊕ Onboarding</a>
+        <a href="admin.html" target="_blank" class="launch" style="border-color:var(--amber);color:var(--amber)">⚙ Operator Admin <span class="tag new">NEW</span></a>
       </div>
     </div>
   </section>

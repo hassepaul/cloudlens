@@ -71,6 +71,33 @@ class Settings(BaseSettings):
     rate_limit_growth: int = Field(default=200)
     rate_limit_enterprise: int = Field(default=600)
 
+    # ── Distributed rate limiting (Redis) ──────────────────────────────────
+    # When redis_url is set, per-tenant and per-IP rate limits are enforced
+    # GLOBALLY across all API replicas via an atomic token-bucket Lua script
+    # (fixes the per-replica limitation of the in-process fallback). Leave
+    # empty to use the zero-dependency in-process limiter (single-replica dev).
+    redis_url: str = Field(
+        default="",
+        description="redis:// or rediss:// URL for distributed rate limiting; empty = in-process fallback",
+    )
+    rate_limit_redis_prefix: str = Field(default="cloudlens:rl")
+
+    # ── Enterprise SSO (SAML 2.0) + SCIM 2.0 provisioning ──────────────────
+    # CloudLens session tokens issued after SSO/SCIM login are signed HS256
+    # with this secret. Empty = SSO session issuance disabled (endpoints 503).
+    session_jwt_secret: str = Field(
+        default="",
+        description="HS256 secret for CloudLens SSO session tokens; empty = SSO disabled",
+    )
+    session_issuer: str = Field(default="cloudlens", description="iss claim for CloudLens session JWTs")
+    session_ttl_hours: int = Field(default=8, ge=1, le=72, description="SSO session token lifetime (hours)")
+    # External URLs used to build SAML SP metadata / ACS and post-login redirect.
+    public_base_url: str = Field(default="", description="External API base URL for SAML ACS/metadata (empty = derive from request)")
+    frontend_base_url: str = Field(default="", description="SPA base URL for post-SSO redirect (empty = return JSON)")
+    # Cosmos containers for identity config (SAML/SCIM) and provisioned users.
+    cosmos_container_identity: str = Field(default="identity_config")
+    cosmos_container_scim_users: str = Field(default="scim_users")
+
     # ── FX / Currency ─────────────────────────────────────────────────────
     # ECB rate cache TTL in seconds. Set to 0 to disable caching (tests only).
     fx_cache_ttl_seconds: int = Field(default=3600, ge=0)
@@ -86,6 +113,9 @@ class Settings(BaseSettings):
     cosmos_container_poll_state: str = Field(default="poll_state")
     cosmos_container_pipeline_runs: str = Field(default="pipeline_runs")
     cosmos_container_onboarding_sessions: str = Field(default="onboarding_sessions")
+    # Persisted monthly cost rollups (survive the 90-day cost_records TTL) —
+    # enable annual/month-of-year seasonality in forecasting.
+    cosmos_container_cost_rollups_monthly: str = Field(default="cost_rollups_monthly")
 
     # ── Real-time ingest scheduler ────────────────────────────────────────
     realtime_poll_interval_minutes: int = Field(

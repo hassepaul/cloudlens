@@ -1,19 +1,20 @@
 """
 Onboarding router — self-service tenant provisioning.
 
-  POST /api/v1/onboarding/validate-credentials   (no auth — rate-limited at LB)
+  POST /api/v1/onboarding/validate-credentials   (no auth — IP rate-limited)
   POST /api/v1/onboarding/provision              (requires internal API key)
 """
 from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.auth import require_api_key
 from app.exceptions import CosmosError
 from app.logging_config import get_logger
+from app.rate_limit import get_client_ip, check_ip_rate_limit, enforce_ip_rate_limit
 from app.services import keyvault as _keyvault
 from app.services.onboarding import (
     ValidationResult,
@@ -73,7 +74,7 @@ class ProvisionRequest(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post("/validate-credentials")
-async def validate_credentials(body: ValidateCredentialsRequest) -> dict:
+async def validate_credentials(request: Request, body: ValidateCredentialsRequest) -> dict:
     """
     Validate cloud credentials before provisioning a tenant.
 
@@ -81,6 +82,7 @@ async def validate_credentials(body: ValidateCredentialsRequest) -> dict:
     generated ExternalId, trust policy, required roles) or an `error` message.
     Does not persist anything — safe to call repeatedly during the wizard flow.
     """
+    await enforce_ip_rate_limit(get_client_ip(request))
     result: ValidationResult
 
     if body.provider == "azure":
@@ -145,8 +147,8 @@ async def provision(body: ProvisionRequest) -> dict:
     except CosmosError as exc:
         raise HTTPException(status_code=503, detail=exc.to_dict())
     except Exception as exc:
-        log.error("onboarding.provision_error", error=str(exc))
-        raise HTTPException(status_code=500, detail={"error": "PROVISION_FAILED", "message": str(exc)})
+        log.error("onboarding.provision_error", error=str(exc), exc_info=True)
+        raise HTTPException(status_code=500, detail={"error": "PROVISION_FAILED", "message": "Tenant provisioning failed — contact support"})
 
 
 # ── Wizard session endpoints ──────────────────────────────────────────────────
@@ -175,11 +177,12 @@ class WizardCompleteRequest(BaseModel):
 
 
 @router.post("/wizard/session", status_code=201)
-async def start_wizard_session(invite_token: Optional[str] = None) -> dict:
+async def start_wizard_session(request: Request, invite_token: Optional[str] = None) -> dict:
     """
     Create a new wizard session. Returns session_id to track progress.
     Optionally links to an invite token.
     """
+    await enforce_ip_rate_limit(get_client_ip(request))
     if invite_token:
         inv = await get_invite_by_token(invite_token)
         if not inv:
@@ -221,11 +224,12 @@ async def save_session_step(session_id: str, body: WizardSessionUpdate) -> dict:
 
 
 @router.post("/wizard/session/{session_id}/complete", status_code=201)
-async def complete_wizard(session_id: str, body: WizardCompleteRequest) -> dict:
+async def complete_wizard(request: Request, session_id: str, body: WizardCompleteRequest) -> dict:
     """
     Finalize wizard: provision the tenant, store bot webhooks, mark session done.
     Requires no API key — the session_id acts as a short-lived bearer token.
     """
+    await enforce_ip_rate_limit(get_client_ip(request))
     session = await get_wizard_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -277,8 +281,8 @@ async def complete_wizard(session_id: str, body: WizardCompleteRequest) -> dict:
     except CosmosError as exc:
         raise HTTPException(status_code=503, detail=exc.to_dict())
     except Exception as exc:
-        log.error("onboarding.wizard_complete_error", error=str(exc))
-        raise HTTPException(status_code=500, detail={"error": "PROVISION_FAILED", "message": str(exc)})
+        log.error("onboarding.wizard_complete_error", error=str(exc), exc_info=True)
+        raise HTTPException(status_code=500, detail={"error": "PROVISION_FAILED", "message": "Tenant provisioning failed — contact support"})
 
 
 # ── Invite endpoints ──────────────────────────────────────────────────────────

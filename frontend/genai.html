@@ -153,6 +153,21 @@ canvas{display:block;width:100%!important}
   <div id="apps-section"><p style="color:var(--txt3);font-size:13px">No app attribution data. Set <code>app_name</code> when ingesting usage.</p></div>
 </div>
 
+<!-- GenAI Budgets -->
+<div class="panel" style="margin-bottom:16px">
+  <h3>💰 GenAI Budgets</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+    <div><label style="display:block;font-size:11px;color:var(--txt3);margin-bottom:3px">Name</label><input id="bg-name" placeholder="Prod LLM budget" style="width:150px"/></div>
+    <div><label style="display:block;font-size:11px;color:var(--txt3);margin-bottom:3px">Monthly limit (USD)</label><input id="bg-limit" type="number" value="1000" style="width:120px"/></div>
+    <div><label style="display:block;font-size:11px;color:var(--txt3);margin-bottom:3px">Provider filter</label><input id="bg-prov" placeholder="(all)" style="width:110px"/></div>
+    <div><label style="display:block;font-size:11px;color:var(--txt3);margin-bottom:3px">App filter</label><input id="bg-app" placeholder="(all)" style="width:110px"/></div>
+    <div><label style="display:block;font-size:11px;color:var(--txt3);margin-bottom:3px">Alert at (%)</label><input id="bg-thr" type="number" value="80" style="width:80px"/></div>
+    <button class="btn" onclick="createGenaiBudget()">Add budget</button>
+  </div>
+  <div id="bg-msg" style="font-size:12px;font-family:monospace;margin-bottom:10px"></div>
+  <div id="budgets-section"><p style="color:var(--txt3);font-size:13px">Loading…</p></div>
+</div>
+
 </div><!-- /wrap -->
 
 <!-- Ingest modal -->
@@ -218,6 +233,51 @@ async function post(path, body) {
   return r.json();
 }
 
+function escg(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+// ── GenAI budgets (create / list / delete) ────────────────────────────
+async function loadBudgets(){
+  const el=document.getElementById('budgets-section');
+  try{
+    const budgets=await get(`/api/v1/genai/${tenant()}/budgets`);
+    if(!budgets.length){ el.innerHTML='<p style="color:var(--txt3);font-size:13px">No budgets yet.</p>'; return; }
+    el.innerHTML=budgets.map(b=>{
+      const filt=[b.provider_filter&&('provider='+b.provider_filter),b.model_filter&&('model='+b.model_filter),b.app_filter&&('app='+b.app_filter)].filter(Boolean).join(' · ')||'all GenAI spend';
+      return `<div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line,#263340)">
+        <div style="flex:1"><div style="font-weight:600">${escg(b.name)}</div><div style="font-size:11px;color:var(--txt3);font-family:monospace">${escg(filt)} · alert ${b.alert_threshold_pct}%</div></div>
+        <div style="font-family:monospace;font-weight:600">$${Number(b.monthly_limit_usd).toLocaleString()}/mo</div>
+        <button onclick="deleteGenaiBudget('${escg(b.id)}','${escg(b.name)}')" style="font-family:monospace;font-size:11px;padding:4px 10px;border-radius:6px;background:transparent;border:1px solid #f0506e;color:#f0506e;cursor:pointer">delete</button>
+      </div>`;
+    }).join('');
+  }catch(e){ el.innerHTML='<p style="color:#f0506e;font-size:13px">Failed to load budgets: '+escg(e.message)+'</p>'; }
+}
+async function createGenaiBudget(){
+  const msg=document.getElementById('bg-msg');msg.style.color='var(--txt3)';msg.textContent='';
+  const k=document.getElementById('api-key').value.trim();if(k)sessionStorage.setItem('cl_api_key',k);
+  const body={name:document.getElementById('bg-name').value.trim(),
+    monthly_limit_usd:+document.getElementById('bg-limit').value,
+    provider_filter:document.getElementById('bg-prov').value.trim(),
+    app_filter:document.getElementById('bg-app').value.trim(),
+    model_filter:'',alert_threshold_pct:+document.getElementById('bg-thr').value||80};
+  if(!body.name){msg.style.color='#f0506e';msg.textContent='Name required.';return;}
+  if(!(body.monthly_limit_usd>0)){msg.style.color='#f0506e';msg.textContent='Monthly limit must be > 0.';return;}
+  try{
+    await post(`/api/v1/genai/${tenant()}/budgets`,body);
+    msg.style.color='#2dd4bf';msg.textContent='Budget created.';
+    document.getElementById('bg-name').value='';
+    loadBudgets();loadAll();
+  }catch(e){msg.style.color='#f0506e';msg.textContent='Failed: '+e.message;}
+}
+async function deleteGenaiBudget(id,name){
+  if(!confirm('Delete budget "'+name+'"?'))return;
+  const msg=document.getElementById('bg-msg');
+  try{
+    const r=await fetch(`${baseUrl()}/api/v1/genai/${tenant()}/budgets/${id}`,{method:'DELETE',headers:hdrs()});
+    if(!r.ok&&r.status!==204)throw new Error('HTTP '+r.status);
+    msg.style.color='#2dd4bf';msg.textContent='Deleted.';loadBudgets();loadAll();
+  }catch(e){msg.style.color='#f0506e';msg.textContent='Delete failed: '+e.message;}
+}
+
 // ── Number formatting ─────────────────────────────────────────────────────
 function fmt(v, dec=2) { return v == null ? '—' : Number(v).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
 function fmtK(v) { return v >= 1e6 ? `${(v/1e6).toFixed(1)}M` : v >= 1e3 ? `${(v/1e3).toFixed(0)}k` : String(v); }
@@ -239,6 +299,7 @@ async function loadAll() {
     renderComparisons(summary.comparisons);
     renderAlerts(alerts);
     renderApps(apps);
+    loadBudgets();
   } catch (e) {
     console.error('Load failed:', e);
   }

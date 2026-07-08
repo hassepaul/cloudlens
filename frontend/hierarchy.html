@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Cost Hierarchy</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1040px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+.ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+select,input{background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:6px 10px;outline:none}
+select:focus,input:focus{border-color:var(--teal)}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--tealDim);color:var(--teal)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:11px;padding:14px 16px}
+.kpi .l{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px}
+.kpi .v{font-family:var(--mono);font-size:22px;font-weight:600}
+.kpi.teal .v{color:var(--teal)}.kpi.amber .v{color:var(--amber)}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px;margin-bottom:16px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:4px}
+.card .cap{font-size:12px;color:var(--txt3);margin-bottom:15px}
+.node{display:flex;align-items:center;gap:12px;padding:10px 10px;border-radius:9px;border:1px solid transparent}
+.node:hover{background:var(--bg2);border-color:var(--lineSoft)}
+.node .type{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:5px;background:var(--panel2);color:var(--txt3);flex-shrink:0}
+.node .nm{flex:1;min-width:0;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node .bar{width:130px;height:6px;background:var(--line);border-radius:3px;overflow:hidden;flex-shrink:0}
+.node .bar i{display:block;height:100%;border-radius:3px;background:var(--teal)}
+.node .amt{font-family:var(--mono);font-size:13px;font-weight:600;min-width:80px;text-align:right}
+.bstat{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:5px;flex-shrink:0}
+.bstat.ok{background:var(--greenDim);color:var(--green)}.bstat.warning{background:var(--amberDim);color:var(--amber)}
+.bstat.breach{background:var(--redDim);color:var(--red)}.bstat.no_budget{background:var(--panel2);color:var(--txt3)}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.form .f label{display:block;font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.form .f input,.form .f select{width:100%}
+.btn{background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);font-family:var(--mono);font-size:12px;padding:8px 15px;border-radius:8px;cursor:pointer}
+.btn:hover{background:#1a5c50;color:#eafffb}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--txt2)}
+.msg{font-size:12px;font-family:var(--mono);margin-top:10px}
+.ok{color:var(--teal)}.err{color:var(--red)}.note{font-size:12px;color:var(--txt3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="insights.html" class="snav-link">◈ Insights</a>
+  <a href="waste.html" class="snav-link">🗑 Waste</a>
+  <a href="reports.html" class="snav-link">▤ Reports</a>
+  <a href="policies.html" class="snav-link">⚖ Policies</a>
+  <a href="hierarchy.html" class="snav-link active">⊞ Hierarchy</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
+</nav>
+  <h2 class="sr-only">CloudLens cost hierarchy: organizational rollup of spend by division, team, and project with budget status</h2>
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · Cost Hierarchy</h1>
+    <div class="ctrl">
+      <select id="tenant-sel" onchange="loadAll()">
+        <option value="t-acme">t-acme (Acme Corp)</option>
+        <option value="t-1">t-1 (Demo)</option>
+      </select>
+      <button class="btn ghost" style="font-size:11px;padding:6px 12px" onclick="loadAll()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi teal"><div class="l">Total allocated</div><div class="v" id="k-total">—</div></div>
+    <div class="kpi amber"><div class="l">Unallocated</div><div class="v" id="k-unalloc">—</div></div>
+    <div class="kpi"><div class="l">Nodes</div><div class="v" id="k-nodes">—</div></div>
+  </div>
+
+  <div class="card">
+    <h2>⊞ Portfolio rollup</h2>
+    <div class="cap" id="period-cap">Spend rolled up through the org tree (GET /api/v1/hierarchy/{t}/rollup).</div>
+    <div id="tree"><div class="note">Loading…</div></div>
+  </div>
+
+  <div class="card">
+    <h2>+ Add node</h2>
+    <div class="cap">Create a cost-hierarchy node (POST /api/v1/hierarchy/{t}/nodes). Tag filter maps spend to this node.</div>
+    <div class="form">
+      <div class="f"><label>Name</label><input id="n-name" placeholder="Platform Team"/></div>
+      <div class="f"><label>Type</label><select id="n-type">
+        <option value="company">Company</option><option value="division">Division</option>
+        <option value="business_unit">Business unit</option><option value="team" selected>Team</option>
+        <option value="project">Project</option><option value="environment">Environment</option>
+      </select></div>
+      <div class="f"><label>Parent</label><select id="n-parent"><option value="">— none (root) —</option></select></div>
+      <div class="f"><label>Tag filter (key=value)</label><input id="n-tag" placeholder="cost_center=platform"/></div>
+      <div class="f"><label>Budget (€/mo, optional)</label><input id="n-budget" type="number" placeholder=""/></div>
+      <div class="f"><button class="btn" onclick="createNode()">Add node →</button></div>
+    </div>
+    <div class="msg" id="create-msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>▤ Manage nodes</h2>
+    <div class="cap">Edit a node's budget or delete it (PATCH/DELETE /api/v1/hierarchy/{t}/nodes/{id}).</div>
+    <div id="node-list"><div class="note">Loading…</div></div>
+    <div class="msg" id="node-msg"></div>
+  </div>
+</div>
+
+<script>
+const API='';
+const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
+function tid(){return document.getElementById('tenant-sel').value;}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function renderNode(n,maxTotal,out){
+  const pad=8+n.depth*22;
+  const bar=maxTotal>0?(n.total_cost_eur/maxTotal*100):0;
+  const bs=n.budget_status||'no_budget';
+  const budge=n.budget_eur!=null?`<span class="bstat ${esc(bs)}">${Math.round(n.budget_consumed_pct||0)}% of ${EUR(n.budget_eur)}</span>`:`<span class="bstat no_budget">no budget</span>`;
+  out.push(`<div class="node" style="padding-left:${pad}px">
+    <span class="type">${esc(n.node_type)}</span>
+    <span class="nm">${esc(n.node_name)}</span>
+    ${budge}
+    <span class="bar"><i style="width:${bar}%"></i></span>
+    <span class="amt">${EUR(n.total_cost_eur||0)}</span>
+  </div>`);
+  (n.children||[]).forEach(c=>renderNode(c,maxTotal,out));
+}
+
+async function loadRollup(){
+  const el=document.getElementById('tree');el.innerHTML='<div class="note">Loading…</div>';
+  try{
+    const j=await fetch(`${API}/api/v1/hierarchy/${tid()}/rollup`).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});
+    document.getElementById('k-total').textContent=EUR(j.total_cost_eur||0);
+    document.getElementById('k-unalloc').textContent=EUR(j.unallocated_eur||0);
+    document.getElementById('k-nodes').textContent=j.node_count||0;
+    document.getElementById('period-cap').textContent=`Period ${j.period_start} → ${j.period_end} · rolled up through the org tree.`;
+    const roots=j.roots||[];
+    if(!roots.length){el.innerHTML='<div class="note">No hierarchy nodes yet — add one below.</div>';return;}
+    const maxTotal=Math.max(...roots.map(r=>r.total_cost_eur||0),1);
+    const out=[];roots.forEach(r=>renderNode(r,maxTotal,out));
+    el.innerHTML=out.join('');
+  }catch(e){el.innerHTML=`<div class="err" style="font-family:var(--mono);font-size:12px">Failed to load rollup: ${esc(e.message)}</div>`;}
+}
+
+async function loadNodes(){
+  try{
+    const nodes=await fetch(`${API}/api/v1/hierarchy/${tid()}/nodes`).then(r=>r.ok?r.json():[]);
+    const sel=document.getElementById('n-parent');
+    sel.innerHTML='<option value="">— none (root) —</option>'+
+      (nodes||[]).map(n=>`<option value="${esc(n.id)}">${esc(n.name)} (${esc(n.node_type)})</option>`).join('');
+    const list=document.getElementById('node-list');
+    if(!nodes||!nodes.length){ list.innerHTML='<div class="note">No nodes yet.</div>'; return; }
+    list.innerHTML=nodes.map(n=>{
+      const budget=n.budget_eur!=null?EUR(n.budget_eur)+'/mo':'no budget';
+      const tf=Object.entries(n.tag_filters||{}).map(([k,v])=>`${k}=${v}`).join(', ');
+      return `<div class="node" style="padding-left:10px">
+        <span class="type">${esc(n.node_type)}</span>
+        <span class="nm">${esc(n.name)}</span>
+        <span class="bstat no_budget">${esc(tf||'no filter')}</span>
+        <span class="amt" style="min-width:90px">${budget}</span>
+        <span style="display:flex;gap:5px">
+          <button onclick="editNode('${esc(n.id)}',${n.budget_eur==null?'null':n.budget_eur})" style="font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:6px;background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);cursor:pointer">budget</button>
+          <button onclick="deleteNode('${esc(n.id)}','${esc(n.name)}')" style="font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:6px;background:var(--redDim);border:1px solid var(--red);color:var(--red);cursor:pointer">del</button>
+        </span>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function editNode(id,current){
+  const na=prompt('New monthly budget (€, blank to clear):', current==null?'':current);
+  if(na===null)return;
+  const msg=document.getElementById('node-msg');msg.className='msg';
+  const budget_eur = na.trim()===''?null:+na;
+  try{
+    const r=await fetch(`${API}/api/v1/hierarchy/${tid()}/nodes/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({budget_eur})});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    msg.className='msg ok';msg.textContent='Node updated.';loadNodes();loadRollup();
+  }catch(e){msg.className='msg err';msg.textContent='Update failed: '+e.message;}
+}
+async function deleteNode(id,name){
+  if(!confirm('Delete node "'+name+'"?'))return;
+  const msg=document.getElementById('node-msg');msg.className='msg';
+  try{
+    const r=await fetch(`${API}/api/v1/hierarchy/${tid()}/nodes/${id}`,{method:'DELETE'});
+    if(!r.ok&&r.status!==204)throw new Error('HTTP '+r.status);
+    msg.className='msg ok';msg.textContent='Node deleted.';loadNodes();loadRollup();
+  }catch(e){msg.className='msg err';msg.textContent='Delete failed: '+e.message;}
+}
+
+async function createNode(){
+  const msg=document.getElementById('create-msg');msg.className='msg';msg.textContent='';
+  const name=document.getElementById('n-name').value.trim();
+  if(!name){msg.className='msg err';msg.textContent='Name is required.';return;}
+  const tag=document.getElementById('n-tag').value.trim();
+  const tag_filters={};
+  if(tag&&tag.includes('=')){const[k,...v]=tag.split('=');tag_filters[k.trim()]=v.join('=').trim();}
+  const budget=document.getElementById('n-budget').value;
+  const body={name,node_type:document.getElementById('n-type').value,
+    parent_id:document.getElementById('n-parent').value||null,
+    description:'',tag_filters,cloud_scope:[],budget_eur:budget?+budget:null};
+  try{
+    const r=await fetch(`${API}/api/v1/hierarchy/${tid()}/nodes`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    msg.className='msg ok';msg.textContent='Node created.';
+    document.getElementById('n-name').value='';document.getElementById('n-tag').value='';document.getElementById('n-budget').value='';
+    loadNodes();loadRollup();
+  }catch(e){msg.className='msg err';msg.textContent='Create failed: '+e.message;}
+}
+
+function loadAll(){loadRollup();loadNodes();}
+loadAll();
+</script>
+</body>
+</html>

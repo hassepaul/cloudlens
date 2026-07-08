@@ -158,8 +158,8 @@ async def full_rollup(
     except CosmosError as exc:
         raise HTTPException(status_code=503, detail=exc.to_dict())
     except Exception as exc:
-        log.error("hierarchy.rollup_error", tenant_id=tenant_id, error=str(exc))
-        raise HTTPException(status_code=500, detail={"error": "ROLLUP_ERROR", "message": str(exc)[:300]})
+        log.error("hierarchy.rollup_error", tenant_id=tenant_id, error=str(exc), exc_info=True)
+        raise HTTPException(status_code=500, detail={"error": "ROLLUP_ERROR", "message": "Failed to compute hierarchy rollup"})
 
 
 @router.get(
@@ -191,5 +191,5 @@ async def node_breakdown(
     except CosmosError as exc:
         raise HTTPException(status_code=503, detail=exc.to_dict())
     except Exception as exc:
-        log.error("hierarchy.breakdown_error", tenant_id=tenant_id, node_id=node_id, error=str(exc))
-        raise HTTPException(status_code=500, detail={"error": "BREAKDOWN_ERROR", "message": str(exc)[:300]})
+        log.error("hierarchy.breakdown_error", tenant_id=tenant_id, node_id=node_id, error=str(exc), exc_info=True)
+        raise HTTPException(status_code=500, detail={"error": "BREAKDOWN_ERROR", "message": "Failed to compute node breakdown"})

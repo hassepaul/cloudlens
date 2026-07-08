@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.auth import require_api_key
 from app.logging_config import get_logger
@@ -125,6 +125,8 @@ class SummaryOut(BaseModel):
 
 
 class BudgetIn(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     name: str = Field(..., min_length=1)
     monthly_limit_usd: float = Field(..., gt=0)
     model_filter: str = ""
@@ -134,6 +136,8 @@ class BudgetIn(BaseModel):
 
 
 class BudgetOut(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     id: str
     tenant_id: str
     name: str

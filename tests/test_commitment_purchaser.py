@@ -205,15 +205,20 @@ class TestSafetyGates:
 class TestAdvisoryFiltering:
     def _run(self, advisories, **settings_kwargs) -> PurchaseRun:
         """Run filtering logic synchronously using the _skip helper."""
+        from app.services.commitment_purchaser import _SUPPORTED_CLOUDS, _PURCHASABLE_BY_CLOUD
         s = PurchaseSettings(tenant_id="t1", enabled=True, dry_run=True, **settings_kwargs)
         run = PurchaseRun(tenant_id="t1", run_at="2026-01-01T00:00:00", dry_run=True)
-        allowed_types = set(s.allowed_commitment_types) or {"savings-plan-1yr", "savings-plan-3yr", "1yr-ri", "3yr-ri"}
+        tenant_type_filter = set(s.allowed_commitment_types)
         allowed_services = set(s.allowed_services)
         for adv in advisories:
-            if adv.get("cloud", "").lower() != "aws":
-                _skip(run, adv, "non-aws", "non-aws")
+            cloud = adv.get("cloud", "").lower()
+            if cloud not in _SUPPORTED_CLOUDS:
+                _skip(run, adv, "cloud_unsupported", "cloud not supported")
                 continue
-            if adv.get("recommended_type") not in allowed_types:
+            if adv.get("recommended_type") not in _PURCHASABLE_BY_CLOUD[cloud]:
+                _skip(run, adv, "type_not_purchasable", "type not purchasable on cloud")
+                continue
+            if tenant_type_filter and adv.get("recommended_type") not in tenant_type_filter:
                 _skip(run, adv, "type", "type not allowed")
                 continue
             if allowed_services and adv.get("service") not in allowed_services:
@@ -227,10 +232,23 @@ class TestAdvisoryFiltering:
                 continue
         return run
 
-    def test_non_aws_skipped(self):
-        run = self._run([_advisory(cloud="azure")])
+    def test_unsupported_cloud_skipped(self):
+        run = self._run([_advisory(cloud="oci")])
         assert len(run.skipped) == 1
-        assert "non-aws" in run.skipped[0].skip_reason
+        assert "cloud_unsupported" in run.skipped[0].skip_reason
+
+    def test_azure_savings_plan_accepted(self):
+        run = self._run([_advisory(cloud="azure", recommended_type="savings-plan-1yr")])
+        assert len(run.skipped) == 0
+
+    def test_gcp_cud_accepted(self):
+        run = self._run([_advisory(cloud="gcp", recommended_type="committed-use-1yr")])
+        assert len(run.skipped) == 0
+
+    def test_gcp_wrong_type_skipped(self):
+        run = self._run([_advisory(cloud="gcp", recommended_type="savings-plan-1yr")])
+        assert len(run.skipped) == 1
+        assert "type_not_purchasable" in run.skipped[0].skip_reason
 
     def test_wrong_timing_skipped(self):
         run = self._run([_advisory(timing="wait")])
@@ -474,6 +492,65 @@ class TestHelpers:
         _skip(run, _advisory(), "test_code", "test reason")
         assert len(run.skipped) == 1
         assert "test_code" in run.skipped[0].skip_reason
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Multi-cloud purchase paths (Azure + GCP)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestMultiCloudPurchase:
+    @pytest.mark.asyncio
+    async def test_azure_dry_run_purchase(self):
+        settings = PurchaseSettings(tenant_id="t1", enabled=True, dry_run=True)
+        adv = _advisory(cloud="azure", service="Virtual Machines",
+                        recommended_type="savings-plan-1yr")
+        async with _mock_globals(settings):
+            run = await run_purchase("t1", [adv])
+        assert len(run.purchased) == 1
+        rec = run.purchased[0]
+        assert rec.cloud == "azure"
+        assert rec.status == "dry_run"
+        assert rec.aws_commitment_id.startswith("dry-run-azure-sp-")
+
+    @pytest.mark.asyncio
+    async def test_gcp_dry_run_purchase(self):
+        settings = PurchaseSettings(tenant_id="t1", enabled=True, dry_run=True)
+        adv = _advisory(cloud="gcp", service="Compute Engine",
+                        recommended_type="committed-use-3yr", saving_pct=0.55)
+        async with _mock_globals(settings):
+            run = await run_purchase("t1", [adv])
+        assert len(run.purchased) == 1
+        rec = run.purchased[0]
+        assert rec.cloud == "gcp"
+        assert rec.status == "dry_run"
+        assert rec.aws_commitment_id.startswith("dry-run-gcp-cud-")
+
+    @pytest.mark.asyncio
+    async def test_azure_live_missing_billing_scope_fails(self):
+        # Live run, but the mocked creds are AWS-shaped (no billing_scope) →
+        # graceful failure rather than a crash.
+        settings = PurchaseSettings(tenant_id="t1", enabled=True, dry_run=False)
+        adv = _advisory(cloud="azure", recommended_type="savings-plan-1yr")
+        async with _mock_globals(settings):
+            run = await run_purchase("t1", [adv])
+        assert len(run.failed) == 1
+        assert "billing_scope" in run.failed[0].error
+
+    @pytest.mark.asyncio
+    async def test_creds_unavailable_skips(self):
+        settings = PurchaseSettings(tenant_id="t1", enabled=True, dry_run=True)
+        adv = _advisory(cloud="azure", recommended_type="savings-plan-1yr")
+        with patch("app.services.commitment_purchaser.get_settings") as mock_cfg:
+            mock_cfg.return_value.commitment_auto_purchase_enabled = True
+            with patch("app.services.commitment_purchaser.get_purchase_settings", new=AsyncMock(return_value=settings)):
+                from app.exceptions import KeyVaultError
+                with patch("app.services.commitment_purchaser._keyvault.get_secret",
+                           new=AsyncMock(side_effect=KeyVaultError("no secret"))):
+                    with patch("app.services.commitment_purchaser._month_spend_eur", new=AsyncMock(return_value=0.0)):
+                        with patch("app.services.commitment_purchaser.cosmos.upsert_item", new=AsyncMock()):
+                            run = await run_purchase("t1", [adv])
+        assert len(run.skipped) == 1
+        assert "creds_unavailable" in run.skipped[0].skip_reason
 
 
 # ══════════════════════════════════════════════════════════════════════════════

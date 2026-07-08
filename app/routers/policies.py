@@ -136,10 +136,10 @@ async def evaluate(tenant_id: str) -> dict:
             "violation_ids": [v.id for v in violations],
         }
     except Exception as exc:
-        log.error("policy.on_demand_eval_failed", tenant_id=tenant_id, error=str(exc))
+        log.error("policy.on_demand_eval_failed", tenant_id=tenant_id, error=str(exc), exc_info=True)
         raise HTTPException(
             status_code=503,
-            detail={"error": "EVALUATION_ERROR", "message": str(exc)[:300]},
+            detail={"error": "EVALUATION_ERROR", "message": "Policy evaluation failed — see server logs"},
         )
 
 

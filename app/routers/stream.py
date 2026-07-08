@@ -191,7 +191,6 @@ async def _cost_event_stream(
                 {
                     "tenant_id": tenant_id,
                     "message": "Upstream query failed — retrying next interval",
-                    "detail": str(exc)[:200],
                 },
             )
 

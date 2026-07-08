@@ -36,6 +36,12 @@ reportlab==4.2.5
 # Auth — Azure AD JWT validation (JWKS)
 python-jose[cryptography]==3.3.0
 
+# Distributed rate limiting (optional — empty REDIS_URL falls back to in-process)
+redis==5.2.1
+
+# Enterprise SSO — SAML 2.0 (optional; endpoints return 503 if not installed)
+python3-saml==1.16.0
+
 # Observability
 opentelemetry-sdk==1.29.0
 
@@ -45,5 +51,9 @@ boto3==1.38.0
 # GCP SDK (BigQuery billing export)
 google-cloud-bigquery==3.31.0
 google-auth==2.40.0
+
+# Commitment auto-purchase SDKs (optional — live purchases only; lazy-imported)
+azure-mgmt-billingbenefits==1.0.0
+google-cloud-compute==1.19.0
 opentelemetry-instrumentation-fastapi==0.50b0
 azure-monitor-opentelemetry==1.6.4

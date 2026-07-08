@@ -201,7 +201,7 @@ async def list_escalation_configs(tenant_id: str) -> list[EscalationConfig]:
 async def save_escalation_config(cfg: EscalationConfig) -> EscalationConfig:
     """Upsert an escalation config."""
     cfg.updated_at = datetime.now(timezone.utc).isoformat()
-    await cosmos.upsert_item(_CONTAINER, cfg.to_cosmos(), partition_key=cfg.tenant_id)
+    await cosmos.upsert_item(_CONTAINER, cfg.to_cosmos())
     return cfg
 
 

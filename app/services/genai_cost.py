@@ -357,6 +357,78 @@ def _budget_container() -> str:
     return get_settings().cosmos_container_genai_budgets
 
 
+def _focus_container() -> str:
+    return get_settings().cosmos_container_cost_records
+
+
+# ── GenAI → FOCUS consolidation ──────────────────────────────────────────────
+# Metered GenAI usage is emitted as a first-class FOCUS record (service_category
+# = AI and Machine Learning) into the shared cost_records container, so LLM spend
+# flows through the SAME explorer, multi-cloud, allocation, chargeback, forecast,
+# anomaly, and sustainability machinery as the rest of the cloud bill — not a
+# silo. Records are tagged source=genai_meter so operators who ALSO ingest AI
+# service lines from a cloud's native billing export can de-duplicate on it.
+
+# Maps a GenAI provider key to its FOCUS ProviderName + display label. "custom"
+# (self-hosted) is intentionally omitted — its infra cost is already captured as
+# Compute in the cloud bill, so emitting an AI_ML line would double-count.
+_GENAI_FOCUS_PROVIDER = {
+    "openai":       ("OpenAI", "OpenAI"),
+    "azure_openai": ("Microsoft Azure", "Azure OpenAI"),
+    "bedrock":      ("Amazon Web Services", "AWS Bedrock"),
+    "vertex_ai":    ("Google Cloud", "GCP Vertex AI"),
+}
+
+
+def _focus_doc_from_genai(rec: GenAIUsageRecord) -> Optional[dict]:
+    """Build a FOCUS cost-record doc from a metered GenAI usage record.
+    Returns None for providers that should not be consolidated (e.g. custom)."""
+    mapping = _GENAI_FOCUS_PROVIDER.get(rec.provider)
+    if mapping is None:
+        return None
+    provider_value, label = mapping
+    from app.models.focus import (
+        FocusRecord, ProviderName, ServiceCategory, ChargeCategory,
+    )
+
+    tags: dict[str, str] = {str(k): str(v) for k, v in (rec.tags or {}).items()}
+    tags.setdefault("source", "genai_meter")
+    tags["genai_provider"] = rec.provider
+    tags["genai_model"] = rec.model
+    if rec.app_name:
+        tags.setdefault("app", rec.app_name)
+    if rec.environment:
+        tags.setdefault("environment", rec.environment)
+
+    fr = FocusRecord(
+        tenant_id=rec.tenant_id,
+        provider_name=ProviderName(provider_value),
+        sub_account_id=rec.app_name or "genai",
+        sub_account_name=rec.app_name or "GenAI",
+        charge_period_start=rec.period_date,          # "YYYY-MM-DD" → date
+        billing_currency="EUR",
+        billed_cost=rec.total_cost_eur,
+        effective_cost=rec.total_cost_eur,
+        list_cost=rec.total_cost_eur,
+        service_name=f"{label} · {rec.model}",
+        service_category=ServiceCategory.AI_ML,
+        charge_category=ChargeCategory.USAGE,
+        charge_description=f"GenAI {rec.request_type} — {rec.total_tokens} tokens",
+        resource_id=rec.id,
+        resource_name=rec.deployment_name or rec.model,
+        resource_type="genai",
+        consumed_quantity=float(rec.total_tokens or rec.quantity or 0),
+        consumed_unit="tokens" if rec.total_tokens else "requests",
+        tags=tags,
+    )
+    doc = fr.to_cosmos()
+    # Legacy-compat aliases so GenAI also appears in the cost summary / trend /
+    # forecast views, which query `record_date` + `cost_eur` on cost_records.
+    doc["record_date"] = rec.period_date
+    doc["cost_eur"] = rec.total_cost_eur
+    return doc
+
+
 # ── Ingest ────────────────────────────────────────────────────────────────────
 
 def _build_record(tenant_id: str, payload: dict) -> GenAIUsageRecord:
@@ -409,9 +481,23 @@ def _build_record(tenant_id: str, payload: dict) -> GenAIUsageRecord:
 
 
 async def ingest_usage(tenant_id: str, payload: dict) -> GenAIUsageRecord:
-    """Ingest a single GenAI usage record."""
+    """Ingest a single GenAI usage record.
+
+    Writes the detailed usage doc to the genai_usage container AND emits a
+    consolidated FOCUS cost record (service_category=AI/ML) into cost_records so
+    the spend shows up in every unified view alongside normal cloud cost.
+    """
     record = _build_record(tenant_id, payload)
     await cosmos.upsert_item(_usage_container(), record.to_cosmos())
+    # First-class consolidation: also emit a FOCUS record. Best-effort — a
+    # failure here must not drop the usage record we already persisted.
+    try:
+        focus_doc = _focus_doc_from_genai(record)
+        if focus_doc is not None:
+            await cosmos.upsert_item(_focus_container(), focus_doc)
+    except Exception as exc:
+        log.warning("genai.focus_emit_failed", tenant_id=tenant_id,
+                    model=record.model, error=str(exc))
     log.info("genai.usage_ingested", tenant_id=tenant_id, model=record.model, cost_usd=record.total_cost_usd)
     return record
 

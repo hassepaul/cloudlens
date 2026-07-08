@@ -104,9 +104,16 @@ padding:9px 16px;border-radius:8px;cursor:pointer}
   <a href="multicloud.html" class="snav-link">⊕ Multi-cloud</a>
   <a href="forecast.html" class="snav-link">∿ Forecast</a>
   <a href="optimization.html" class="snav-link">◎ Optimize</a>
+  <a href="waste.html" class="snav-link">🗑 Waste</a>
   <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
   <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
+  <a href="policies.html" class="snav-link">⚖ Policies</a>
+  <a href="hierarchy.html" class="snav-link">⊞ Hierarchy</a>
+  <a href="reports.html" class="snav-link">▤ Reports</a>
+  <a href="escalation.html" class="snav-link">⇗ Escalation</a>
+  <a href="commitment_purchaser.html" class="snav-link">◷ Auto-purchase</a>
   <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
   <a href="commitment_advisor.html" class="snav-link">◈ Commitments</a>
   <a href="maturity.html" class="snav-link">◬ Maturity</a>
   <a href="context_mapper.html" class="snav-link">⊛ Context</a>
@@ -115,6 +122,8 @@ padding:9px 16px;border-radius:8px;cursor:pointer}
   <a href="genai.html" class="snav-link" style="color:var(--purple)">◎ GenAI Costs</a>
   <a href="onboarding.html" class="snav-link">⊕ Onboarding</a>
   <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+  <a href="drift.html" class="snav-link">⟳ TF Drift</a>
+  <a href="sustainability.html" class="snav-link">🌱 CO₂</a>
   <h2 class="sr-only">CloudLens multi-cloud explorer: drill from provider to account to service to resource, with anomaly detection, budget setup, and alerts</h2>
   <div class="head">
     <h1><span class="dot"></span> CloudLens · Explorer</h1>
@@ -140,6 +149,18 @@ padding:9px 16px;border-radius:8px;cursor:pointer}
         <button onclick="tab('alerts',this)">Alerts</button>
         <button onclick="tab('budget',this)">Budgets</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Wedge banner: FOCUS-native consolidation + first-class GenAI cost -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div style="flex:1;min-width:250px;background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--lineSoft);border-radius:11px;padding:12px 15px">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--teal);text-transform:uppercase;letter-spacing:.05em">⊕ FOCUS-native consolidation</div>
+      <div style="font-size:12.5px;color:var(--txt2);margin-top:4px;line-height:1.5">Azure · AWS · GCP · Kubernetes · GenAI — normalized into one FOCUS schema. Every drill-down, allocation, and forecast below spans all of them.</div>
+    </div>
+    <div style="flex:1;min-width:250px;background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--lineSoft);border-radius:11px;padding:12px 15px">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--purple);text-transform:uppercase;letter-spacing:.05em">🤖 First-class GenAI cost</div>
+      <div style="font-size:12.5px;color:var(--txt2);margin-top:4px;line-height:1.5">OpenAI · Anthropic · Bedrock · Vertex — metered per token and folded into the same explorer, budgets & chargeback as cloud spend.</div>
     </div>
   </div>
 

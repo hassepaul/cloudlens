@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Escalation Channels</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1218;--bg2:#131b24;--panel:#18222e;--panel2:#1d2935;--line:#263340;--lineSoft:#1e2a36;
+--txt:#e6edf3;--txt2:#9fb0c0;--txt3:#647386;--teal:#2dd4bf;--tealDim:#14463f;--amber:#f5a524;--amberDim:#4a3410;
+--red:#f0506e;--redDim:#4a1622;--blue:#4d9fff;--blueDim:#13314d;--green:#36d399;--greenDim:#0f3020;
+--mono:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:radial-gradient(1100px 500px at 75% -10%,#16212e 0,transparent 60%),var(--bg);
+color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;padding:22px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1000px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.head h1{font-family:var(--mono);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.head h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 10px var(--red)}
+.keybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+select,input{background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;padding:8px 11px;font-family:var(--body);outline:none}
+input[type=checkbox]{width:auto}
+select:focus,input:focus{border-color:var(--teal)}
+.keybar input,.keybar select{font-family:var(--mono);font-size:12px;padding:6px 10px}
+.lock{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:7px;background:var(--amberDim);color:var(--amber)}
+.sitenav{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:16px;padding:5px;background:var(--panel);border:1px solid var(--lineSoft);border-radius:10px}
+.snav-link{font-family:var(--mono);font-size:11px;color:var(--txt2);padding:4px 9px;border-radius:6px;text-decoration:none}
+.snav-link:hover{background:var(--panel2);color:var(--txt)}.snav-link.active{background:var(--redDim);color:var(--red)}
+.card{background:linear-gradient(180deg,var(--panel) 0,var(--bg2) 100%);border:1px solid var(--lineSoft);border-radius:13px;padding:18px 20px;margin-bottom:16px}
+.card h2{font-family:var(--mono);font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.card .cap{font-size:12px;color:var(--txt3);margin-bottom:15px}
+.state{font-family:var(--mono);font-size:9.5px;padding:2px 9px;border-radius:6px}
+.state.on{background:var(--greenDim);color:var(--green)}.state.off{background:var(--panel2);color:var(--txt3)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.f label{display:block;font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.f input,.f select{width:100%}
+.full{grid-column:1/-1}
+.chk{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txt2);font-family:var(--mono)}
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn{background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);font-family:var(--mono);font-size:12px;padding:8px 15px;border-radius:8px;cursor:pointer}
+.btn:hover{background:#1a5c50;color:#eafffb}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--txt2)}
+.btn.ghost:hover{border-color:var(--blue);color:var(--blue)}
+.btn.danger{background:var(--redDim);border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:#5a1a28;color:#ffd7de}
+.msg{font-size:12px;font-family:var(--mono);margin-top:10px}
+.ok{color:var(--teal)}.err{color:var(--red)}.note{font-size:12px;color:var(--txt3)}
+.kv{font-size:10.5px;color:var(--txt3);font-family:var(--mono);margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="sitenav" aria-label="CloudLens navigation">
+  <a href="index.html" class="snav-link">⊞ Explorer</a>
+  <a href="policies.html" class="snav-link">⚖ Policies</a>
+  <a href="escalation.html" class="snav-link active">⇗ Escalation</a>
+  <a href="commitment_purchaser.html" class="snav-link">◷ Auto-purchase</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
+  <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+</nav>
+  <h2 class="sr-only">CloudLens escalation channels: configure PagerDuty, Jira, Azure DevOps, and Teams integrations for alerts</h2>
+  <div class="head">
+    <h1><span class="dot"></span> CloudLens · Escalation Channels</h1>
+    <div class="keybar">
+      <select id="tenant-sel" onchange="load()">
+        <option value="t-acme">t-acme (Acme Corp)</option>
+        <option value="t-1">t-1 (Demo)</option>
+      </select>
+      <input id="api-key-input" type="password" placeholder="X-API-Key (operator)"/>
+      <button class="btn ghost" style="font-size:11px;padding:6px 12px" onclick="load()">↻ Load</button>
+      <span class="lock">🔒 API-key required</span>
+    </div>
+  </div>
+
+  <!-- PAGERDUTY -->
+  <div class="card">
+    <h2>📟 PagerDuty <span class="state off" id="s-pagerduty">disabled</span></h2>
+    <div class="cap">Routes critical alerts to a PagerDuty service. The integration/routing key lives in Key Vault.</div>
+    <div class="grid">
+      <div class="f"><label>Service name</label><input id="pd-service" placeholder="CloudLens"/></div>
+      <div class="f chk"><label style="margin:0">Enabled</label><input type="checkbox" id="pd-enabled"/></div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="save('pagerduty')">Save</button>
+      <button class="btn ghost" onclick="test('pagerduty')">Send test</button>
+      <button class="btn danger" onclick="del('pagerduty')">Delete</button>
+    </div>
+    <div class="kv" id="kv-pagerduty"></div>
+    <div class="msg" id="m-pagerduty"></div>
+  </div>
+
+  <!-- JIRA -->
+  <div class="card">
+    <h2>🧩 Jira <span class="state off" id="s-jira">disabled</span></h2>
+    <div class="cap">Opens Jira issues for policy violations. API token stored in Key Vault.</div>
+    <div class="grid">
+      <div class="f full"><label>Base URL (https://…)</label><input id="ji-url" placeholder="https://acme.atlassian.net"/></div>
+      <div class="f"><label>Email</label><input id="ji-email" placeholder="finops@acme.com"/></div>
+      <div class="f"><label>Project key</label><input id="ji-proj" placeholder="FINOPS"/></div>
+      <div class="f"><label>Issue type</label><input id="ji-type" value="Bug"/></div>
+      <div class="f"><label>Labels (comma)</label><input id="ji-labels" value="cloudlens,finops"/></div>
+      <div class="f chk"><label style="margin:0">Enabled</label><input type="checkbox" id="ji-enabled"/></div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="save('jira')">Save</button>
+      <button class="btn ghost" onclick="test('jira')">Send test</button>
+      <button class="btn danger" onclick="del('jira')">Delete</button>
+    </div>
+    <div class="kv" id="kv-jira"></div>
+    <div class="msg" id="m-jira"></div>
+  </div>
+
+  <!-- AZURE DEVOPS -->
+  <div class="card">
+    <h2>🔷 Azure DevOps <span class="state off" id="s-ado">disabled</span></h2>
+    <div class="cap">Creates ADO work items. PAT stored in Key Vault.</div>
+    <div class="grid">
+      <div class="f"><label>Organization</label><input id="ado-org" placeholder="acme"/></div>
+      <div class="f"><label>Project</label><input id="ado-proj" placeholder="Platform"/></div>
+      <div class="f"><label>Work item type</label><input id="ado-type" value="Bug"/></div>
+      <div class="f"><label>Area path</label><input id="ado-area" placeholder="Platform\\FinOps"/></div>
+      <div class="f"><label>Iteration path</label><input id="ado-iter" placeholder="Platform\\Sprint 1"/></div>
+      <div class="f"><label>Tags</label><input id="ado-tags" value="CloudLens; FinOps"/></div>
+      <div class="f chk"><label style="margin:0">Enabled</label><input type="checkbox" id="ado-enabled"/></div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="save('ado')">Save</button>
+      <button class="btn ghost" onclick="test('ado')">Send test</button>
+      <button class="btn danger" onclick="del('ado')">Delete</button>
+    </div>
+    <div class="kv" id="kv-ado"></div>
+    <div class="msg" id="m-ado"></div>
+  </div>
+
+  <!-- TEAMS -->
+  <div class="card">
+    <h2>💬 Microsoft Teams <span class="state off" id="s-teams">disabled</span></h2>
+    <div class="cap">Posts Adaptive Cards to a Teams channel via incoming webhook.</div>
+    <div class="grid">
+      <div class="f full"><label>Webhook URL</label><input id="tm-url" placeholder="https://outlook.office.com/webhook/…"/></div>
+      <div class="f full"><label>Action URL (optional)</label><input id="tm-action" placeholder="https://cloudlens.app/insights.html"/></div>
+      <div class="f chk"><label style="margin:0">Enabled</label><input type="checkbox" id="tm-enabled"/></div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="save('teams')">Save</button>
+      <button class="btn ghost" onclick="test('teams')">Send test</button>
+      <button class="btn danger" onclick="del('teams')">Delete</button>
+    </div>
+    <div class="kv" id="kv-teams"></div>
+    <div class="msg" id="m-teams"></div>
+  </div>
+</div>
+
+<script>
+const API='';
+function tid(){return document.getElementById('tenant-sel').value;}
+function apiKey(){return document.getElementById('api-key-input').value.trim()||sessionStorage.getItem('cl_api_key')||'';}
+function hdrs(json){const h=json?{'Content-Type':'application/json'}:{};const k=apiKey();if(k){h['X-API-Key']=k;sessionStorage.setItem('cl_api_key',k);}return h;}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function errText(r){try{const e=await r.json();return (e.detail&&(e.detail.message||e.detail))||('HTTP '+r.status);}catch(_){return 'HTTP '+r.status;}}
+const gid=id=>document.getElementById(id);
+
+function setState(ch,enabled){const s=gid('s-'+ch);s.className='state '+(enabled?'on':'off');s.textContent=enabled?'enabled':'disabled';}
+
+function fill(intg){
+  const ch=intg.channel_type;
+  setState(ch,intg.enabled);
+  if(ch==='pagerduty'){gid('pd-service').value=intg.pagerduty_service_name||'CloudLens';gid('pd-enabled').checked=!!intg.enabled;}
+  if(ch==='jira'){gid('ji-url').value=intg.jira_base_url||'';gid('ji-email').value=intg.jira_email||'';gid('ji-proj').value=intg.jira_project_key||'';gid('ji-type').value=intg.jira_issue_type||'Bug';gid('ji-labels').value=(intg.jira_labels||[]).join(',');gid('ji-enabled').checked=!!intg.enabled;}
+  if(ch==='ado'){gid('ado-org').value=intg.ado_org||'';gid('ado-proj').value=intg.ado_project||'';gid('ado-type').value=intg.ado_work_item_type||'Bug';gid('ado-area').value=intg.ado_area_path||'';gid('ado-iter').value=intg.ado_iteration_path||'';gid('ado-tags').value=intg.ado_tags||'CloudLens; FinOps';gid('ado-enabled').checked=!!intg.enabled;}
+  if(ch==='teams'){gid('tm-url').value=intg.teams_webhook_url||'';gid('tm-action').value=intg.teams_action_url||'';gid('tm-enabled').checked=!!intg.enabled;}
+  const kv=intg.kv_secret_names&&intg.kv_secret_names.required_secret;
+  if(kv)gid('kv-'+ch).textContent='Key Vault secret: '+kv;
+}
+
+async function load(){
+  ['pagerduty','jira','ado','teams'].forEach(ch=>{setState(ch,false);gid('m-'+ch).textContent='';});
+  try{
+    const r=await fetch(`${API}/api/v1/escalation/${tid()}/integrations`,{headers:hdrs()});
+    if(!r.ok)throw new Error(await errText(r));
+    const d=await r.json();
+    (d.integrations||[]).forEach(fill);
+  }catch(e){gid('m-pagerduty').className='msg err';gid('m-pagerduty').textContent='Failed to load: '+e.message+' — enter a valid operator X-API-Key.';}
+}
+
+function body(ch){
+  if(ch==='pagerduty')return {enabled:gid('pd-enabled').checked,pagerduty_service_name:gid('pd-service').value.trim()||'CloudLens'};
+  if(ch==='jira')return {enabled:gid('ji-enabled').checked,jira_base_url:gid('ji-url').value.trim(),jira_email:gid('ji-email').value.trim(),jira_project_key:gid('ji-proj').value.trim(),jira_issue_type:gid('ji-type').value.trim()||'Bug',jira_labels:gid('ji-labels').value.split(',').map(s=>s.trim()).filter(Boolean)};
+  if(ch==='ado')return {enabled:gid('ado-enabled').checked,ado_org:gid('ado-org').value.trim(),ado_project:gid('ado-proj').value.trim(),ado_work_item_type:gid('ado-type').value.trim()||'Bug',ado_area_path:gid('ado-area').value.trim(),ado_iteration_path:gid('ado-iter').value.trim(),ado_tags:gid('ado-tags').value.trim()||'CloudLens; FinOps'};
+  if(ch==='teams')return {enabled:gid('tm-enabled').checked,teams_webhook_url:gid('tm-url').value.trim(),teams_action_url:gid('tm-action').value.trim()};
+  return {};
+}
+
+async function save(ch){
+  const m=gid('m-'+ch);m.className='msg';m.textContent='';
+  try{
+    const r=await fetch(`${API}/api/v1/escalation/${tid()}/integrations/${ch}`,{method:'PUT',headers:hdrs(true),body:JSON.stringify(body(ch))});
+    if(!r.ok)throw new Error(await errText(r));
+    const d=await r.json();fill(d);
+    m.className='msg ok';m.textContent='Saved.';
+  }catch(e){m.className='msg err';m.textContent='Save failed: '+e.message;}
+}
+async function test(ch){
+  const m=gid('m-'+ch);m.className='msg';m.textContent='Sending test…';
+  try{
+    const r=await fetch(`${API}/api/v1/escalation/${tid()}/integrations/${ch}/test`,{method:'POST',headers:hdrs()});
+    if(!r.ok)throw new Error(await errText(r));
+    const d=await r.json();
+    m.className='msg '+(d.success?'ok':'err');m.textContent=(d.success?'✓ ':'✗ ')+(d.message||d.status);
+  }catch(e){m.className='msg err';m.textContent='Test failed: '+e.message;}
+}
+async function del(ch){
+  if(!confirm('Delete the '+ch+' integration?'))return;
+  const m=gid('m-'+ch);m.className='msg';
+  try{
+    const r=await fetch(`${API}/api/v1/escalation/${tid()}/integrations/${ch}`,{method:'DELETE',headers:hdrs()});
+    if(!r.ok&&r.status!==204)throw new Error(await errText(r));
+    m.className='msg ok';m.textContent='Deleted.';setState(ch,false);
+  }catch(e){m.className='msg err';m.textContent='Delete failed: '+e.message;}
+}
+
+(function(){const k=sessionStorage.getItem('cl_api_key');if(k){gid('api-key-input').value=k;load();}})();
+</script>
+</body>
+</html>

@@ -16,11 +16,15 @@ callers get an honest accuracy figure, not a false-precision point estimate.
 
 Honesty / limits
 ----------------
-- Needs >= 14 daily points for seasonality; below that it falls back to a
-  damped-trend model with wide intervals and flags low confidence.
-- cost_records carry a 90-day TTL, so the input series is at most ~12 weeks.
-  Weekly seasonality is well-supported; annual seasonality is NOT (would need
-  persisted monthly rollups — see forecast_rollup()).
+- Needs >= 14 daily points for weekly seasonality; below that it falls back to
+  a damped-trend model with wide intervals and flags low confidence.
+- cost_records carry a 90-day TTL, so the daily input series is at most ~12
+  weeks. Weekly seasonality is well-supported. ANNUAL (month-of-year)
+  seasonality is supported via persisted *monthly rollups*
+  (see app/services/rollups.py): once >= 13 months of rollups exist, the daily
+  forecast is overlaid with a month-of-year seasonal index, and
+  ``forecast_monthly()`` provides a true long-range annual-seasonal forecast
+  (Holt-Winters with period = 12).
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
@@ -30,7 +34,9 @@ from typing import Optional
 import numpy as np
 
 SEASON = 7              # weekly seasonality
+ANNUAL_SEASON = 12      # monthly (annual) seasonality period
 MIN_SEASONAL_POINTS = 14
+MIN_ANNUAL_MONTHS = 13  # need >1 full year of monthly rollups to see the cycle
 Z_80 = 1.2816           # 80% prediction interval
 Z_95 = 1.9600
 
@@ -136,14 +142,118 @@ def _select_params(y: np.ndarray, m: int, holdout: int) -> tuple[tuple, float]:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Annual (month-of-year) seasonality
+# ──────────────────────────────────────────────────────────────────────────────
+
+def annual_seasonal_factors(monthly: list[dict]) -> Optional[dict[int, float]]:
+    """
+    Compute a multiplicative month-of-year seasonal index from persisted monthly
+    rollups: ``[{"month": "YYYY-MM", "cost_eur": float}, ...]``.
+
+    Returns a dict {1..12 -> factor} normalised so the mean of observed months
+    is ~1.0 (e.g. 1.18 = that calendar month runs 18% above the annual average).
+    Missing months default to 1.0 (no adjustment). Returns None when there are
+    fewer than MIN_ANNUAL_MONTHS months or the data is degenerate.
+    """
+    if not monthly or len(monthly) < MIN_ANNUAL_MONTHS:
+        return None
+    from collections import defaultdict
+    buckets: dict[int, list[float]] = defaultdict(list)
+    for m in monthly:
+        mv = str(m.get("month", ""))
+        if len(mv) < 7:
+            continue
+        try:
+            mo = int(mv[5:7])
+            buckets[mo].append(float(m.get("cost_eur", 0.0)))
+        except (ValueError, TypeError):
+            continue
+    if len(buckets) < 2:
+        return None
+    month_avg = {mo: (sum(v) / len(v)) for mo, v in buckets.items() if v}
+    overall = sum(month_avg.values()) / len(month_avg)
+    if overall <= 0:
+        return None
+    return {mo: (month_avg.get(mo, overall) / overall) for mo in range(1, 13)}
+
+
+def _add_months(ym: str, k: int) -> str:
+    """Add k months to a 'YYYY-MM' string, returning 'YYYY-MM'."""
+    y, m = int(ym[:4]), int(ym[5:7])
+    idx = (y * 12 + (m - 1)) + k
+    ny, nm = divmod(idx, 12)
+    return f"{ny:04d}-{nm + 1:02d}"
+
+
+def forecast_monthly(monthly: list[dict], horizon_months: int = 12) -> ForecastResult:
+    """
+    Long-range MONTHLY forecast with ANNUAL seasonality.
+
+    Uses additive Holt-Winters with period = 12 once >= 24 months of history are
+    available (two full cycles); otherwise falls back to a damped-trend monthly
+    model and flags low confidence. Input: ``[{"month": "YYYY-MM", "cost_eur"}]``.
+    ForecastPoint.day holds the 'YYYY-MM' of each forecast month.
+    """
+    monthly = sorted(monthly, key=lambda d: d["month"])
+    y = np.array([float(d["cost_eur"]) for d in monthly])
+    n = len(y)
+    notes: list[str] = []
+    if n == 0:
+        return ForecastResult("none", horizon_months, 0, None, "low",
+                              notes=["No monthly history available to forecast."])
+    last_month = monthly[-1]["month"]
+
+    if n >= 2 * ANNUAL_SEASON:
+        holdout = min(ANNUAL_SEASON, n // 4)
+        params, mape = _select_params(y, ANNUAL_SEASON, holdout)
+        _, fc = _hw_additive(y, ANNUAL_SEASON, *params, h=horizon_months)
+        method = "holt_winters_additive_annual"
+        confidence = "high" if (not np.isnan(mape) and mape < 12) else \
+                     "medium" if (not np.isnan(mape) and mape < 25) else "low"
+        if np.isnan(mape):
+            mape = None
+            confidence = "medium"
+    else:
+        fc = _damped_trend(y, horizon_months)
+        mape = None
+        method = "damped_trend_monthly"
+        confidence = "low"
+        notes.append(f"Only {n} months of history (<{2 * ANNUAL_SEASON}); annual "
+                     "seasonality not fully modelled — using trend-only fallback.")
+
+    sigma = float(np.std(np.diff(y))) if n > 1 else float(y[0] * 0.2)
+    points: list[ForecastPoint] = []
+    for i in range(horizon_months):
+        nm = _add_months(last_month, i + 1)
+        widen = sigma * np.sqrt(i + 1)
+        val = max(0.0, float(fc[i]))
+        points.append(ForecastPoint(
+            day=nm, value=round(val, 2),
+            lower=round(max(0.0, val - Z_80 * widen), 2),
+            upper=round(val + Z_80 * widen, 2),
+        ))
+    return ForecastResult(
+        method=method, horizon_days=horizon_months, history_days=n,
+        mape=(round(mape, 1) if mape is not None else None),
+        confidence=confidence, points=points, month_end_projection=None, notes=notes,
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Public: baseline spend forecast
 # ──────────────────────────────────────────────────────────────────────────────
 
 def forecast_spend(
     daily: list[dict],          # [{"date": "YYYY-MM-DD", "cost_eur": float}, ...] ascending
     horizon_days: int = 30,
+    monthly_history: Optional[list[dict]] = None,   # [{"month":"YYYY-MM","cost_eur":..}]
 ) -> ForecastResult:
-    """Forecast daily spend `horizon_days` into the future from a daily history."""
+    """Forecast daily spend `horizon_days` into the future from a daily history.
+
+    When `monthly_history` contains >= 13 months of rollups, a month-of-year
+    (annual) seasonal index is overlaid on top of the weekly forecast so
+    predictable annual patterns (year-end spikes, summer dips) are reflected.
+    """
     daily = sorted(daily, key=lambda d: d["date"])
     y = np.array([float(d["cost_eur"]) for d in daily])
     n = len(y)
@@ -176,15 +286,30 @@ def forecast_spend(
         notes.append(f"Only {n} days of history (<{MIN_SEASONAL_POINTS}); using trend-only "
                      "fallback with wide intervals. Weekly seasonality not modelled.")
 
+    # Annual (month-of-year) seasonality overlay from persisted monthly rollups.
+    # Applied relative to the current month so the near-term level is preserved
+    # and only the month-to-month annual shape adjusts the forward path.
+    factors = annual_seasonal_factors(monthly_history) if monthly_history else None
+    cur_factor = (factors.get(last_day.month, 1.0) or 1.0) if factors else 1.0
+    if factors:
+        method = method + "+annual"
+        notes.append(
+            f"Annual (month-of-year) seasonality applied from "
+            f"{len(monthly_history)} months of persisted rollups."
+        )
+
     points: list[ForecastPoint] = []
     for i in range(horizon_days):
         d = last_day + timedelta(days=i + 1)
+        val = float(fc[i])
+        if factors:
+            val *= factors.get(d.month, 1.0) / cur_factor
         widen = sigma * np.sqrt(i + 1)          # interval grows with horizon
         points.append(ForecastPoint(
             day=d.isoformat(),
-            value=round(float(fc[i]), 2),
-            lower=round(max(0.0, float(fc[i]) - Z_80 * widen), 2),
-            upper=round(float(fc[i]) + Z_80 * widen, 2),
+            value=round(val, 2),
+            lower=round(max(0.0, val - Z_80 * widen), 2),
+            upper=round(val + Z_80 * widen, 2),
         ))
 
     # month-end projection = actuals so far this month + forecast to month end

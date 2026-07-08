@@ -192,12 +192,12 @@ class TestScoringAnomalyResponse:
 
     @pytest.mark.asyncio
     async def test_fast_response_high_score(self):
-        from datetime import datetime, timedelta
-        now = datetime.utcnow()
+        from datetime import datetime, timedelta, timezone
+        now = datetime.now(timezone.utc)
         violations = [
             {
-                "triggered_at": (now - timedelta(hours=2)).isoformat() + "Z",
-                "resolved_at":  now.isoformat() + "Z",
+                "triggered_at": (now - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "resolved_at":  now.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
         ]
         with patch("app.services.maturity.cosmos.query_items", new_callable=AsyncMock) as mock_q:
@@ -208,12 +208,12 @@ class TestScoringAnomalyResponse:
 
     @pytest.mark.asyncio
     async def test_slow_response_low_score(self):
-        from datetime import datetime, timedelta
-        now = datetime.utcnow()
+        from datetime import datetime, timedelta, timezone
+        now = datetime.now(timezone.utc)
         violations = [
             {
-                "triggered_at": (now - timedelta(hours=200)).isoformat() + "Z",
-                "resolved_at":  now.isoformat() + "Z",
+                "triggered_at": (now - timedelta(hours=200)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "resolved_at":  now.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
         ]
         with patch("app.services.maturity.cosmos.query_items", new_callable=AsyncMock) as mock_q:

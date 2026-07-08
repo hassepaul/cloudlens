@@ -10,10 +10,12 @@ from app.logging_config import get_logger
 from app.models.forecast import (
     SpendForecastResponse, ForecastPointModel, TrajectoryResponse,
     RoadmapResponse, RoadmapPhaseModel, BudgetBreachResponse,
+    AnnualForecastResponse,
 )
 from app.rate_limit import rate_limit_tenant
 from app.services import cosmos
 from app.services import forecast as fc
+from app.services import rollups
 
 log = get_logger(__name__)
 router = APIRouter(
@@ -74,15 +76,52 @@ async def get_spend_forecast(
     horizon_days: int = Query(30, ge=7, le=90),
     history_days: int = Query(90, ge=14, le=90),
 ) -> SpendForecastResponse:
-    """Baseline spend forecast (Holt-Winters, weekly seasonality, with backtest MAPE)."""
+    """Baseline spend forecast (Holt-Winters, weekly seasonality, with backtest MAPE).
+
+    When >= 13 months of persisted monthly rollups exist, a month-of-year
+    (annual) seasonal overlay is applied on top of the weekly forecast.
+    """
     try:
         daily = await _daily_series(tenant_id, history_days)
-        result = fc.forecast_spend(daily, horizon_days=horizon_days)
+        # Opportunistically persist sealed monthly totals so annual history
+        # accumulates over time, then load whatever rollups we have.
+        await rollups.persist_monthly_rollups(tenant_id, daily)
+        monthly = await rollups.get_monthly_rollups(tenant_id)
+        result = fc.forecast_spend(daily, horizon_days=horizon_days, monthly_history=monthly)
         return SpendForecastResponse(
             tenant_id=tenant_id, method=result.method, horizon_days=result.horizon_days,
             history_days=result.history_days, mape=result.mape, confidence=result.confidence,
             month_end_projection=result.month_end_projection,
+            annual_seasonality=result.method.endswith("+annual"),
             points=_pts(result.points), notes=result.notes,
+        )
+    except CosmosError as exc:
+        raise HTTPException(status_code=503, detail=exc.to_dict())
+
+
+@router.get("/{tenant_id}/annual", response_model=AnnualForecastResponse)
+async def get_annual_forecast(
+    tenant_id: str,
+    horizon_months: int = Query(12, ge=1, le=36),
+) -> AnnualForecastResponse:
+    """Long-range MONTHLY forecast with annual seasonality (Holt-Winters period=12).
+
+    Uses persisted monthly rollups. Needs >= 24 months for a full seasonal
+    model; with less history it returns a trend-only monthly projection and
+    flags low confidence.
+    """
+    try:
+        # Refresh rollups from the last 90 days first so the current window is
+        # captured, then forecast on the full persisted monthly history.
+        daily = await _daily_series(tenant_id, 90)
+        await rollups.persist_monthly_rollups(tenant_id, daily)
+        monthly = await rollups.get_monthly_rollups(tenant_id, months=36)
+        result = fc.forecast_monthly(monthly, horizon_months=horizon_months)
+        return AnnualForecastResponse(
+            tenant_id=tenant_id, method=result.method,
+            horizon_months=result.horizon_days, history_months=result.history_days,
+            mape=result.mape, confidence=result.confidence,
+            months=_pts(result.points), notes=result.notes,
         )
     except CosmosError as exc:
         raise HTTPException(status_code=503, detail=exc.to_dict())

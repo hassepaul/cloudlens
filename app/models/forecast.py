@@ -18,7 +18,19 @@ class SpendForecastResponse(BaseModel):
     mape: Optional[float] = Field(None, description="Backtest mean abs % error")
     confidence: str
     month_end_projection: Optional[float] = None
+    annual_seasonality: bool = Field(default=False, description="True when a month-of-year seasonal overlay was applied")
     points: list[ForecastPointModel] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
+class AnnualForecastResponse(BaseModel):
+    tenant_id: str
+    method: str
+    horizon_months: int
+    history_months: int
+    mape: Optional[float] = None
+    confidence: str
+    months: list[ForecastPointModel] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
 

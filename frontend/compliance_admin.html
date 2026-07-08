@@ -76,12 +76,19 @@ color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1
   <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
   <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
   <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
   <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+  <a href="sustainability.html" class="snav-link">🌱 CO₂</a>
 </nav>
   <h2 class="sr-only">CloudLens compliance admin: SOC 2-aligned control matrix with CLI evidence export and audit-trail integrity</h2>
   <div class="head">
     <h1><span class="dot"></span> CloudLens · Compliance Admin</h1>
-    <span class="lock">🔒 operator · API-key required</span>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <input id="tenant-in" value="t-acme" placeholder="tenant" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:6px 10px;width:110px;outline:none"/>
+      <input id="api-key-input" type="password" placeholder="X-API-Key" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:6px 10px;width:160px;outline:none"/>
+      <button class="btn" onclick="loadAll()">↻ Load</button>
+      <span class="lock">🔒 operator · API-key required</span>
+    </div>
   </div>
 
   <div class="disclaimer">
@@ -100,7 +107,7 @@ color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1
     <div class="integrity">
       <span>Hash-chained audit log for <b id="int-tenant">t-acme</b>:</span>
       <span class="badge ok" id="int-badge">✓ intact · 1,284 records</span>
-      <button class="btn ghost" style="margin-left:auto" onclick="alert('Calls GET /api/v1/admin/compliance/audit-integrity/{tenant}')">re-verify</button>
+      <button class="btn ghost" style="margin-left:auto" onclick="loadIntegrity()">re-verify</button>
     </div>
     <div style="font-size:11.5px;color:var(--txt3);margin-top:9px">Each record is SHA-256 chained to the previous; any tampering or back-dating breaks the chain and is reported (CC7.3).</div>
   </div>
@@ -117,8 +124,13 @@ color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1
 </div>
 
 <script>
-/* shaped to GET /api/v1/admin/compliance/matrix */
-const MATRIX={
+/* Loaded live from GET /api/v1/admin/compliance/matrix (mock shown until API loads) */
+const API='';
+function ctid(){return document.getElementById('tenant-in').value.trim()||'t-acme';}
+function apiKey(){return document.getElementById('api-key-input').value.trim()||sessionStorage.getItem('cl_api_key')||'';}
+function hdrs(){const h={};const k=apiKey();if(k){h['X-API-Key']=k;sessionStorage.setItem('cl_api_key',k);}return h;}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let MATRIX={
   framework:"SOC 2 (AICPA Trust Services Criteria)",
   summary:{total:15,implemented:12,partial:1,needs_org_process:2,coverage_pct:80.0},
   controls:[
@@ -150,15 +162,15 @@ function render(){
   document.getElementById('controls').innerHTML=list.map((c,i)=>{
     const ev=c.cli_evidence.map((e,j)=>`<div class="cli">
       <button class="copy" onclick="copyCmd(this,${i},${j})">copy</button>
-      <div class="desc">${e.description}</div>
-      <pre>$ ${e.command}</pre>
-      <div class="exp">${e.expected}</div></div>`).join('')||'<div style="font-size:11.5px;color:var(--txt3)">No CLI proof — process/document evidence.</div>';
-    const note=c.notes?`<div class="note">⚠ ${c.notes}</div>`:'';
+      <div class="desc">${esc(e.description)}</div>
+      <pre>$ ${esc(e.command)}</pre>
+      <div class="exp">${esc(e.expected)}</div></div>`).join('')||'<div style="font-size:11.5px;color:var(--txt3)">No CLI proof — process/document evidence.</div>';
+    const note=c.notes?`<div class="note">⚠ ${esc(c.notes)}</div>`:'';
     return `<div class="ctrl">
       <div class="top" onclick="toggle(${i})">
-        <span class="cid">${c.criteria_id}</span>
-        <div class="nm"><div class="t">${c.criteria_name} <span class="kind">· ${c.evidence_kind}</span></div><div class="d">${c.control}</div></div>
-        <span class="status ${c.status}">${c.status.replace(/_/g,' ')}</span>
+        <span class="cid">${esc(c.criteria_id)}</span>
+        <div class="nm"><div class="t">${esc(c.criteria_name)} <span class="kind">· ${esc(c.evidence_kind)}</span></div><div class="d">${esc(c.control)}</div></div>
+        <span class="status ${c.status}">${esc(c.status.replace(/_/g,' '))}</span>
       </div>
       <div class="ev" id="ev-${i}"><div class="lbl">CLI evidence (run against the deployed resources)</div>${ev}${note}</div>
     </div>`;
@@ -173,14 +185,42 @@ function copyAll(){
   const cmds=MATRIX.controls.flatMap(c=>c.cli_evidence.map(e=>'# '+c.criteria_id+' '+e.description+'\n'+e.command)).join('\n\n');
   navigator.clipboard?.writeText(cmds);alert('Copied '+MATRIX.controls.flatMap(c=>c.cli_evidence).length+' CLI evidence commands to clipboard.');
 }
-function exportPack(){
-  // in production: POST /api/v1/admin/compliance/evidence-export → downloads JSON/PDF pack
-  const pack={export_id:'evidence-'+new Date().toISOString().replace(/[-:T.]/g,'').slice(0,15)+'Z',framework:MATRIX.framework,summary:MATRIX.summary,controls:MATRIX.controls};
-  const blob=new Blob([JSON.stringify(pack,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);const a=document.createElement('a');
-  a.href=url;a.download=pack.export_id+'.json';a.click();URL.revokeObjectURL(url);
+async function loadAll(){
+  const ctrl=document.getElementById('controls');
+  try{
+    const r=await fetch(`${API}/api/v1/admin/compliance/matrix`,{headers:hdrs()});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    MATRIX=await r.json();
+    render();
+  }catch(e){
+    ctrl.innerHTML='<div class="note">Failed to load control matrix: '+esc(e.message)+' — enter a valid operator X-API-Key and click Load.</div>';
+  }
+  loadIntegrity();
+}
+async function loadIntegrity(){
+  const badge=document.getElementById('int-badge');
+  document.getElementById('int-tenant').textContent=ctid();
+  badge.className='badge';badge.style.background='';badge.style.color='';badge.textContent='checking…';
+  try{
+    const r=await fetch(`${API}/api/v1/admin/compliance/audit-integrity/${encodeURIComponent(ctid())}`,{headers:hdrs()});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    if(d.intact){badge.className='badge ok';badge.textContent=`✓ intact · ${(d.records||0).toLocaleString()} records`;}
+    else{badge.style.background='var(--redDim)';badge.style.color='var(--red)';badge.textContent=`✗ broken at ${d.first_broken_id||'?'}`;}
+  }catch(e){badge.style.background='var(--amberDim)';badge.style.color='var(--amber)';badge.textContent='error: '+esc(e.message);}
+}
+async function exportPack(){
+  try{
+    const r=await fetch(`${API}/api/v1/admin/compliance/evidence-export?tenant_id=${encodeURIComponent(ctid())}&actor=admin`,{method:'POST',headers:hdrs()});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const pack=await r.json();
+    const blob=new Blob([JSON.stringify(pack,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download=(pack.export_id||'evidence')+'.json';a.click();URL.revokeObjectURL(url);
+  }catch(e){alert('Evidence export failed: '+e.message+'\nEnsure a valid operator X-API-Key is entered.');}
 }
 render();
+loadAll();
 </script>
 </body>
 </html>

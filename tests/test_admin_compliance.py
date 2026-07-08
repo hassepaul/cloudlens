@@ -69,9 +69,9 @@ class TestAuditLog:
         from app.models.audit import AuditAction
         with patch("app.services.cosmos.upsert_item", new=fake_upsert), \
              patch("app.services.cosmos.query_items", new=fake_query):
-            r1 = asyncio.get_event_loop().run_until_complete(
+            r1 = asyncio.run(
                 write_audit("t-1", AuditAction.TENANT_CREATED, "ops", actor_type="api_key"))
-            r2 = asyncio.get_event_loop().run_until_complete(
+            r2 = asyncio.run(
                 write_audit("t-1", AuditAction.TENANT_UPDATED, "ops", actor_type="api_key"))
         assert r1.record_hash
         assert r2.prev_hash == r1.record_hash      # chained

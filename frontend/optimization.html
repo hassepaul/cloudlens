@@ -85,16 +85,24 @@ color:var(--txt);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1
   <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
   <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
   <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
   <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+  <a href="sustainability.html" class="snav-link">🌱 CO₂</a>
 </nav>
   <h2 class="sr-only">CloudLens optimization: utilization heatmap with over-capacity scoring, CPU and memory rightsizing recommendations, scheduling, and realized-savings ledger</h2>
   <div class="head">
     <h1><span class="dot"></span> CloudLens · Optimization</h1>
-    <div class="tabs">
-      <button class="on" onclick="tab('util',this)">Utilization</button>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <select id="tenant-sel" onchange="loadAll()" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:6px 10px;outline:none">
+        <option value="t-acme">t-acme (Acme Corp)</option>
+        <option value="t-1">t-1 (Demo)</option>
+      </select>
+      <div class="tabs">
+        <button class="on" onclick="tab('util',this)">Utilization</button>
       <button onclick="tab('right',this)">Rightsizing</button>
       <button onclick="tab('sched',this)">Scheduling</button>
       <button onclick="tab('ledger',this)">Savings ledger</button>
+    </div>
     </div>
   </div>
 
@@ -163,28 +171,15 @@ function tab(v,el){document.querySelectorAll('.view').forEach(x=>x.classList.rem
   document.getElementById('v-'+v).classList.add('on');
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
 
-/* mock data shaped to GET /optimization/{t}/{utilization|rightsizing|scheduling|savings/ledger} */
-const UTIL={summary:{avg_cpu_pct:24.6,avg_mem_pct:41.2,over_provisioned_count:5,idle_count:2,hot_count:3,reclaimable_monthly_eur:1840},
-  resources:[
-    {resource_name:'idle-reporting-vm',service:'EC2',provider:'aws',cpu_peak_pct:1,mem_peak_pct:2,over_capacity_score:98,band:'idle',monthly_eur:70},
-    {resource_name:'web-prod-03',service:'EC2',provider:'aws',cpu_peak_pct:18,mem_peak_pct:22,over_capacity_score:78,band:'over',monthly_eur:280},
-    {resource_name:'staging-app-01',service:'VM',provider:'azure',cpu_peak_pct:14,mem_peak_pct:28,over_capacity_score:72,band:'over',monthly_eur:120},
-    {resource_name:'batch-worker',service:'GCE',provider:'gcp',cpu_peak_pct:33,mem_peak_pct:35,over_capacity_score:65,band:'over',monthly_eur:160},
-    {resource_name:'analytics-db',service:'EC2',provider:'aws',cpu_peak_pct:12,mem_peak_pct:85,over_capacity_score:15,band:'hot',monthly_eur:560},
-    {resource_name:'prod-api-01',service:'EC2',provider:'aws',cpu_peak_pct:71,mem_peak_pct:64,over_capacity_score:29,band:'balanced',monthly_eur:200},
-    {resource_name:'cache-node',service:'VM',provider:'azure',cpu_peak_pct:15,mem_peak_pct:88,over_capacity_score:12,band:'hot',monthly_eur:280},
-  ]};
-const RIGHT={total_monthly_saving_eur:354,recommendations:[
-  {resource_name:'web-prod-03',current_type:'m5.2xlarge',recommended_type:'r5.large',action:'downsize',monthly_saving_eur:188,cross_family:true,confidence:'high',cpu_peak_pct:18,mem_peak_pct:22,rationale:'Peaked at 18% CPU / 22% memory. Needs ~1.9 vCPU / 9 GiB with a 30% buffer — r5.large (cross-family) covers it.'},
-  {resource_name:'cache-node',current_type:'D8s_v5',recommended_type:'E4s_v5',action:'downsize',monthly_saving_eur:96,cross_family:true,confidence:'medium',cpu_peak_pct:15,mem_peak_pct:70,rationale:'Low CPU but high memory — moves to memory-optimized family rather than a too-small general box.'},
-  {resource_name:'idle-reporting-vm',current_type:'m5.large',recommended_type:null,action:'terminate',monthly_saving_eur:70,cross_family:false,confidence:'high',cpu_peak_pct:1,mem_peak_pct:2,rationale:'Effectively idle over 30 days — consider terminating.'},
-]};
-const SCHED={total_monthly_saving_eur:193,recommendations:[
-  {resource_name:'dev-erp-app',environment:'dev',schedule_label:'Mon–Fri 08:00–20:00',recommended_hours_week:60,saving_pct:64.3,monthly_saving_eur:116,confidence:'medium'},
-  {resource_name:'staging-app-01',environment:'staging',schedule_label:'Mon–Fri 08:00–20:00',recommended_hours_week:60,saving_pct:64.3,monthly_saving_eur:77,confidence:'medium'},
-]};
-const LEDGER={identified_monthly_eur:2380,actioned_monthly_eur:920,realized_monthly_eur:740,realized_annual_eur:8880,realization_rate_pct:80.4,
-  by_category:{rightsize:{identified:1100,actioned:400,realized:354},schedule:{identified:480,actioned:193,realized:193},waste:{identified:800,actioned:327,realized:193}}};
+/* data loaded from GET /optimization/{t}/{utilization|rightsizing|scheduling|savings/ledger} */
+const API='';
+function tid(){return document.getElementById('tenant-sel').value;}
+function hdrs(){return {'X-API-Key':'demo-key'};}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let UTIL={summary:{avg_cpu_pct:0,avg_mem_pct:0,over_provisioned_count:0,idle_count:0,hot_count:0,reclaimable_monthly_eur:0},resources:[]};
+let RIGHT={total_monthly_saving_eur:0,recommendations:[]};
+let SCHED={total_monthly_saving_eur:0,recommendations:[]};
+let LEDGER={identified_monthly_eur:0,actioned_monthly_eur:0,realized_monthly_eur:0,realized_annual_eur:0,realization_rate_pct:0,by_category:{}};
 
 function utilColor(p){return p>=85?'var(--blue)':p>=40?'var(--teal)':p>=15?'var(--amber)':'var(--red)';}
 function scoreColor(s){return s>=70?'var(--red)':s>=40?'var(--amber)':s>=15?'var(--teal)':'var(--blue)';}
@@ -197,11 +192,11 @@ function renderUtil(){
   document.getElementById('u-recl').textContent=EUR(s.reclaimable_monthly_eur);
   let h='<div class="hdr">Resource</div><div class="hdr">CPU</div><div class="hdr">Mem</div><div class="hdr">Over-capacity</div><div class="hdr">Band</div>';
   UTIL.resources.forEach(r=>{
-    h+=`<div class="cell rn"><div class="t">${r.resource_name}</div><div class="s">${r.provider} · ${r.service} · ${EUR(r.monthly_eur)}/mo</div></div>`;
+    h+=`<div class="cell rn"><div class="t">${esc(r.resource_name)}</div><div class="s">${esc(r.provider)} · ${esc(r.service)} · ${EUR(r.monthly_eur)}/mo</div></div>`;
     h+=`<div class="cell"><span class="util-chip" style="background:${utilColor(r.cpu_peak_pct)}22;color:${utilColor(r.cpu_peak_pct)}">${r.cpu_peak_pct}%</span></div>`;
     h+=`<div class="cell"><span class="util-chip" style="background:${utilColor(r.mem_peak_pct)}22;color:${utilColor(r.mem_peak_pct)}">${r.mem_peak_pct}%</span></div>`;
     h+=`<div class="cell"><div class="score-bar"><i style="width:${r.over_capacity_score}%;background:${scoreColor(r.over_capacity_score)}"></i></div></div>`;
-    h+=`<div class="cell"><span class="band ${r.band}">${r.band}</span></div>`;
+    h+=`<div class="cell"><span class="band ${esc(r.band)}">${esc(r.band)}</span></div>`;
   });
   document.getElementById('heat').innerHTML=h;
 }
@@ -211,12 +206,12 @@ function renderRight(){
   document.getElementById('r-cf').textContent=RIGHT.recommendations.filter(r=>r.cross_family).length;
   document.getElementById('right-list').innerHTML=RIGHT.recommendations.map(r=>{
     const icon=r.action==='terminate'?'⊗':'⤓';
-    const move=r.action==='terminate'?`<b>terminate</b> ${r.current_type}`:`${r.current_type} → <b>${r.recommended_type}</b>`;
-    return `<div class="rec ${r.action}">
+    const move=r.action==='terminate'?`<b>terminate</b> ${esc(r.current_type)}`:`${esc(r.current_type)} → <b>${esc(r.recommended_type||'—')}</b>`;
+    return `<div class="rec ${esc(r.action)}">
       <div class="ic">${icon}</div>
-      <div class="c"><div class="t">${r.resource_name} <span class="tag">${r.confidence}</span></div>
+      <div class="c"><div class="t">${esc(r.resource_name)} <span class="tag">${esc(r.confidence)}</span></div>
         <div class="move">${move}</div>
-        <div class="m">${r.rationale}</div></div>
+        <div class="m">${esc(r.rationale)}</div></div>
       <div class="save">${EUR(r.monthly_saving_eur)}/mo${r.cross_family?'<span class="cf">cross-family</span>':''}</div>
     </div>`;
   }).join('');
@@ -226,8 +221,8 @@ function renderSched(){
   document.getElementById('s-count').textContent=SCHED.recommendations.length;
   document.getElementById('sched-list').innerHTML=SCHED.recommendations.map(r=>`<div class="rec schedule">
     <div class="ic">◷</div>
-    <div class="c"><div class="t">${r.resource_name} <span class="tag">${r.environment}</span></div>
-      <div class="move">168h/week → <b>${r.recommended_hours_week}h</b> · ${r.schedule_label}</div>
+    <div class="c"><div class="t">${esc(r.resource_name)} <span class="tag">${esc(r.environment)}</span></div>
+      <div class="move">168h/week → <b>${r.recommended_hours_week}h</b> · ${esc(r.schedule_label)}</div>
       <div class="m">Shut down nights &amp; weekends — ${r.saving_pct}% saved, no working-hours impact.</div></div>
     <div class="save">${EUR(r.monthly_saving_eur)}/mo</div></div>`).join('');
 }
@@ -237,18 +232,41 @@ function renderLedger(){
   document.getElementById('l-re').textContent=EUR(LEDGER.realized_monthly_eur);
   document.getElementById('l-rate').textContent=LEDGER.realization_rate_pct+'%';
   document.getElementById('l-ann').textContent=EUR(LEDGER.realized_annual_eur)+'/yr';
-  const tot=LEDGER.identified_monthly_eur;
+  const tot=LEDGER.identified_monthly_eur||1;
   document.getElementById('funnel').innerHTML=
     `<i style="width:${LEDGER.realized_monthly_eur/tot*100}%;background:var(--green)"></i>`+
     `<i style="width:${LEDGER.actioned_monthly_eur/tot*100}%;background:var(--amber)"></i>`+
     `<i style="width:${(tot-LEDGER.actioned_monthly_eur-LEDGER.realized_monthly_eur)/tot*100}%;background:var(--line)"></i>`;
   document.getElementById('ledger-cats').innerHTML=Object.entries(LEDGER.by_category).map(([k,v])=>
-    `<div class="catrow"><span class="nm">${k}</span>
+    `<div class="catrow"><span class="nm">${esc(k)}</span>
       <span class="v" style="color:var(--txt3)">id ${EUR(v.identified)}</span>
       <span class="v" style="color:var(--amber)">act ${EUR(v.actioned)}</span>
       <span class="v" style="color:var(--green)">real ${EUR(v.realized)}</span></div>`).join('');
 }
 renderUtil();renderRight();renderSched();renderLedger();
+async function loadAll(){
+  const t=tid();
+  const heat=document.getElementById('heat');if(heat)heat.innerHTML='<div style="color:var(--txt3);font-size:12px;padding:8px">Loading…</div>';
+  try{
+    const [util,right,sched,ledger]=await Promise.all([
+      fetch(`${API}/api/v1/optimization/${t}/utilization?days=30`,{headers:hdrs()}).then(r=>r.json()),
+      fetch(`${API}/api/v1/optimization/${t}/rightsizing?days=30`,{headers:hdrs()}).then(r=>r.json()),
+      fetch(`${API}/api/v1/optimization/${t}/scheduling?days=30`,{headers:hdrs()}).then(r=>r.json()),
+      fetch(`${API}/api/v1/optimization/${t}/savings/ledger`,{headers:hdrs()}).then(r=>r.json()),
+    ]);
+    UTIL={summary:util.summary||UTIL.summary,resources:util.resources||[]};
+    RIGHT={total_monthly_saving_eur:right.total_monthly_saving_eur||0,recommendations:right.recommendations||[]};
+    SCHED={total_monthly_saving_eur:sched.total_monthly_saving_eur||0,recommendations:sched.recommendations||[]};
+    LEDGER={identified_monthly_eur:ledger.identified_monthly_eur||0,actioned_monthly_eur:ledger.actioned_monthly_eur||0,
+      realized_monthly_eur:ledger.realized_monthly_eur||0,realized_annual_eur:ledger.realized_annual_eur||0,
+      realization_rate_pct:ledger.realization_rate_pct||0,by_category:ledger.by_category||{}};
+  }catch(e){
+    if(heat)heat.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px">Failed to load: '+esc(e.message)+'</div>';
+    return;
+  }
+  renderUtil();renderRight();renderSched();renderLedger();
+}
+loadAll();
 </script>
 </body>
 </html>

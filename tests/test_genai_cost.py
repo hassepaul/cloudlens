@@ -213,7 +213,12 @@ class TestRecordBuilding:
 
     def test_period_date_set(self):
         rec = _build_record(TENANT, {"provider": "openai", "model": "gpt-4o-mini"})
-        assert rec.period_date == date.today().isoformat()
+        # Default period_date is "today" — accept both the UTC and local date so
+        # the assertion is stable across the UTC/local midnight boundary.
+        from datetime import datetime, timezone
+        today_local = date.today().isoformat()
+        today_utc = datetime.now(timezone.utc).date().isoformat()
+        assert rec.period_date in (today_local, today_utc)
 
     def test_eur_conversion_applied(self):
         rec = _build_record(TENANT, {
@@ -284,6 +289,98 @@ class TestUsageIngestion:
             _, kwargs = mock_upsert.call_args
             doc = mock_upsert.call_args.args[1]
             assert doc["tenant_id"] == "tenant-abc"
+
+
+# ── TestGenAIFocusConsolidation ───────────────────────────────────────────────
+# GenAI usage must also flow into the shared FOCUS cost_records container so it
+# appears in the consolidated explorer / multi-cloud / allocation / forecast
+# views — the "first-class GenAI cost" + "FOCUS-native consolidation" wedges.
+
+class TestGenAIFocusConsolidation:
+    @pytest.mark.asyncio
+    async def test_emits_focus_record_alongside_usage(self):
+        from app.services.genai_cost import _focus_container, _usage_container
+        captured: list = []
+
+        async def cap(container, doc):
+            captured.append((container, doc))
+
+        with patch("app.services.genai_cost.cosmos.upsert_item", side_effect=cap):
+            await ingest_usage(TENANT, {
+                "provider": "bedrock", "model": "claude-3-5-sonnet",
+                "input_tokens": 1000, "output_tokens": 500,
+                "app_name": "chatbot", "tags": {"cost_center": "ml-platform"},
+            })
+
+        usage = [d for c, d in captured if c == _usage_container()]
+        focus = [d for c, d in captured if c == _focus_container()]
+        assert len(usage) == 1
+        assert len(focus) == 1
+        f = focus[0]
+        assert f["type"] == "focus_record"
+        assert f["service_category"] == "AI and Machine Learning"
+        assert f["provider_name"] == "Amazon Web Services"
+        assert f["service_name"].startswith("AWS Bedrock ·")
+        assert f["resource_type"] == "genai"
+        assert f["tags"]["source"] == "genai_meter"
+        # allocation/chargeback dimension is preserved so GenAI is charged back
+        assert f["tags"]["cost_center"] == "ml-platform"
+        # legacy-compat aliases for the cost summary / forecast views
+        assert f["record_date"] == f["charge_period_start"]
+        assert f["cost_eur"] == f["effective_cost"]
+
+    @pytest.mark.asyncio
+    async def test_provider_mapping_to_focus_providers(self):
+        from app.services.genai_cost import _focus_container
+        expected = {
+            "openai": "OpenAI",
+            "azure_openai": "Microsoft Azure",
+            "bedrock": "Amazon Web Services",
+            "vertex_ai": "Google Cloud",
+        }
+        for prov, provider_name in expected.items():
+            captured: list = []
+
+            async def cap(container, doc, _cap=captured):
+                _cap.append((container, doc))
+
+            with patch("app.services.genai_cost.cosmos.upsert_item", side_effect=cap):
+                await ingest_usage(TENANT, {"provider": prov, "model": "m",
+                                            "input_tokens": 10, "output_tokens": 10})
+            focus = [d for c, d in captured if c == _focus_container()]
+            assert focus, f"no FOCUS record for {prov}"
+            assert focus[0]["provider_name"] == provider_name
+
+    @pytest.mark.asyncio
+    async def test_custom_provider_not_consolidated(self):
+        # Self-hosted ("custom") infra cost is already Compute in the cloud bill;
+        # emitting an AI/ML FOCUS line would double-count, so it is skipped.
+        from app.services.genai_cost import _focus_container
+        captured: list = []
+
+        async def cap(container, doc):
+            captured.append((container, doc))
+
+        with patch("app.services.genai_cost.cosmos.upsert_item", side_effect=cap):
+            await ingest_usage(TENANT, {"provider": "custom", "model": "llama-self",
+                                        "input_tokens": 10, "output_tokens": 10,
+                                        "total_cost_usd": 0.01})
+        focus = [d for c, d in captured if c == _focus_container()]
+        assert focus == []
+
+    @pytest.mark.asyncio
+    async def test_focus_emit_failure_does_not_drop_usage(self):
+        from app.services.genai_cost import _focus_container
+
+        async def cap(container, doc):
+            if container == _focus_container():
+                raise RuntimeError("cosmos down")
+
+        with patch("app.services.genai_cost.cosmos.upsert_item", side_effect=cap):
+            rec = await ingest_usage(TENANT, {"provider": "openai", "model": "gpt-4o"})
+        # usage still returned; the FOCUS failure was swallowed
+        assert rec is not None
+        assert rec.provider == "openai"
 
 
 # ── TestModelStats ────────────────────────────────────────────────────────────

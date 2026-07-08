@@ -57,7 +57,10 @@ class PurchaseSettingsIn(BaseModel):
 
     @model_validator(mode="after")
     def _validate_types(self) -> "PurchaseSettingsIn":
-        valid = {"savings-plan-1yr", "savings-plan-3yr", "1yr-ri", "3yr-ri"}
+        valid = {
+            "savings-plan-1yr", "savings-plan-3yr", "1yr-ri", "3yr-ri",  # aws / azure
+            "committed-use-1yr", "committed-use-3yr",                    # gcp
+        }
         for t in self.allowed_commitment_types:
             if t not in valid:
                 raise ValueError(
@@ -171,8 +174,10 @@ async def execute_purchase(tenant_id: str, body: ExecuteRequest) -> dict:
 
     1. Fetches the latest Commitment Advisor recommendations.
     2. Filters to advisories eligible for auto-purchase (timing=commit_now,
-       confidence ≥ min_confidence_score, cloud=aws, within budget caps).
-    3. Purchases the filtered advisories via the AWS SDK.
+       confidence ≥ min_confidence_score, purchasable type for the cloud,
+       within budget caps).
+    3. Purchases the filtered advisories via the matching provider SDK
+       (AWS Savings Plans / RIs, Azure Compute Savings Plans, GCP CUDs).
 
     Returns HTTP 403 if either safety gate (global or per-tenant) is closed.
     Returns a full run report including purchased, skipped, and failed items.

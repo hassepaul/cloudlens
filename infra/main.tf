@@ -59,6 +59,27 @@ resource "azurerm_container_registry" "main" {
   tags                = local.tags
 }
 
+# ── Azure Cache for Redis (optional) ──────────────────────────────────────────
+# Backs GLOBAL (cross-replica) rate limiting via an atomic token-bucket Lua
+# script. When disabled the API falls back to the in-process limiter (per
+# replica). Basic C0 is the cheapest tier; scale the SKU up for HA/throughput.
+resource "azurerm_redis_cache" "main" {
+  count                = var.enable_redis ? 1 : 0
+  name                 = "redis-cloudlens-${var.environment}"
+  resource_group_name  = azurerm_resource_group.main.name
+  location             = azurerm_resource_group.main.location
+  capacity             = 0
+  family               = "C"
+  sku_name             = "Basic"
+  non_ssl_port_enabled = false
+  minimum_tls_version  = "1.2"
+  tags                 = local.tags
+}
+
+locals {
+  redis_url = var.enable_redis ? "rediss://:${try(azurerm_redis_cache.main[0].primary_access_key, "")}@${try(azurerm_redis_cache.main[0].hostname, "")}:6380/0" : ""
+}
+
 # ── User-Assigned Managed Identity ───────────────────────────────────────────
 resource "azurerm_user_assigned_identity" "api" {
   name                = "id-cloudlens-api-${var.environment}"
@@ -311,6 +332,37 @@ resource "azurerm_container_app" "api" {
         name  = "ACTION_EXECUTION_ENABLED"
         value = "false"
       }
+      # Distributed rate limiting (global across replicas) — present only when
+      # Azure Cache for Redis is provisioned (var.enable_redis = true).
+      dynamic "env" {
+        for_each = local.redis_url != "" ? [1] : []
+        content {
+          name        = "REDIS_URL"
+          secret_name = "redis-url"
+        }
+      }
+      # Enterprise SSO — session token signing secret (empty = SSO disabled).
+      dynamic "env" {
+        for_each = var.session_jwt_secret != "" ? [1] : []
+        content {
+          name        = "SESSION_JWT_SECRET"
+          secret_name = "session-jwt-secret"
+        }
+      }
+      dynamic "env" {
+        for_each = var.public_base_url != "" ? [1] : []
+        content {
+          name  = "PUBLIC_BASE_URL"
+          value = var.public_base_url
+        }
+      }
+      dynamic "env" {
+        for_each = var.frontend_base_url != "" ? [1] : []
+        content {
+          name  = "FRONTEND_BASE_URL"
+          value = var.frontend_base_url
+        }
+      }
     }
 
     liveness_probe {
@@ -326,6 +378,22 @@ resource "azurerm_container_app" "api" {
   secret {
     name  = "internal-api-key"
     value = var.internal_api_key
+  }
+
+  dynamic "secret" {
+    for_each = local.redis_url != "" ? [1] : []
+    content {
+      name  = "redis-url"
+      value = local.redis_url
+    }
+  }
+
+  dynamic "secret" {
+    for_each = var.session_jwt_secret != "" ? [1] : []
+    content {
+      name  = "session-jwt-secret"
+      value = var.session_jwt_secret
+    }
   }
 }
 

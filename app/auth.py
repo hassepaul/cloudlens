@@ -108,6 +108,24 @@ async def verify_bearer_token(
 
     token = authorization.split(" ", 1)[1].strip()
 
+    # ── CloudLens session tokens (issued after SAML SSO) ────────────────────
+    # These are HS256, signed with session_jwt_secret, and identified by our
+    # own issuer claim. Validate them before falling through to Azure AD.
+    if settings.session_jwt_secret:
+        try:
+            from jose import jwt as _jwt  # type: ignore
+            unverified = _jwt.get_unverified_claims(token)
+        except Exception:
+            unverified = {}
+        if unverified.get("iss") == settings.session_issuer:
+            from app.services.session_token import verify_session
+            claims = verify_session(token)  # raises UnauthorizedError on failure
+            return AuthContext(
+                subject=claims.get("sub", "unknown"),
+                tenant_id=claims.get("tid"),
+                scopes=claims.get("roles", []),
+            )
+
     try:
         from jose import jwt  # type: ignore
         from jose.exceptions import JWTError  # type: ignore

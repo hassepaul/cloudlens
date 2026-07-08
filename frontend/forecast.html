@@ -93,13 +93,19 @@
   <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
   <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
   <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
   <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+  <a href="sustainability.html" class="snav-link">🌱 CO₂</a>
 </nav>
   <h2 class="sr-only">CloudLens spend forecast with dual-trajectory cost-of-inaction model</h2>
 
   <div class="head">
     <h1><span class="dot"></span> CloudLens · Spend Forecast</h1>
     <div class="controls">
+      <select id="tenant-sel" onchange="loadAll()" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:6px 10px;outline:none;margin-right:6px">
+        <option value="t-acme">t-acme (Acme Corp)</option>
+        <option value="t-1">t-1 (Demo)</option>
+      </select>
       <div class="seg" id="horizon">
         <button data-h="30" class="on">30d</button>
         <button data-h="60">60d</button>
@@ -166,72 +172,78 @@
     <div id="roadmap"></div>
     <div class="tip" id="budget-tip"></div>
   </div>
+
+  <!-- ANNUAL OUTLOOK (month-of-year seasonality) -->
+  <div class="card">
+    <h2>12-month outlook <span id="annual-meta" style="font-size:11px;font-weight:400;color:var(--txt3);font-family:var(--body)"></span></h2>
+    <div class="cap">Long-range monthly forecast with annual (month-of-year) seasonality — builds from persisted monthly rollups.</div>
+    <div id="annual-body"></div>
+  </div>
 </div>
 
 <script>
-/* ── mock data shaped to the real API responses ─────────────────────────────
+/* ── forecast API endpoints (live-wired below) ──────────────────────────────
    GET /api/v1/forecast/{tid}                  → baseline + month_end + mape
    GET /api/v1/forecast/{tid}/cost-of-inaction → baseline[] + optimized[] + burn
    GET /api/v1/forecast/{tid}/roadmap          → phases[]
    GET /api/v1/forecast/{tid}/budget-breach    → breach dates
-   Swap genData() for fetch(); render functions stay identical.
+   Swap complete: this page is live-wired to the forecast API via loadAll() → renderAll().
 ─────────────────────────────────────────────────────────────────────────── */
 const EUR = n => '€' + Math.round(n).toLocaleString('en-US');
+const API = '';
+const BUDGET = 19000;                 // monthly budget used for the breach check
+function tid(){ return document.getElementById('tenant-sel').value; }
+let HORIZON = 30;
 
-const WASTE = { critical:2465, high:635, medium:180, low:60 };   // monthly savings by tier
-const PHASE_DAYS = { critical:7, high:21, medium:42, low:90 };
-const MONTHLY_SPEND = 20000;
-const BUDGET = 19000;
-
-function genData(horizon){
-  // synthetic baseline: rising trend + weekly seasonality
-  const base=[], today=new Date('2026-06-10');
-  let lvl=640;
-  for(let i=1;i<=horizon;i++){
-    const d=new Date(today); d.setDate(d.getDate()+i);
-    const wk=90*Math.sin(2*Math.PI*d.getDay()/7);
-    const weekend=(d.getDay()===0||d.getDay()===6)?-110:0;
-    const val=lvl + 2.4*i + wk + weekend;
-    base.push({day:d.toISOString().slice(0,10), value:Math.max(0,val)});
+async function loadAll(){
+  const t = tid();
+  const note = document.getElementById('chart-note');
+  note.textContent = 'Loading forecast…';
+  try{
+    const [baseline, traj, roadmap, breach, annual] = await Promise.all([
+      fetch(`${API}/api/v1/forecast/${t}?horizon_days=${HORIZON}`).then(r=>r.json()),
+      fetch(`${API}/api/v1/forecast/${t}/cost-of-inaction?horizon_days=${HORIZON}`).then(r=>r.json()),
+      fetch(`${API}/api/v1/forecast/${t}/roadmap`).then(r=>r.json()),
+      fetch(`${API}/api/v1/forecast/${t}/budget-breach?monthly_budget=${BUDGET}&horizon_days=${HORIZON}`).then(r=>r.ok?r.json():null).catch(()=>null),
+      fetch(`${API}/api/v1/forecast/${t}/annual?horizon_months=12`).then(r=>r.json()),
+    ]);
+    renderAll(baseline, traj, roadmap, breach, annual);
+  }catch(e){
+    note.textContent = 'Failed to load forecast: ' + e.message;
   }
-  // optimized = baseline - phased daily savings
-  const opt = base.map((p,i)=>{
-    const dayN=i+1; let realised=0;
-    for(const[prio,monthly] of Object.entries(WASTE)){
-      realised += (monthly/30) * Math.min(1, dayN/PHASE_DAYS[prio]);
-    }
-    return {day:p.day, value:Math.max(0,p.value-realised)};
-  });
-  // prediction band
-  const sigma=24;
-  const band = base.map((p,i)=>({day:p.day, lo:Math.max(0,p.value-1.28*sigma*Math.sqrt(i+1)), hi:p.value+1.28*sigma*Math.sqrt(i+1)}));
-  // cumulative inaction = area between curves
-  let cum=0; base.forEach((p,i)=>cum+=p.value-opt[i].value);
-  const totalMonthly = Object.values(WASTE).reduce((a,b)=>a+b,0);
-  return {base,opt,band,
-    inaction:cum, burn:totalMonthly/30, monthlyRec:totalMonthly,
-    monthEnd: 25700, mape:1.8, confidence:'high'};
 }
 
-let HORIZON=30;
-function render(){
-  const D=genData(HORIZON);
-  document.getElementById('h-days').textContent=HORIZON;
-  document.getElementById('inaction').textContent=EUR(D.inaction);
-  document.getElementById('burn').textContent=EUR(D.burn);
-  document.getElementById('k-month').textContent=EUR(D.monthEnd);
-  document.getElementById('k-rec').textContent=EUR(D.monthlyRec);
-  document.getElementById('k-recy').textContent=EUR(D.monthlyRec*12)+' / year';
-  document.getElementById('k-opt').textContent=EUR(MONTHLY_SPEND-D.monthlyRec);
-  document.getElementById('k-mape').textContent=D.mape+'%';
-  const conf=document.getElementById('k-conf');
-  conf.className='conf '+D.confidence; conf.textContent=D.confidence+' confidence';
-  drawChart(D);
-  drawRoadmap();
-  drawBudget(D);
+function renderAll(baseline, traj, roadmap, breach, annual){
+  const base = (traj.baseline || []).map(p => ({day:p.day, value:p.value}));
+  const opt  = (traj.optimized || []).map(p => ({day:p.day, value:p.value}));
+  const band = (baseline.points || []).map(p => ({day:p.day, lo:p.lower, hi:p.upper}));
+  const mape = baseline.mape;
+  const D = {
+    base, opt, band,
+    inaction: traj.cumulative_inaction_eur || 0,
+    burn: traj.daily_waste_burn_eur || 0,
+    monthlyRec: traj.monthly_recoverable_eur || 0,
+    monthEnd: baseline.month_end_projection || 0,
+    mape, confidence: baseline.confidence || 'low',
+  };
+  document.getElementById('h-days').textContent = HORIZON;
+  document.getElementById('inaction').textContent = EUR(D.inaction);
+  document.getElementById('burn').textContent = EUR(D.burn);
+  document.getElementById('k-month').textContent = EUR(D.monthEnd);
+  document.getElementById('k-rec').textContent = EUR(D.monthlyRec);
+  document.getElementById('k-recy').textContent = EUR(traj.annual_recoverable_eur || D.monthlyRec*12) + ' / year';
+  document.getElementById('k-opt').textContent = EUR(roadmap.optimized_run_rate_eur || 0);
+  document.getElementById('k-mape').textContent = (mape == null ? 'n/a' : mape + '%');
+  const conf = document.getElementById('k-conf');
+  conf.className = 'conf ' + D.confidence; conf.textContent = D.confidence + ' confidence';
+  if(base.length && band.length){ drawChart(D); } else { document.getElementById('chart').innerHTML = '<text x="20" y="40" fill="var(--txt3)" font-size="12">Not enough history to forecast yet.</text>'; }
+  drawRoadmapLive(roadmap);
+  drawBudgetLive(breach);
+  drawAnnual(annual);
+  const seas = baseline.annual_seasonality ? 'weekly + annual seasonality' : 'weekly seasonality';
   document.getElementById('chart-note').textContent =
-    `Forecast method: Holt-Winters additive (weekly seasonality) · backtest MAPE ${D.mape}% · `+
-    `the optimized curve assumes critical waste actioned within 7 days, high within 21, medium 42, low 90.`;
+    `Forecast method: ${baseline.method || 'holt_winters'} (${seas}) · backtest MAPE `+
+    `${mape == null ? 'n/a' : mape + '%'}${(baseline.notes && baseline.notes.length) ? ' · ' + baseline.notes.join(' ') : ''}`;
 }
 
 function drawChart(D){
@@ -276,41 +288,54 @@ function drawChart(D){
   `;
 }
 
-function drawRoadmap(){
-  const tiers=[
-    {label:'Quick wins', sub:'critical · ETA 7d', save:2465, items:1},
-    {label:'High impact', sub:'high · ETA 21d', save:635, items:2},
-    {label:'Optimization', sub:'medium · ETA 42d', save:180, items:1},
-    {label:'Long tail', sub:'low · ETA 90d', save:60, items:1},
-  ];
-  let cum=0; const maxRR=MONTHLY_SPEND;
-  let html='';
-  tiers.forEach((t,i)=>{
-    cum+=t.save; const rr=MONTHLY_SPEND-cum;
-    const pct=(1-rr/maxRR)*100;
-    html+=`<div class="phase">
-      <div class="num">${i+1}</div>
-      <div class="nm"><b>${t.label}</b><span>${t.sub} · ${t.items} item${t.items>1?'s':''}</span></div>
-      <div class="sv">−${EUR(t.save)}/mo</div>
+function drawRoadmapLive(roadmap){
+  const phases = roadmap.phases || [];
+  const maxRR = roadmap.current_run_rate_eur || 1;
+  const el = document.getElementById('roadmap');
+  if(!phases.length){ el.innerHTML = '<div class="note">No open waste to remediate. 🎉</div>'; return; }
+  el.innerHTML = phases.map(p=>{
+    const rr = p.target_run_rate_eur;
+    const pct = Math.max(0, Math.min(100, (1 - rr/maxRR)*100));
+    return `<div class="phase">
+      <div class="num">${p.phase}</div>
+      <div class="nm"><b>${p.label}</b><span>ETA ${p.eta_days}d · ${p.items} item${p.items>1?'s':''}</span></div>
+      <div class="sv">−${EUR(p.monthly_saving_eur)}/mo</div>
       <div class="rr"><div class="track"><i style="width:${pct}%"></i></div><div class="n">${EUR(rr)}/mo</div></div>
     </div>`;
-  });
-  document.getElementById('roadmap').innerHTML=html;
+  }).join('');
 }
 
-function drawBudget(D){
-  // simple cumulative breach estimate against BUDGET
-  let cumB=0,cumO=0,breachB=null,breachO=null;
-  D.base.forEach((p,i)=>{cumB+=p.value; if(!breachB&&cumB>BUDGET)breachB=p.day;});
-  D.opt.forEach((p,i)=>{cumO+=p.value; if(!breachO&&cumO>BUDGET)breachO=p.day;});
-  const el=document.getElementById('budget-tip');
-  if(breachB&&!breachO){
-    el.innerHTML=`◷ <b>Budget ${EUR(BUDGET)}/mo:</b> on the current trajectory you breach it on <b>${breachB}</b>. Actioning the backlog keeps you under budget for the full horizon.`;
-  }else if(breachB&&breachO){
-    el.innerHTML=`◷ <b>Budget ${EUR(BUDGET)}/mo:</b> breached <b>${breachB}</b> (do nothing) vs <b>${breachO}</b> (if actioned) — remediation buys time but you'll need deeper rightsizing to stay under.`;
+function drawBudgetLive(breach){
+  const el = document.getElementById('budget-tip');
+  if(!breach){ el.textContent = ''; return; }
+  const b = breach.breach_date_baseline, o = breach.breach_date_optimized;
+  const bud = EUR(breach.monthly_budget_eur);
+  if(b && breach.safe_if_actioned){
+    el.innerHTML = `◷ <b>Budget ${bud}/mo:</b> on the current trajectory you breach it on <b>${b}</b>. Actioning the backlog keeps you under budget for the full horizon.`;
+  }else if(b && o){
+    el.innerHTML = `◷ <b>Budget ${bud}/mo:</b> breached <b>${b}</b> (do nothing) vs <b>${o}</b> (if actioned) — remediation buys time but you'll need deeper rightsizing to stay under.`;
   }else{
-    el.innerHTML=`◷ <b>Budget ${EUR(BUDGET)}/mo:</b> projected to stay within budget across the horizon.`;
+    el.innerHTML = `◷ <b>Budget ${bud}/mo:</b> projected to stay within budget across the horizon.`;
   }
+}
+
+function drawAnnual(annual){
+  const el = document.getElementById('annual-body');
+  const meta = document.getElementById('annual-meta');
+  const months = (annual && annual.months) || [];
+  if(!months.length){
+    meta.textContent = '';
+    el.innerHTML = '<div class="note">Not enough monthly history yet — annual seasonality builds as monthly rollups accumulate (needs ≥ 13 months).</div>';
+    return;
+  }
+  meta.textContent = `method ${annual.method} · ${annual.confidence} confidence`+(annual.mape!=null?` · MAPE ${annual.mape}%`:'');
+  const max = Math.max(...months.map(m=>m.value), 1);
+  el.innerHTML = months.map(m=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--lineSoft)">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--txt3);min-width:64px">${m.day}</span>
+      <span style="flex:1;height:7px;background:var(--line);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${m.value/max*100}%;background:var(--teal);border-radius:4px"></i></span>
+      <span style="font-family:var(--mono);font-size:12px;font-weight:600;min-width:74px;text-align:right">${EUR(m.value)}</span>
+    </div>`).join('');
 }
 
 document.getElementById('horizon').addEventListener('click',e=>{
@@ -318,9 +343,9 @@ document.getElementById('horizon').addEventListener('click',e=>{
   document.querySelectorAll('#horizon button').forEach(b=>b.classList.remove('on'));
   e.target.classList.add('on');
   HORIZON=+e.target.dataset.h;
-  render();
+  loadAll();
 });
-render();
+loadAll();
 </script>
 </body>
 </html>

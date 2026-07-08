@@ -94,15 +94,23 @@ padding:9px 16px;border-radius:8px;cursor:pointer}
   <a href="kubernetes.html" class="snav-link">⎈ Kubernetes</a>
   <a href="unit_economics.html" class="snav-link">∑ Unit Cost</a>
   <a href="compliance_admin.html" class="snav-link">⊡ Compliance</a>
+  <a href="admin.html" class="snav-link">⚙ Admin</a>
   <a href="cicd_costs.html" class="snav-link">⧖ CI/CD Costs</a>
+  <a href="sustainability.html" class="snav-link">🌱 CO₂</a>
 </nav>
   <h2 class="sr-only">CloudLens multi-cloud explorer: drill from provider to account to service to resource, with anomaly detection, budget setup, and alerts</h2>
   <div class="head">
     <h1><span class="dot"></span> CloudLens · Explorer</h1>
-    <div class="tabs">
-      <button class="on" onclick="tab('explore',this)">Drill-down</button>
-      <button onclick="tab('alerts',this)">Alerts</button>
-      <button onclick="tab('budget',this)">Budgets</button>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <select id="tenant-sel" onchange="switchTenant()" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:var(--mono);font-size:12px;padding:6px 10px;outline:none">
+        <option value="t-acme">t-acme (Acme Corp)</option>
+        <option value="t-1">t-1 (Demo)</option>
+      </select>
+      <div class="tabs">
+        <button class="on" onclick="tab('explore',this)">Drill-down</button>
+        <button onclick="tab('alerts',this)">Alerts</button>
+        <button onclick="tab('budget',this)">Budgets</button>
+      </div>
     </div>
   </div>
 
@@ -124,6 +132,24 @@ padding:9px 16px;border-radius:8px;cursor:pointer}
     </div>
     <div class="card">
       <h2>⚙ Alert rules</h2>
+      <div class="form" style="margin-bottom:14px">
+        <div><label>Rule name</label><input id="ar-name" value="Budget breach ≥ 90%" /></div>
+        <div><label>Type</label><select id="ar-type">
+          <option value="budget_breach">Budget breach</option>
+          <option value="spend_spike">Spend spike</option>
+          <option value="resource_anomaly">Resource anomaly</option>
+          <option value="waste_threshold">Waste threshold</option>
+          <option value="commitment_idle">Commitment idle</option>
+        </select></div>
+        <div><label>Threshold</label><input id="ar-thr" type="number" value="90" /></div>
+        <div><label>Channels</label><select id="ar-ch">
+          <option value="in_app">In-app</option>
+          <option value="in_app,email">In-app + email</option>
+          <option value="in_app,webhook">In-app + webhook</option>
+        </select></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn" onclick="createAlertRule()">Add rule ↗</button></div>
+      </div>
+      <div class="note" id="ar-note"></div>
       <div id="rules"></div>
       <div class="note">Channels: in-app (always on) · webhook (Slack/Teams) · email (needs SMTP/SendGrid/ACS integration).</div>
     </div>
@@ -157,87 +183,31 @@ padding:9px 16px;border-radius:8px;cursor:pointer}
 
 <script>
 const EUR=n=>'€'+Math.round(n).toLocaleString('en-US');
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let _renderGen=0;
 const PROV={'Amazon Web Services':{ic:'AWS',c:'var(--aws)'},'Microsoft Azure':{ic:'AZ',c:'var(--azure)'},
 'Google Cloud':{ic:'GCP',c:'var(--gcp)'},'Alibaba Cloud':{ic:'ALI',c:'var(--alibaba)'},
 'Oracle Cloud Infrastructure':{ic:'OCI',c:'var(--oci)'}};
 function tab(v,el){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
   document.getElementById('v-'+v).classList.add('on');
-  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+  if(v==='alerts')renderAlerts();if(v==='budget')renderBudgets();}
+const API='';
+function tid(){return document.getElementById('tenant-sel').value;}
+function hdrs(){return {'X-API-Key':'demo-key'};}
+function switchTenant(){PATH=[];render();renderAlerts();renderBudgets();}
 
-/* Data model shaped to GET /drilldown/{t}?level=&provider=&account=&service=
-   The real endpoint aggregates FOCUS records by level for any provider; this mock
-   generates the same shape for every provider path so all drill-downs work. */
-const PROVIDERS=[
-  {key:'Amazon Web Services',spend_eur:18600,pct:38.6},
-  {key:'Microsoft Azure',spend_eur:14200,pct:29.5},
-  {key:'Google Cloud',spend_eur:8100,pct:16.8},
-  {key:'Alibaba Cloud',spend_eur:3400,pct:7.1},
-  {key:'Oracle Cloud Infrastructure',spend_eur:1700,pct:3.5},
-];
-/* provider-specific accounts, services, and resource name prefixes */
-const SHAPE={
-  'Amazon Web Services':{
-    accounts:['111122223333 · prod','444455556666 · staging'],
-    services:['Amazon EC2','Amazon RDS','Amazon S3','AWS Lambda','Amazon Bedrock'],
-    rprefix:'i-0', rsuffix:['web','api','batch','worker'],
-  },
-  'Microsoft Azure':{
-    accounts:['sub-prod-01 · Production','sub-dev-02 · Dev/Test'],
-    services:['Virtual Machines','Azure SQL Database','Blob Storage','App Service','Azure OpenAI'],
-    rprefix:'vm-', rsuffix:['app','sql','web','func'],
-  },
-  'Google Cloud':{
-    accounts:['acme-prod · Production','acme-data · Analytics'],
-    services:['Compute Engine','BigQuery','Cloud SQL','Cloud Storage','Vertex AI'],
-    rprefix:'gce-', rsuffix:['svc','etl','api','ml'],
-  },
-  'Alibaba Cloud':{
-    accounts:['acc-5821 · prod','acc-5822 · test'],
-    services:['ECS','ApsaraDB RDS','OSS','Function Compute'],
-    rprefix:'i-rj9', rsuffix:['ecs','db','cache'],
-  },
-  'Oracle Cloud Infrastructure':{
-    accounts:['prod-compartment','shared-compartment'],
-    services:['Compute','Autonomous Database','Object Storage','Load Balancer'],
-    rprefix:'ocid1.instance.', rsuffix:['node','adb','lb'],
-  },
-};
-/* deterministic pseudo-hash so spends/anomalies are stable across re-renders */
-function hash(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0;}return h;}
-/* split a parent spend across named children by descending weights */
-function split(parentSpend,names,salt){
-  const weights=names.map((n,i)=>1/(i+1.4)+(hash(salt+n)%30)/100);
-  const sum=weights.reduce((a,b)=>a+b,0);
-  return names.map((n,i)=>({name:n,spend:Math.round(parentSpend*weights[i]/sum)}));
+async function fetchChildren(){
+  const lvl=PATH.length===0?'provider':PATH[PATH.length-1].nextLevel;
+  const keys=PATH.map(p=>p.key);
+  const qs=new URLSearchParams({level:lvl,days:'30'});
+  if(lvl!=='provider'&&keys[0])qs.set('provider',keys[0]);
+  if((lvl==='service'||lvl==='resource')&&keys[1])qs.set('account',keys[1]);
+  if(lvl==='resource'&&keys[2])qs.set('service',keys[2]);
+  const r=await fetch(`${API}/api/v1/drilldown/${tid()}?${qs}`,{headers:hdrs()});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
 }
-function getChildren(level,keys,parentSpend){
-  if(level==='provider') return PROVIDERS.map(p=>({...p,next_level:'account'}));
-  const prov=keys[0]; const shp=SHAPE[prov]||SHAPE['Amazon Web Services'];
-  if(level==='account'){
-    return split(parentSpend,shp.accounts,prov).map(c=>({key:c.name,spend_eur:c.spend,next_level:'service'}));
-  }
-  if(level==='service'){
-    return split(parentSpend,shp.services,keys[1]).map(c=>({key:c.name,spend_eur:c.spend,next_level:'resource'}));
-  }
-  /* resource level: generate resources, inject anomalies deterministically */
-  const svc=keys[2]; const base=hash(keys.join('|'));
-  const n=3+(base%2);
-  const names=[];for(let i=0;i<n;i++){names.push(`${shp.rprefix}${(base+i).toString(16).slice(0,4)} · ${shp.rsuffix[i%shp.rsuffix.length]}-${svc.split(' ').pop().toLowerCase()}-${i+1}`);}
-  const rows=split(parentSpend,names,svc).map((c,i)=>({key:c.name,spend_eur:c.spend,anomaly:null}));
-  /* anomaly on top resource when hash even; a medium on another when divisible by 3 */
-  if(rows.length && base%2===0){
-    const exp=Math.round(rows[0].spend_eur*0.35), act=Math.round(rows[0].spend_eur*0.9);
-    rows[0].anomaly={severity:'high',actual_eur:act,expected_eur:exp,excess_eur:act-exp,
-      z_score:(4+(base%4)).toFixed(1)*1,day:'2026-06-15',method:'holt_winters'};
-  }
-  if(rows.length>2 && base%3===0){
-    const exp=Math.round(rows[2].spend_eur*0.5), act=Math.round(rows[2].spend_eur*0.85);
-    rows[2].anomaly={severity:'medium',actual_eur:act,expected_eur:exp,excess_eur:act-exp,
-      z_score:(3+(base%2)).toFixed(1)*1,day:'2026-06-16',method:'median_mad'};
-  }
-  return rows;
-}
-function pct(spend,total){return total>0?Math.round(spend/total*1000)/10:0;}
 
 let PATH=[];  // [{key,nextLevel,spend}]
 function renderCrumb(){
@@ -249,44 +219,50 @@ function renderCrumb(){
 }
 function goto(i){PATH=i<0?[]:PATH.slice(0,i+1);render();}
 function drill(key,nextLevel,spend){if(!nextLevel)return;PATH.push({key,nextLevel,spend});render();}
+
 function iconFor(level,key){
   if(level==='provider'){const m=PROV[key]||{ic:'?',c:'var(--txt3)'};return `<span class="ic" style="background:${m.c}">${m.ic}</span>`;}
   const map={account:['ACC','var(--blue)'],service:['SVC','var(--teal)'],resource:['RES','var(--purple)']};
   const [t,c]=map[level]||['?','var(--txt3)'];return `<span class="ic" style="background:${c}">${t}</span>`;}
-function render(){
+async function render(){
+  const gen=++_renderGen;
   renderCrumb();
   const lvl=PATH.length===0?'provider':PATH[PATH.length-1].nextLevel;
-  const keys=PATH.map(p=>p.key);
-  const parentSpend=PATH.length===0?0:PATH[PATH.length-1].spend;
   const title=PATH.length===0?'Cloud providers':PATH[PATH.length-1].key;
   document.getElementById('lvl-title').textContent=title;
-  let kids=getChildren(lvl,keys,parentSpend);
-  const total=kids.reduce((s,k)=>s+k.spend_eur,0);
-  kids.forEach(k=>k.pct=pct(k.spend_eur,total));
-  kids.sort((a,b)=>b.spend_eur-a.spend_eur);
+  document.getElementById('lvl-total').textContent='';
+  document.getElementById('anom-note').textContent='';
+  document.getElementById('rows').innerHTML='<div class="note">Loading…</div>';
+  let resp;
+  try{resp=await fetchChildren();}
+  catch(e){document.getElementById('rows').innerHTML='<div class="note" style="color:var(--red)">Failed to load: '+esc(e.message)+'</div>';return;}
+  if(gen!==_renderGen)return;
+  let kids=(resp.children||[]).slice().sort((a,b)=>b.spend_eur-a.spend_eur);
+  const total=resp.total_eur||kids.reduce((s,k)=>s+k.spend_eur,0);
   document.getElementById('lvl-total').textContent=`${kids.length} ${lvl}${kids.length===1?'':'s'} · ${EUR(total)}`;
+  if(!kids.length){document.getElementById('rows').innerHTML='<div class="note">No spend recorded at this level.</div>';return;}
   const max=Math.max(...kids.map(k=>k.spend_eur),1);
   let anomCount=0;
   document.getElementById('rows').innerHTML=kids.map((k,idx)=>{
     const a=k.anomaly;if(a)anomCount++;
     const col=lvl==='provider'?(PROV[k.key]||{}).c||'var(--teal)':'var(--teal)';
-    const badge=a?`<span class="anom-badge ${a.severity}">⚠ ${a.severity==='high'?'ANOMALY':'watch'} +${EUR(a.excess_eur)}</span>`:'';
+    const badge=a?`<span class="anom-badge ${a.severity==='medium'?'medium':''}">⚠ ${a.severity==='high'?'ANOMALY':'watch'} +${EUR(a.excess_eur)}</span>`:'';
     const drawer=a?`<div class="drawer" id="dr-${idx}" style="display:none">
-      <div class="dh">⚠ Resource cost anomaly — ${k.key.split('·').pop().trim()}</div>
+      <div class="dh">⚠ Resource cost anomaly — ${esc(a.resource_name||k.key)}</div>
       <div class="grid">
         <div class="g"><div class="l">Actual (day)</div><div class="v" style="color:var(--red)">${EUR(a.actual_eur)}</div></div>
         <div class="g"><div class="l">Expected</div><div class="v">${EUR(a.expected_eur)}</div></div>
         <div class="g"><div class="l">Excess</div><div class="v" style="color:var(--amber)">+${EUR(a.excess_eur)}</div></div>
-        <div class="g"><div class="l">Z-score</div><div class="v">${a.z_score}σ</div></div>
-        <div class="g"><div class="l">Date</div><div class="v" style="font-size:12px">${a.day}</div></div>
-        <div class="g"><div class="l">Method</div><div class="v" style="font-size:11px">${a.method}</div></div>
+        <div class="g"><div class="l">Z-score</div><div class="v">${(a.z_score||0).toFixed(1)}σ</div></div>
+        <div class="g"><div class="l">Date</div><div class="v" style="font-size:12px">${esc(a.day)}</div></div>
+        <div class="g"><div class="l">Method</div><div class="v" style="font-size:11px">${esc(a.method)}</div></div>
       </div></div>`:'';
-    const next=k.next_level||(lvl==='resource'?null:'service');
-    const safeKey=k.key.replace(/'/g,"\\'");
+    const next=k.next_level;
+    const safeKey=esc(String(k.key).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
     const click=a?`onclick="toggleDrawer(${idx})"`:(next?`onclick="drill('${safeKey}','${next}',${k.spend_eur})"`:'');
     return `<div class="row ${a?'anom':''}" ${click}>
       ${iconFor(lvl,k.key)}
-      <div class="nm"><div class="t">${k.key} ${badge}</div><div class="s">${k.pct}% of level</div></div>
+      <div class="nm"><div class="t">${esc(k.key)} ${badge}</div><div class="s">${(k.pct||0).toFixed(1)}% of level</div></div>
       <div class="bar"><i style="width:${k.spend_eur/max*100}%;background:${col}"></i></div>
       <div class="amt">${EUR(k.spend_eur)}</div>
       <div class="chev">${next&&!a?'›':(a?'⌄':'')}</div>
@@ -298,57 +274,116 @@ function render(){
 function toggleDrawer(i){const d=document.getElementById('dr-'+i);if(d)d.style.display=d.style.display==='none'?'block':'none';}
 
 /* alerts */
-const EVENTS=[
-  {severity:'critical',title:"Budget 'Engineering' at 112% of €11,000",meta:'budget_breach · 2026-06-16',imp:1320,ack:false},
-  {severity:'high',title:"Resource 'web-prod-03' spiked to €240 (expected €96)",meta:'resource_anomaly · AWS/prod · 2026-06-15',imp:144,ack:false},
-  {severity:'high',title:'Spend spike €1,240 on 2026-06-08 (driver: Virtual Machines)',meta:'spend_spike · 4.2σ',imp:1240,ack:true},
-  {severity:'medium',title:'Idle commitment €640/mo exceeds threshold €500',meta:'commitment_idle',imp:640,ack:false},
-];
-const RULES=[
-  {name:'Budget breach ≥ 90%',type:'budget_breach',ch:'in_app, email',on:true},
-  {name:'Resource anomaly ≥ 3σ (AWS prod)',type:'resource_anomaly',ch:'in_app, webhook',on:true},
-  {name:'Recoverable waste ≥ €5,000',type:'waste_threshold',ch:'in_app',on:true},
-  {name:'Idle commitment ≥ €500',type:'commitment_idle',ch:'in_app',on:false},
-];
-function renderAlerts(){
-  document.getElementById('events').innerHTML=EVENTS.map((e,i)=>`<div class="alert ${e.severity}">
-    <div class="sev"></div>
-    <div class="c"><div class="t">${e.title}</div><div class="m">${e.meta}</div></div>
-    <div class="imp">${EUR(e.imp)}</div>
-    ${e.ack?'<span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">ack’d</span>':`<button class="ack" onclick="ackEvent(${i})">ack</button>`}
-  </div>`).join('');
-  document.getElementById('rules').innerHTML=RULES.map(r=>`<div class="rule">
-    <div class="nm"><div>${r.name}</div><div class="s">${r.type} · ${r.ch}</div></div>
-    <span class="tog ${r.on?'on':'off'}">${r.on?'enabled':'disabled'}</span></div>`).join('');
+async function renderAlerts(){
+  const evEl=document.getElementById('events'),ruEl=document.getElementById('rules');
+  evEl.innerHTML='<div class="note">Loading…</div>';
+  try{
+    const [events,rules]=await Promise.all([
+      fetch(`${API}/api/v1/alerts/${tid()}/events?limit=20`,{headers:hdrs()}).then(r=>r.json()),
+      fetch(`${API}/api/v1/alerts/${tid()}/rules`,{headers:hdrs()}).then(r=>r.json()),
+    ]);
+    const sevClass=s=>s==='critical'?'critical':(s==='high'?'high':'medium');
+    evEl.innerHTML=(events&&events.length)?events.map(e=>`<div class="alert ${sevClass(e.severity)}">
+      <div class="sev"></div>
+      <div class="c"><div class="t">${esc(e.title)}</div><div class="m">${esc(e.alert_type)} · ${new Date(e.triggered_at).toLocaleString()}</div></div>
+      <div class="imp">${EUR(e.impact_eur||0)}</div>
+      ${e.acknowledged?'<span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">ack’d</span>':`<button class="ack" onclick="ackEvent('${e.id}')">ack</button>`}
+    </div>`).join(''):'<div class="note">No alert events.</div>';
+    ruEl.innerHTML=(rules&&rules.length)?rules.map(r=>`<div class="rule">
+      <div class="nm"><div>${esc(r.name)}</div><div class="s">${esc(r.alert_type)} · ${esc((r.channels||[]).join(', '))}</div></div>
+      <button onclick="toggleRule('${esc(r.id)}',${!r.enabled})" class="tog ${r.enabled?'on':'off'}" style="cursor:pointer;border:0">${r.enabled?'enabled':'disabled'}</button>
+      <button onclick="deleteRule('${esc(r.id)}','${esc(r.name)}')" style="font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:6px;background:var(--redDim);border:1px solid var(--red);color:var(--red);cursor:pointer;margin-left:6px">del</button></div>`).join(''):'<div class="note">No alert rules configured.</div>';
+  }catch(e){evEl.innerHTML='<div class="note" style="color:var(--red)">Failed to load alerts: '+esc(e.message)+'</div>';ruEl.innerHTML='';}
 }
-function ackEvent(i){EVENTS[i].ack=true;renderAlerts();}
+async function createAlertRule(){
+  const note=document.getElementById('ar-note');note.style.color='var(--txt3)';
+  const body={tenant_id:tid(),name:document.getElementById('ar-name').value.trim(),
+    alert_type:document.getElementById('ar-type').value,threshold:+document.getElementById('ar-thr').value,
+    channels:document.getElementById('ar-ch').value.split(','),enabled:true};
+  try{
+    const r=await fetch(`${API}/api/v1/alerts/${tid()}/rules`,{method:'POST',headers:{...hdrs(),'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.ok){note.style.color='var(--teal)';note.textContent='Rule created.';renderAlerts();}
+    else{const e=await r.json().catch(()=>({}));note.style.color='var(--red)';note.textContent='Failed: '+((e.detail&&e.detail.message)||('HTTP '+r.status));}
+  }catch(e){note.style.color='var(--red)';note.textContent='Failed: '+e.message;}
+}
+async function toggleRule(id,enabled){
+  try{await fetch(`${API}/api/v1/alerts/${tid()}/rules/${id}`,{method:'PATCH',headers:{...hdrs(),'Content-Type':'application/json'},body:JSON.stringify({enabled})});}catch(e){}
+  renderAlerts();
+}
+async function deleteRule(id,name){
+  if(!confirm('Delete alert rule "'+name+'"?'))return;
+  try{await fetch(`${API}/api/v1/alerts/${tid()}/rules/${id}`,{method:'DELETE',headers:hdrs()});}catch(e){}
+  renderAlerts();
+}
+async function ackEvent(id){
+  try{await fetch(`${API}/api/v1/alerts/${tid()}/events/${id}/acknowledge`,{method:'POST',headers:hdrs()});}catch(e){}
+  renderAlerts();
+}
 
 /* budgets */
-const BUDGETS=[
-  {name:'Engineering',scope:'cost_center=engineering',amount:11000,spend:12320,pct:112,status:'breach'},
-  {name:'AWS prod account',scope:'sub_account_id=111122223333',amount:14000,spend:11800,pct:84,status:'warning'},
-  {name:'Tenant total',scope:'tenant',amount:60000,spend:45800,pct:76,status:'ok'},
-];
 function budColor(p){return p>=100?'var(--red)':p>=85?'var(--amber)':'var(--teal)';}
-function renderBudgets(){
-  document.getElementById('budgets').innerHTML=BUDGETS.map(b=>`<div class="rule">
-    <div class="nm"><div>${b.name}</div><div class="s">${b.scope}</div></div>
-    <div style="width:140px"><div style="height:7px;background:var(--line);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100,b.pct)}%;background:${budColor(b.pct)};border-radius:4px"></i></div>
-      <div style="font-size:10px;color:var(--txt3);font-family:var(--mono);margin-top:3px">${EUR(b.spend)} / ${EUR(b.amount)}</div></div>
-    <div style="font-family:var(--mono);font-weight:600;color:${budColor(b.pct)};min-width:42px;text-align:right">${b.pct}%</div></div>`).join('');
+async function renderBudgets(){
+  const el=document.getElementById('budgets');
+  el.innerHTML='<div class="note">Loading…</div>';
+  try{
+    const budgets=await fetch(`${API}/api/v1/budgets/${tid()}`,{headers:hdrs()}).then(r=>r.json());
+    if(!budgets||!budgets.length){el.innerHTML='<div class="note">No budgets yet — create one below.</div>';return;}
+    const statuses=await Promise.all(budgets.map(b=>
+      fetch(`${API}/api/v1/budgets/${tid()}/${b.id}/status`,{headers:hdrs()}).then(r=>r.ok?r.json():null).catch(()=>null)));
+    el.innerHTML=budgets.map((b,i)=>{
+      const st=statuses[i];
+      const spend=st?st.spend_to_date_eur:0;
+      const p=st?Math.round(st.consumed_pct):0;
+      const scope=b.scope_dimension?`${b.scope_dimension}=${b.scope_value}`:'tenant';
+      return `<div class="rule">
+        <div class="nm"><div>${esc(b.name)}</div><div class="s">${esc(scope)}</div></div>
+        <div style="width:140px"><div style="height:7px;background:var(--line);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100,p)}%;background:${budColor(p)};border-radius:4px"></i></div>
+          <div style="font-size:10px;color:var(--txt3);font-family:var(--mono);margin-top:3px">${EUR(spend)} / ${EUR(b.amount_eur)}</div></div>
+        <div style="font-family:var(--mono);font-weight:600;color:${budColor(p)};min-width:42px;text-align:right">${p}%</div>
+        <div style="display:flex;gap:5px;margin-left:8px">
+          <button onclick="editBudget('${esc(b.id)}',${b.amount_eur})" style="font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:6px;background:var(--tealDim);border:1px solid var(--teal);color:var(--teal);cursor:pointer">edit</button>
+          <button onclick="deleteBudget('${esc(b.id)}','${esc(b.name)}')" style="font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:6px;background:var(--redDim);border:1px solid var(--red);color:var(--red);cursor:pointer">del</button>
+        </div></div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="note" style="color:var(--red)">Failed to load budgets: '+esc(e.message)+'</div>';}
 }
-function createBudget(){
-  const name=document.getElementById('b-name').value;
-  const amount=document.getElementById('b-amount').value;
+async function createBudget(){
+  const name=document.getElementById('b-name').value.trim();
+  const amount=+document.getElementById('b-amount').value;
   const scope=document.getElementById('b-scope').value;
-  const value=document.getElementById('b-value').value;
-  const scopeStr=scope==='tenant'?'tenant':`${scope}=${value}`;
-  BUDGETS.unshift({name,scope:scopeStr,amount:+amount,spend:0,pct:0,status:'ok'});
-  renderBudgets();
-  document.getElementById('b-note').textContent=`Created "${name}" (${EUR(+amount)}/mo, scope ${scopeStr}). Wires to POST /api/v1/budgets/{tenant}.`;
+  const value=document.getElementById('b-value').value.trim();
+  const warn=+document.getElementById('b-warn').value||85;
+  const note=document.getElementById('b-note');
+  const body={tenant_id:tid(),name,amount_eur:amount,period:'monthly',warning_threshold_pct:warn};
+  if(scope!=='tenant'){body.scope_dimension=scope;body.scope_value=value;}
+  try{
+    const r=await fetch(`${API}/api/v1/budgets/${tid()}`,{method:'POST',headers:{...hdrs(),'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.ok){note.style.color='var(--teal)';note.textContent=`Created “${name}” (${EUR(amount)}/mo).`;renderBudgets();}
+    else{const e=await r.json().catch(()=>({}));note.style.color='var(--red)';note.textContent='Failed: '+((e.detail&&e.detail.message)||('HTTP '+r.status));}
+  }catch(e){note.style.color='var(--red)';note.textContent='Failed: '+e.message;}
+}
+async function editBudget(id,amount){
+  const na=prompt('New monthly amount (€):',amount);
+  if(na===null)return;
+  const amt=+na;const note=document.getElementById('b-note');
+  if(!(amt>0)){note.style.color='var(--red)';note.textContent='Amount must be > 0.';return;}
+  try{
+    const r=await fetch(`${API}/api/v1/budgets/${tid()}/${id}`,{method:'PATCH',headers:{...hdrs(),'Content-Type':'application/json'},body:JSON.stringify({amount_eur:amt})});
+    if(r.ok){note.style.color='var(--teal)';note.textContent='Budget updated.';renderBudgets();}
+    else{note.style.color='var(--red)';note.textContent='Update failed: HTTP '+r.status;}
+  }catch(e){note.style.color='var(--red)';note.textContent='Update failed: '+e.message;}
+}
+async function deleteBudget(id,name){
+  if(!confirm('Delete budget "'+name+'"?'))return;
+  const note=document.getElementById('b-note');
+  try{
+    const r=await fetch(`${API}/api/v1/budgets/${tid()}/${id}`,{method:'DELETE',headers:hdrs()});
+    if(r.ok||r.status===204){note.style.color='var(--teal)';note.textContent='Budget deleted.';renderBudgets();}
+    else{note.style.color='var(--red)';note.textContent='Delete failed: HTTP '+r.status;}
+  }catch(e){note.style.color='var(--red)';note.textContent='Delete failed: '+e.message;}
 }
 
-render();renderAlerts();renderBudgets();
+render();
 </script>
 </body>
 </html>

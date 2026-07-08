@@ -11,12 +11,13 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from app.auth import require_api_key
 from app.exceptions import CosmosError
 from app.logging_config import get_logger
+from app.rate_limit import get_client_ip, check_ip_rate_limit, enforce_ip_rate_limit
 from app.services.cost_estimator import (
     catalog_summary,
     compute_drift,
@@ -30,19 +31,25 @@ log = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1/estimate", tags=["cost-estimate"])
 
+# Max allowed Terraform plan JSON length (characters).  Pydantic validates
+# character count, not bytes — this is an application-layer guard.  For byte-
+# level protection, configure --limit-request-body on uvicorn / the LB.
+_MAX_PLAN_JSON_CHARS = 5 * 1024 * 1024
+
 
 # ── Request models ────────────────────────────────────────────────────────────
 
 class TerraformEstimateRequest(BaseModel):
     plan_json: str = Field(
         ...,
+        max_length=_MAX_PLAN_JSON_CHARS,
         description="Full JSON output of `terraform show -json <plan-file>`",
     )
     label: str = Field(default="", max_length=200)
 
 
 class RecordRunRequest(BaseModel):
-    plan_json: str = Field(..., description="Terraform show -json output")
+    plan_json: str = Field(..., max_length=_MAX_PLAN_JSON_CHARS, description="Terraform show -json output")
     tenant_id: str
     label: str = Field(default="", max_length=200)
     ci_system: str = Field(
@@ -65,8 +72,9 @@ class BudgetGateRequest(BaseModel):
 # ── Stateless estimate ────────────────────────────────────────────────────────
 
 @router.post("/terraform")
-async def estimate_terraform(body: TerraformEstimateRequest) -> dict:
+async def estimate_terraform(request: Request, body: TerraformEstimateRequest) -> dict:
     """Parse a Terraform plan JSON and return a per-resource cost estimate (not persisted)."""
+    await enforce_ip_rate_limit(get_client_ip(request), limit_per_min=20)
     try:
         result = estimate_plan(body.plan_json)
     except ValueError as exc:
@@ -176,11 +184,12 @@ async def get_run_history(
 # ── Budget gate ───────────────────────────────────────────────────────────────
 
 @router.post("/gate")
-async def budget_gate(body: BudgetGateRequest) -> dict:
+async def budget_gate(request: Request, body: BudgetGateRequest) -> dict:
     """
     Evaluate a cost budget gate. Returns pass/fail + exit_code (0/1).
     No auth required so pipelines can use it without storing a key.
     """
+    await enforce_ip_rate_limit(get_client_ip(request), limit_per_min=60)
     passed = compute_gate(body.monthly_delta_eur, body.gate_eur)
     sign = "+" if body.monthly_delta_eur >= 0 else ""
     return {
